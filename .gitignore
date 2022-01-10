@@ -1,0 +1,8 @@
+# Eclipse files
+.cproject
+.idea
+.project
+.settings
+
+# Binary files
+bin
