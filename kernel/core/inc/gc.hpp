@@ -92,6 +92,12 @@ namespace GC
 		 * @returns A pointer to the owned object.
 		 */
 		void* getRaw();
+
+		template<typename T>
+		T* as()
+		{
+			return reinterpret_cast<T*>(getRaw());
+		}
 	};
 
 //	/**

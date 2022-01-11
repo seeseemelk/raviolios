@@ -24,9 +24,9 @@ namespace Java
 		void name(GC::Root<char>& name);
 
 	private:
+		VM m_vm;
 		GC::Root<ClassFile> m_classfile;
 		GC::Root<char> m_name;
-		VM m_vm;
 	};
 }
 

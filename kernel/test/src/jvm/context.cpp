@@ -23,7 +23,6 @@ TEST("Can load class file")
 	assertEquals(55U, classfile.majorVersion, "Correct major version");
 	assertEquals(0U, classfile.minorVersion, "Correct minor version");
 	assertEquals(13, classfile.constantPoolCount, "Correct number of items in the constant pool");
-	assertEquals(7, classfile.thisClass, "Correct this class");
 	assertEquals(ACC_PUBLIC | ACC_SUPER, classfile.accessFlags, "Correct access flags");
 	assertEquals(0, classfile.interfacesCount, "Correct number of interfaces");
 

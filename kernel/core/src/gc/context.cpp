@@ -109,8 +109,11 @@ class MarkVisitor : public MetaVisitor
 public:
 	void visit(Meta** object) override
 	{
-		(*object)->reachable = true;
-		(*object)->describer(*object, *this);
+		if (*object != nullptr)
+		{
+			(*object)->reachable = true;
+			(*object)->describer(*object, *this);
+		}
 	}
 };
 

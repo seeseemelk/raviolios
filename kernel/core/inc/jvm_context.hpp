@@ -7,6 +7,7 @@
 #include "gc.hpp"
 #include "jvm_defs.hpp"
 #include "jvm_loader.hpp"
+#include "jvm_thread.hpp"
 
 namespace Java
 {
@@ -28,6 +29,13 @@ namespace Java
 		 * @return The garbage collector used by the VM.
 		 */
 		GC::Context& gc();
+
+		/**
+		 * Creates a thread.
+		 *
+		 * @param thread The created thread.
+		 */
+		void createThread(GC::Root<Thread>& thread);
 
 		/**
 		 * Loads a class into the VM.

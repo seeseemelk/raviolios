@@ -26,6 +26,12 @@ void VM::allocateArray(GC::Root<char>& root, size_t length)
 	m_gc.allocate(meta, root);
 }
 
+void VM::createThread(GC::Root<Thread>& thread)
+{
+	GC::Allocator<Thread> allocator(Thread::describer);
+	m_gc.allocate(allocator, thread);
+}
+
 ClassError VM::defineClass(GC::Root<ClassFile>& classfile, const u8* data, size_t length)
 {
 	Loader loader(data, length);
