@@ -1,49 +1,10 @@
 #include "asserts.hpp"
 
+#include "cut.hpp"
 #include "fileloader.hpp"
 #include "jvm_context.hpp"
 
-#include <cstdio>
-
 using namespace Java;
-
-struct CUT
-{
-	VM vm;
-	void* memory;
-
-	CUT(size_t memorySize = MB(1))
-	{
-		memory = malloc(memorySize);
-		vm.gc().init(memory, memorySize);
-	}
-
-	~CUT()
-	{
-		vm.gc().deinit();
-		free(memory);
-	}
-
-	void loadClass(GC::Root<ClassFile>& classfile, std::string classname)
-	{
-		Buffer buffer;
-		loadTestClass(buffer, classname);
-		ClassError error = vm.defineClass(classfile, buffer.data, buffer.length);
-		assertEquals(ClassError::GOOD, error, "Class loaded without errors");
-	}
-
-	template<typename T>
-	void makeRoot(GC::Array<T>* ref, GC::Root<T>& root)
-	{
-		vm.gc().makeRoot(*ref, root);
-	}
-
-	template<typename T>
-	void makeRoot(GC::Object<T>* ref, GC::Root<T>& root)
-	{
-		vm.gc().makeRoot(*ref, root);
-	}
-};
 
 TEST("Can create a JVM instance")
 {
@@ -62,6 +23,7 @@ TEST("Can load class file")
 	assertEquals(55U, classfile.majorVersion, "Correct major version");
 	assertEquals(0U, classfile.minorVersion, "Correct minor version");
 	assertEquals(13, classfile.constantPoolCount, "Correct number of items in the constant pool");
+	assertEquals(7, classfile.thisClass, "Correct this class");
 	assertEquals(ACC_PUBLIC | ACC_SUPER, classfile.accessFlags, "Correct access flags");
 	assertEquals(0, classfile.interfacesCount, "Correct number of interfaces");
 

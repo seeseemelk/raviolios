@@ -62,19 +62,19 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, const u8* data, size_
 			array.store(&info->c_utf8.bytes);
 			break;
 		case CONSTANT_class:
-			info->c_class.nameIndex = loader.readU16();
+			info->c_class.nameIndex = loader.readU16() - 1;
 			break;
 		case CONSTANT_fieldRef:
-			info->c_field.classIndex = loader.readU16();
-			info->c_field.nameAndTypeIndex = loader.readU16();
+			info->c_field.classIndex = loader.readU16() - 1;
+			info->c_field.nameAndTypeIndex = loader.readU16() - 1;
 			break;
 		case CONSTANT_methodRef:
-			info->c_method.classIndex = loader.readU16();
-			info->c_method.nameAndTypeIndex = loader.readU16();
+			info->c_method.classIndex = loader.readU16() - 1;
+			info->c_method.nameAndTypeIndex = loader.readU16() - 1;
 			break;
 		case CONSTANT_nameAndType:
-			info->c_nameAndType.nameIndex = loader.readU16();
-			info->c_nameAndType.descriptorIndex = loader.readU16();
+			info->c_nameAndType.nameIndex = loader.readU16() - 1;
+			info->c_nameAndType.descriptorIndex = loader.readU16() - 1;
 			break;
 		default:
 			printf("Unknown tag: %d at index %d (of %d)\n", info->tag, (int)i, (int)classfile.get().constantPoolCount);
@@ -84,8 +84,8 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, const u8* data, size_
 
 	// Continue loading class file header
 	classfile.get().accessFlags = loader.readU16();
-	classfile.get().thisClass = loader.readU16();
-	classfile.get().superClass = loader.readU16();
+	classfile.get().thisClass = loader.readU16() - 1;
+	classfile.get().superClass = loader.readU16() - 1;
 
 	// Load interfaces
 	classfile.get().interfacesCount = loader.readU16();

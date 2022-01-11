@@ -206,7 +206,12 @@ namespace GC
 
 		T& get()
 		{
-			return *static_cast<T*>(object->getRaw());
+			return *asPtr();
+		}
+
+		T* asPtr()
+		{
+			return static_cast<T*>(object->getRaw());
 		}
 
 //		void storeRef(Ref<T>** ref)
@@ -315,7 +320,7 @@ namespace GC
 		 * @param meta The object to create a root to.
 		 * @param root The root to create.
 		 */
-		void makeRootRaw(Meta& meta, RawRoot& root);
+		void makeRootRaw(Meta* meta, RawRoot& root);
 
 		/**
 		 * Creates a root to an object.
@@ -324,7 +329,7 @@ namespace GC
 		 * @param root The root to create.
 		 */
 		template<typename T>
-		void makeRoot(Object<T>& object, Root<T>& root)
+		void makeRoot(Object<T>* object, Root<T>& root)
 		{
 			makeRootRaw(object, root);
 		}
@@ -336,9 +341,24 @@ namespace GC
 		 * @param root The root to create.
 		 */
 		template<typename T>
-		void makeRoot(Array<T>& object, Root<T>& root)
+		void makeRoot(Array<T>* object, Root<T>& root)
 		{
 			makeRootRaw(object, root);
+		}
+
+		/**
+		 * Creates a new root from an existing root.
+		 *
+		 * @tparam T The type of the root.
+		 * @param base The root to base the new on one.
+		 * @param target The new root to create.
+		 */
+		template<typename T>
+		void makeRoot(Root<T>& base, Root<T>& target)
+		{
+			Object<T>* object;
+			base.store(&object);
+			makeRootRaw(object, target);
 		}
 
 		/**

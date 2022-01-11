@@ -69,9 +69,9 @@ AllocResult Context::allocateRaw(Meta& meta, RawRoot& root)
 	return AllocResult::SUCCESS;
 }
 
-void Context::makeRootRaw(Meta& meta, RawRoot& root)
+void Context::makeRootRaw(Meta* meta, RawRoot& root)
 {
-	root.set(&meta, &m_root, m_root.next);
+	root.set(meta, &m_root, m_root.next);
 }
 
 void Context::createObject(Meta& meta, RawRoot& root)
@@ -88,7 +88,7 @@ void Context::createObject(Meta& meta, RawRoot& root)
 	objectMeta->reachable = 0;
 	m_objects++;
 
-	makeRootRaw(*objectMeta, root);
+	makeRootRaw(objectMeta, root);
 }
 
 Meta* Context::firstObject()

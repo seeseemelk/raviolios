@@ -28,7 +28,7 @@ $(KERNEL_BIN_DIR)/%.cpp.o: %.cpp
 
 $(BIN_DIR)/java/%.class: kernel/test/java/%.java $(firstword $(JAVA_OBJ))
 
-$(firstword $(JAVA_OBJ)): $(firstword $(JAVA_SRC))
+$(firstword $(JAVA_OBJ)): $(JAVA_SRC)
 	mkdir -p $(dir $@)
 	javac --release 11 -g:none -d $(dir $@) $(JAVA_SRC)
 
