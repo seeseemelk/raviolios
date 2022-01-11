@@ -3,6 +3,8 @@
 #include "fileloader.hpp"
 #include "jvm_context.hpp"
 
+#include <cstdio>
+
 using namespace Java;
 
 struct CUT
@@ -31,9 +33,15 @@ struct CUT
 	}
 
 	template<typename T>
-	void makeRoot(GC::Ref<T>& ref, GC::Root<T>& root)
+	void makeRoot(GC::Array<T>* ref, GC::Root<T>& root)
 	{
-		vm.gc().makeRoot(ref, root);
+		vm.gc().makeRoot(*ref, root);
+	}
+
+	template<typename T>
+	void makeRoot(GC::Object<T>* ref, GC::Root<T>& root)
+	{
+		vm.gc().makeRoot(*ref, root);
 	}
 };
 
@@ -59,8 +67,12 @@ TEST("Can load class file")
 
 	assertEquals(1, classfile.fieldsCount, "Correct number of fields");
 	GC::Root<FieldInfo> fields;
-	cut.makeRoot(*classfile.fields, fields);
+	cut.makeRoot(classfile.fields, fields);
 
 	assertEquals(ACC_PRIVATE, fields[0].accessFlags, "Correct field access flags");
-	assertStringEqual("field", &fields[0].name->get(), "Correct field name");
+	assertStringEqual("field", fields[0].name->asPtr(), "Correct field name");
+
+	GC::Root<MethodInfo> methods;
+	cut.makeRoot(classfile.methods, methods);
+	assertEquals(1U, methods.count(), "Correct number of methods");
 }

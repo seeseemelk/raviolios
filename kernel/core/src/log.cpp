@@ -4,10 +4,10 @@
 
 void Log::trace(const char* line)
 {
-	(void) line;
-//	Arch::log("[TRCE] ");
-//	Arch::log(line);
-//	Arch::log("\n");
+//	(void) line;
+	Arch::log("[TRCE] ");
+	Arch::log(line);
+	Arch::log("\n");
 }
 
 void Log::info(const char* line)

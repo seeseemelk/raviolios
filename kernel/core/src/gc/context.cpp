@@ -22,7 +22,7 @@ Meta* nextObject(Meta* meta)
 
 void Context::init(void* memoryStart, size_t memorySize)
 {
-	Log::trace("Initialised GC");
+//	Log::trace("Initialised GC");
 	m_memStart = static_cast<u8*>(memoryStart);
 	m_memCurrent = static_cast<u8*>(memoryStart);
 	m_memCapacity = memorySize;
@@ -30,7 +30,7 @@ void Context::init(void* memoryStart, size_t memorySize)
 
 void Context::deinit()
 {
-	Log::trace("Freed GC");
+//	Log::trace("Freed GC");
 }
 
 size_t Context::getFree()
@@ -59,7 +59,7 @@ void* Context::permAlloc(size_t size)
 
 AllocResult Context::allocateRaw(Meta& meta, RawRoot& root)
 {
-	Log::trace("Allocating object");
+//	Log::trace("Allocating object");
 	size_t required = meta.size + sizeof(Meta);
 	if (getFree() < required)
 		collect();
@@ -98,7 +98,7 @@ Meta* Context::firstObject()
 
 void Context::collect()
 {
-	Log::trace("Collecting garbage");
+//	Log::trace("Collecting garbage");
 	mark();
 	sweepUpdate();
 	sweepMove();

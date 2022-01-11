@@ -12,7 +12,7 @@ namespace Java
 	struct ConstantPoolUtf8
 	{
 		u16 length;
-		GC::Ref<char>* bytes;
+		GC::Array<char>* bytes;
 	};
 
 	struct ConstantPoolClass
@@ -89,10 +89,39 @@ namespace Java
 
 	enum class AttributeType
 	{
-		constant_value,
+//		constant_value,
 		code,
-		stack_map_table,
+//		stack_map_table,
 		// Many others
+	};
+
+	struct ExceptionTableEntry
+	{
+		u16 startPC;
+		u16 endPC;
+		u16 handlerPC;
+		u16 catchType;
+	};
+
+	struct Opcode
+	{
+		u8 opcode;
+	};
+
+	struct AttributeInfo;
+
+	struct CodeAttribute
+	{
+		u16 maxStack;
+		u16 maxLocals;
+		u32 codeLength;
+		GC::Array<Opcode>* code;
+		u16 exceptionTableLength;
+		GC::Array<ExceptionTableEntry>* exceptionTable;
+		u16 attributesCount;
+		GC::Array<AttributeInfo>* attributes;
+
+		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
 	};
 
 	struct AttributeInfo
@@ -100,6 +129,14 @@ namespace Java
 		u16 attributeNameIndex;
 		u32 attributeLength;
 		AttributeType attributeType;
+
+		union
+		{
+			GC::Object<CodeAttribute>* code;
+		};
+
+		void describe(GC::MetaVisitor& visitor);
+		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
 	};
 
 	struct FieldInfo
@@ -108,8 +145,19 @@ namespace Java
 		u16 nameIndex;
 		u16 descriptorIndex;
 		u16 attributesCount;
-		GC::Ref<AttributeInfo>* attributes;
-		GC::Ref<char>* name;
+		GC::Array<AttributeInfo>* attributes;
+		GC::Array<char>* name;
+
+		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
+	};
+
+	struct MethodInfo
+	{
+		u16 accessFlags;
+		u16 nameIndex;
+		u16 descriptorIndex;
+		u16 attributesCount;
+		GC::Array<AttributeInfo>* attributes;
 
 		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
 	};
@@ -120,16 +168,18 @@ namespace Java
 		u16 minorVersion;
 		u16 majorVersion;
 		u16 constantPoolCount;
-		GC::Ref<ConstantPoolInfo>* constantPool;
+		GC::Array<ConstantPoolInfo>* constantPool;
 		u16 accessFlags;
 		u16 thisClass;
 		u16 superClass;
 		u16 interfacesCount;
-		GC::Ref<u16>* interfaces;
+		GC::Array<u16>* interfaces;
 		u16 fieldsCount;
-		GC::Ref<FieldInfo>* fields;
-		// Methods
-		// Attributes
+		GC::Array<FieldInfo>* fields;
+		u16 methodCount;
+		GC::Array<MethodInfo>* methods;
+		u16 attributesCount;
+		GC::Array<AttributeInfo>* attributes;
 
 		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
 	};

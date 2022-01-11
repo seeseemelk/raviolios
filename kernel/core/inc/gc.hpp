@@ -12,7 +12,9 @@ namespace GC
 {
 	class Context;
 	struct Meta;
-	template<typename T> struct Ref;
+//	template<typename T> struct Ref;
+	template<typename T> struct Object;
+	template<typename T> struct Array;
 
 	/**
 	 * Visits each meta in a object.
@@ -23,8 +25,20 @@ namespace GC
 		virtual ~MetaVisitor() = default;
 		virtual void visit(Meta** object) = 0;
 
+//		template<typename T>
+//		void visit(Ref<T>** ref)
+//		{
+//			visit(reinterpret_cast<Meta**>(ref));
+//		}
+
 		template<typename T>
-		void visit(Ref<T>** ref)
+		void visit(Array<T>** ref)
+		{
+			visit(reinterpret_cast<Meta**>(ref));
+		}
+
+		template<typename T>
+		void visit(Object<T>** ref)
 		{
 			visit(reinterpret_cast<Meta**>(ref));
 		}
@@ -80,31 +94,81 @@ namespace GC
 		void* getRaw();
 	};
 
-	/**
-	 * A typed wrapper around @ref Meta.
-	 *
-	 * @tparam T The type stored by the meta.
-	 */
+//	/**
+//	 * A typed wrapper around @ref Meta.
+//	 *
+//	 * @tparam T The type stored by the meta.
+//	 */
+//	template<typename T>
+//	struct Ref : Meta
+//	{
+//		Ref()
+//		{
+//			size = sizeof(T);
+//		}
+//
+//		/**
+//		 * Gets a pointer to the object owned by this meta.
+//		 *
+//		 * The same warnings as for @ref getRaw() apply.
+//		 *
+//		 * @tparam T The type of object owned.
+//		 *
+//		 * @return A reference to the object.
+//		 */
+//		T& get()
+//		{
+//			return *static_cast<T*>(getRaw());
+//		}
+//	};
+
 	template<typename T>
-	struct Ref : Meta
+	struct Allocator : Meta
 	{
-		Ref()
+		Allocator(size_t count, MetaDescriber* describer)
 		{
-			size = sizeof(T);
+			this->size = count * sizeof(T);
+			this->describer = describer;
 		}
 
-		/**
-		 * Gets a pointer to the object owned by this meta.
-		 *
-		 * The same warnings as for @ref getRaw() apply.
-		 *
-		 * @tparam T The type of object owned.
-		 *
-		 * @return A reference to the object.
-		 */
-		T& get()
+		Allocator(size_t count)
+			: Allocator(count, &emptyDescriber)
 		{
-			return *static_cast<T*>(getRaw());
+		}
+
+		Allocator(MetaDescriber* describer)
+			: Allocator(1, describer)
+		{
+		}
+
+		Allocator()
+			: Allocator(1, &emptyDescriber)
+		{
+		}
+	};
+
+	template<typename T>
+	struct Object : Meta
+	{
+		T object;
+	};
+
+	template<typename T>
+	struct Array : Meta
+	{
+		T& get(size_t index)
+		{
+			return asPtr()[index];
+		}
+
+		T& operator[](size_t index)
+		{
+			return get(index);
+		}
+
+		T* asPtr()
+		{
+			return reinterpret_cast<T*>(getRaw());
 		}
 	};
 
@@ -135,14 +199,29 @@ namespace GC
 	template<typename T>
 	struct Root : RawRoot
 	{
+		size_t count()
+		{
+			return object->size / sizeof(T);
+		}
+
 		T& get()
 		{
 			return *static_cast<T*>(object->getRaw());
 		}
 
-		void storeRef(Ref<T>** ref)
+//		void storeRef(Ref<T>** ref)
+//		{
+//			storeMeta(reinterpret_cast<Meta**>(ref));
+//		}
+
+		void store(Object<T>** object)
 		{
-			storeMeta(reinterpret_cast<Meta**>(ref));
+			storeMeta(reinterpret_cast<Meta**>(object));
+		}
+
+		void store(Array<T>** array)
+		{
+			storeMeta(reinterpret_cast<Meta**>(array));
 		}
 
 		T& operator[](size_t index)
@@ -200,19 +279,35 @@ namespace GC
 		 */
 		AllocResult allocateRaw(Meta& meta, RawRoot& root);
 
-		/**
-		 * Allocates data on the context.
-		 *
-		 * @tparam T The type of object to allocate.
-		 *
-		 * @param meta Information about the object to allocate.
-		 * @param root The allocated object.
-		 */
+//		/**
+//		 * Allocates data on the context.
+//		 *
+//		 * @tparam T The type of object to allocate.
+//		 *
+//		 * @param meta Information about the object to allocate.
+//		 * @param root The allocated object.
+//		 */
 		template<typename T>
-		AllocResult allocate(Ref<T>& meta, Root<T>& root)
+		AllocResult allocate(Allocator<T>& allocator, Root<T>& root)
 		{
-			return allocateRaw(meta, root);
+			return allocateRaw(allocator, root);
 		}
+//		template<typename T>
+//		AllocResult allocate(Object<T>& meta, Root<T>& root)
+//		{
+//			return allocateRaw(meta, root);
+//		}
+//
+//		template<typename T>
+//		AllocResult allocate(Array<T>& meta, Root<T>& root)
+//		{
+//			return allocateRaw(meta, root);
+//		}
+//		template<typename T>
+//		AllocResult allocate(Ref<T>& meta, Root<T>& root)
+//		{
+//			return allocateRaw(meta, root);
+//		}
 
 		/**
 		 * Creates a root to an object.
@@ -229,7 +324,19 @@ namespace GC
 		 * @param root The root to create.
 		 */
 		template<typename T>
-		void makeRoot(Ref<T>& object, Root<T>& root)
+		void makeRoot(Object<T>& object, Root<T>& root)
+		{
+			makeRootRaw(object, root);
+		}
+
+		/**
+		 * Creates a root to an object.
+		 *
+		 * @param object The object to create a root to.
+		 * @param root The root to create.
+		 */
+		template<typename T>
+		void makeRoot(Array<T>& object, Root<T>& root)
 		{
 			makeRootRaw(object, root);
 		}

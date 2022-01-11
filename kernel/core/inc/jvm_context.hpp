@@ -67,6 +67,8 @@ namespace Java
 		 * @param count The number of attributes to load.
 		 */
 		void loadAttributes(GC::Root<ClassFile>& classfile, GC::Root<AttributeInfo>& root, Loader& loader, size_t count);
+
+		void loadCodeAttribute(GC::Root<ClassFile>& classfile, GC::Root<CodeAttribute>& root, Loader& loader);
 	};
 }
 
