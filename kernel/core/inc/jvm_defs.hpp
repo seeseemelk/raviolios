@@ -159,6 +159,16 @@ namespace Java
 		u16 attributesCount;
 		GC::Array<AttributeInfo>* attributes;
 
+		/**
+		 * Gets an attribute of a specific type.
+		 *
+		 * @param type The type of attribute to get.
+		 *
+		 * @return The attribute, or `nullptr` if there is no attribute of the
+		 * given type.
+		 */
+		AttributeInfo* getAttributeOfType(AttributeType type);
+
 		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
 	};
 

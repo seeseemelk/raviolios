@@ -189,11 +189,7 @@ namespace GC
 
 		~RawRoot();
 
-		void storeMeta(Meta** meta)
-		{
-			*meta = object;
-		}
-
+		void storeMeta(Meta** meta) const;
 		void set(Meta* object, RawRoot* previous, RawRoot* next);
 		void set(const RawRoot& root);
 		void clear();
@@ -215,7 +211,17 @@ namespace GC
 			return *asPtr();
 		}
 
+		const T& get() const
+		{
+			return *asPtr();
+		}
+
 		T* asPtr()
+		{
+			return static_cast<T*>(object->getRaw());
+		}
+
+		const T* asPtr() const
 		{
 			return static_cast<T*>(object->getRaw());
 		}
@@ -225,12 +231,12 @@ namespace GC
 //			storeMeta(reinterpret_cast<Meta**>(ref));
 //		}
 
-		void store(Object<T>** object)
+		void store(Object<T>** object) const
 		{
 			storeMeta(reinterpret_cast<Meta**>(object));
 		}
 
-		void store(Array<T>** array)
+		void store(Array<T>** array) const
 		{
 			storeMeta(reinterpret_cast<Meta**>(array));
 		}
@@ -360,7 +366,7 @@ namespace GC
 		 * @param target The new root to create.
 		 */
 		template<typename T>
-		void makeRoot(Root<T>& base, Root<T>& target)
+		void makeRoot(const Root<T>& base, Root<T>& target)
 		{
 			Object<T>* object;
 			base.store(&object);

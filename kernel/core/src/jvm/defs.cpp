@@ -68,6 +68,16 @@ void FieldInfo::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 	visitor.visit(&field->attributes);
 }
 
+AttributeInfo* MethodInfo::getAttributeOfType(AttributeType type)
+{
+	for (size_t i = 0; i < attributesCount; i++)
+	{
+		if (attributes->get(i).attributeType == type)
+			return &attributes->get(i);
+	}
+	return nullptr;
+}
+
 void MethodInfo::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 {
 	MethodInfo* method = static_cast<MethodInfo*>(object->getRaw());

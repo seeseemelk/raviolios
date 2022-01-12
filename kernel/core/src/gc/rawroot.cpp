@@ -7,6 +7,11 @@ RawRoot::~RawRoot()
 	clear();
 }
 
+void RawRoot::storeMeta(Meta** meta) const
+{
+	*meta = object;
+}
+
 void RawRoot::set(Meta* object, RawRoot* previous, RawRoot* next)
 {
 	this->object = object;

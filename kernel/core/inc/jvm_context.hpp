@@ -17,6 +17,12 @@ namespace Java
 		BAD_CONSTANT
 	};
 
+	enum class ThreadState
+	{
+		RUNNING,
+		ENDED
+	};
+
 	/**
 	 * A thing that can load and run Java code.
 	 */
@@ -35,7 +41,15 @@ namespace Java
 		 *
 		 * @param thread The created thread.
 		 */
-		void createThread(GC::Root<Thread>& thread);
+		void createThread(GC::Root<Thread>& thread, const GC::Root<ClassFile>& classfile, u16 method);
+		void createThread(GC::Root<Thread>& thread, const GC::Root<ClassFile>& classfile, const char* method);
+
+		/**
+		 * Performs a single step in a thread.
+		 *
+		 * @param thread The thread to step through.
+		 */
+		ThreadState step(GC::Root<Thread>& thread);
 
 		/**
 		 * Loads a class into the VM.
@@ -77,6 +91,8 @@ namespace Java
 		void loadAttributes(GC::Root<ClassFile>& classfile, GC::Root<AttributeInfo>& root, Loader& loader, size_t count);
 
 		void loadCodeAttribute(GC::Root<ClassFile>& classfile, GC::Root<CodeAttribute>& root, Loader& loader);
+
+		void createFrame(GC::Root<Frame>& frame, MethodInfo& method);
 	};
 }
 
