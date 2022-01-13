@@ -23,6 +23,12 @@ namespace Java
 		ENDED
 	};
 
+	enum class ThreadCreateResult
+	{
+		CREATED,
+		NO_METHOD
+	};
+
 	/**
 	 * A thing that can load and run Java code.
 	 */
@@ -39,10 +45,20 @@ namespace Java
 		/**
 		 * Creates a thread.
 		 *
-		 * @param thread The created thread.
+		 * @param thread The thread to create.
+		 * @param classfile The classfile containing the method to start executing.
+		 * @param method The index into the classfile where the method can be found.
 		 */
-		void createThread(GC::Root<Thread>& thread, const GC::Root<ClassFile>& classfile, u16 method);
-		void createThread(GC::Root<Thread>& thread, const GC::Root<ClassFile>& classfile, const char* method);
+		ThreadCreateResult createThread(GC::Root<Thread>& thread, const GC::Root<ClassFile>& classfile, u16 method);
+
+		/**
+		 * Creates a thread.
+		 *
+		 * @param thread The thread to create.
+		 * @param classfile The classfile containing the method to start executing.
+		 * @param method The name of the method.
+		 */
+		ThreadCreateResult createThread(GC::Root<Thread>& thread, const GC::Root<ClassFile>& classfile, const char* method);
 
 		/**
 		 * Performs a single step in a thread.
@@ -93,6 +109,8 @@ namespace Java
 		void loadCodeAttribute(GC::Root<ClassFile>& classfile, GC::Root<CodeAttribute>& root, Loader& loader);
 
 		void createFrame(GC::Root<Frame>& frame, MethodInfo& method);
+
+		void pushInteger(Frame& frame, i32 number);
 	};
 }
 

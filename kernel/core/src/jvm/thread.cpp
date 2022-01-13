@@ -22,8 +22,11 @@ void Thread::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 	visitor.visit(&thread->top);
 }
 
-void VM::createThread(GC::Root<Thread>& thread, const GC::Root<ClassFile>& classfile, u16 methodIndex)
+ThreadCreateResult VM::createThread(GC::Root<Thread>& thread, const GC::Root<ClassFile>& classfile, u16 methodIndex)
 {
+	if (methodIndex > classfile.get().methodCount)
+		return ThreadCreateResult::NO_METHOD;
+
 	GC::Allocator<Thread> allocator(Thread::describer);
 	m_gc.allocate(allocator, thread);
 
@@ -31,6 +34,13 @@ void VM::createThread(GC::Root<Thread>& thread, const GC::Root<ClassFile>& class
 	GC::Root<Frame> frame;
 	createFrame(frame, method);
 	frame.store(&thread.get().top);
+	return ThreadCreateResult::CREATED;
+}
+
+ThreadCreateResult VM::createThread(GC::Root<Thread>& thread, const GC::Root<ClassFile>& classfile, const char* method)
+{
+	u16 methodIndex = classfile.get().findMethodByName(method);
+	return createThread(thread, classfile, methodIndex);
 }
 
 void VM::createFrame(GC::Root<Frame>& frame, MethodInfo& method)
@@ -54,6 +64,8 @@ void VM::createFrame(GC::Root<Frame>& frame, MethodInfo& method)
 
 	local.store(&frame.get().locals);
 	stack.store(&frame.get().stack);
+	frame.get().code = method.getAttributeOfType(AttributeType::code)->code;
+	frame.get().stackIndex = 0;
 }
 
 ThreadState VM::step(GC::Root<Thread>& thread)
@@ -67,9 +79,16 @@ ThreadState VM::step(GC::Root<Thread>& thread)
 	u16 pc = frame.get().pc;
 	frame.get().pc = pc + 1;
 
-	u8 opcode = frame.get().code->object.code->get(pc).opcode;
+	CodeAttribute* codeAttribute = &frame.get().code->object;
+	Instruction opcode = codeAttribute->code->get(pc).opcode;
 	switch (opcode)
 	{
+	case Instruction::iconst_4:
+		pushInteger(frame.get(), 4);
+		break;
+	case Instruction::ireturn:
+		Log::critical("ireturn (0xAC) not implemented");
+		break;
 	default:
 		Log::critical("Invalid opcode");
 		Arch::panic();
@@ -79,6 +98,13 @@ ThreadState VM::step(GC::Root<Thread>& thread)
 	return ThreadState::RUNNING;
 }
 
+void VM::pushInteger(Frame& frame, i32 number)
+{
+	Operand operand;
+	operand.integer = number;
+	frame.stack->get(frame.stackIndex) = operand;
+	frame.stackIndex++;
+}
 
 
 

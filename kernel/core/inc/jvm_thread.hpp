@@ -12,6 +12,11 @@ namespace Java
 {
 	struct Operand
 	{
+		union
+		{
+			i32 integer;
+		};
+
 		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
 	};
 
@@ -20,8 +25,9 @@ namespace Java
 		GC::Object<Frame>* previous = nullptr;
 		GC::Array<Operand>* locals;
 		GC::Array<Operand>* stack;
-		u16 pc;
 		GC::Object<CodeAttribute>* code;
+		u16 pc;
+		u16 stackIndex;
 
 		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
 	};

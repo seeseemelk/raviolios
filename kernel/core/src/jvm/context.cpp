@@ -182,7 +182,7 @@ void VM::loadCodeAttribute(GC::Root<ClassFile>& classfile, GC::Root<CodeAttribut
 	m_gc.allocate(allocator, root);
 	root.get().maxStack = loader.readU16();
 	root.get().maxLocals = loader.readU16();
-	u16 codeLength = loader.readU16();
+	u16 codeLength = loader.readU32();
 	root.get().codeLength = codeLength;;
 
 	GC::Allocator<Opcode> codeAllocator(codeLength);
@@ -190,7 +190,7 @@ void VM::loadCodeAttribute(GC::Root<ClassFile>& classfile, GC::Root<CodeAttribut
 	m_gc.allocate(codeAllocator, codeRoot);
 	for (size_t i = 0; i < codeLength; i++)
 	{
-		codeRoot[i].opcode = loader.readU8();
+		codeRoot[i].opcode = static_cast<Instruction>(loader.readU8());
 	}
 	codeRoot.store(&root.get().code);
 

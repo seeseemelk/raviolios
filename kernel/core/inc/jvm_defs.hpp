@@ -6,6 +6,7 @@
 
 #include "defs.hpp"
 #include "gc.hpp"
+#include "jvm_opcodes.hpp"
 
 namespace Java
 {
@@ -105,7 +106,7 @@ namespace Java
 
 	struct Opcode
 	{
-		u8 opcode;
+		Instruction opcode;
 	};
 
 	struct AttributeInfo;
@@ -190,6 +191,16 @@ namespace Java
 		GC::Array<MethodInfo>* methods;
 		u16 attributesCount;
 		GC::Array<AttributeInfo>* attributes;
+
+		/**
+		 * Finds a method by its name.
+		 *
+		 * @param name The name of the method.
+		 *
+		 * @return An index into the @ref methods array. Contains a value of
+		 * `-1` if the method was not found.
+		 */
+		u16 findMethodByName(const char* name) const;
 
 		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
 	};

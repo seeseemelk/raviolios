@@ -1,5 +1,7 @@
 #include "jvm_defs.hpp"
 
+#include <cstring>
+
 using namespace Java;
 
 void ClassFile::describer(GC::Meta* object, GC::MetaVisitor& visitor)
@@ -10,6 +12,21 @@ void ClassFile::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 	visitor.visit(&classfile->fields);
 	visitor.visit(&classfile->methods);
 	visitor.visit(&classfile->attributes);
+}
+
+u16 ClassFile::findMethodByName(const char* name) const
+{
+	size_t length = strlen(name);
+	for (u16 i = 0; i < methodCount; i++)
+	{
+		MethodInfo& methodInfo = methods->get(i);
+		u16 nameIndex = methodInfo.nameIndex;
+		ConstantPoolUtf8& methodName = constantPool->get(nameIndex).c_utf8;
+
+		if (length == methodName.length && strcmp(name, methodName.bytes->asPtr()) == 0)
+			return i;
+	}
+	return -1;
 }
 
 void ConstantPoolInfo::describe(GC::MetaVisitor& visitor)
