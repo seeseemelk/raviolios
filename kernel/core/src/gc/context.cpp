@@ -115,6 +115,10 @@ public:
 			(*object)->describer(*object, *this);
 		}
 	}
+
+	void visitWeak(Meta** /*object*/) override
+	{
+	}
 };
 
 void Context::mark()
@@ -139,6 +143,7 @@ void Context::sweepUpdate()
 		if (!object->reachable)
 		{
 			offset += sizeof(Meta) + object->size;
+			updateAddress(object, nullptr);
 		}
 		else if (offset > 0)
 		{
@@ -161,6 +166,11 @@ public:
 	{
 		if (*object == from)
 			*object = to;
+	}
+
+	void visitWeak(Meta** object) override
+	{
+		visit(object);
 	}
 };
 

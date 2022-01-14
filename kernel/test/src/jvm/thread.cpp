@@ -31,5 +31,8 @@ TEST("Can run a thread")
 	assertEquals(ThreadState::RUNNING, state, "Thread is running");
 
 	state = cut.vm.step(thread);
-	assertEquals(ThreadState::ENDED, state, "Thread has stopped");
+	assertEquals(ThreadState::RUNNING, state, "Thread is running");
+
+	state = cut.vm.step(thread);
+	assertEquals(ThreadState::STOPPED, state, "Thread has stopped");
 }

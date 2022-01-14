@@ -23,13 +23,24 @@ namespace GC
 	{
 	public:
 		virtual ~MetaVisitor() = default;
+
+		/**
+		 * Visits a reference to an object.
+		 *
+		 * @param object The reference to visit.
+		 */
 		virtual void visit(Meta** object) = 0;
 
-//		template<typename T>
-//		void visit(Ref<T>** ref)
-//		{
-//			visit(reinterpret_cast<Meta**>(ref));
-//		}
+		/**
+		 * Visits a weak reference to an object.
+		 *
+		 * A weak reference is a reference to an object while allowing the garbage
+		 * collector to remove the referenced object if there are no or only weak
+		 * references to the object.
+		 *
+		 * @param object The object to visit.
+		 */
+		virtual void visitWeak(Meta** object) = 0;
 
 		template<typename T>
 		void visit(Array<T>** ref)
@@ -38,9 +49,21 @@ namespace GC
 		}
 
 		template<typename T>
+		void visitWeak(Array<T>** ref)
+		{
+			visitWeak(reinterpret_cast<Meta**>(ref));
+		}
+
+		template<typename T>
 		void visit(Object<T>** ref)
 		{
 			visit(reinterpret_cast<Meta**>(ref));
+		}
+
+		template<typename T>
+		void visitWeak(Object<T>** ref)
+		{
+			visitWeak(reinterpret_cast<Meta**>(ref));
 		}
 	};
 
@@ -100,34 +123,6 @@ namespace GC
 		}
 	};
 
-//	/**
-//	 * A typed wrapper around @ref Meta.
-//	 *
-//	 * @tparam T The type stored by the meta.
-//	 */
-//	template<typename T>
-//	struct Ref : Meta
-//	{
-//		Ref()
-//		{
-//			size = sizeof(T);
-//		}
-//
-//		/**
-//		 * Gets a pointer to the object owned by this meta.
-//		 *
-//		 * The same warnings as for @ref getRaw() apply.
-//		 *
-//		 * @tparam T The type of object owned.
-//		 *
-//		 * @return A reference to the object.
-//		 */
-//		T& get()
-//		{
-//			return *static_cast<T*>(getRaw());
-//		}
-//	};
-
 	template<typename T>
 	struct Allocator : Meta
 	{
@@ -176,6 +171,11 @@ namespace GC
 		{
 			return reinterpret_cast<T*>(getRaw());
 		}
+
+		size_t count()
+		{
+			return size / sizeof(T);
+		}
 	};
 
 	/**
@@ -211,6 +211,11 @@ namespace GC
 			return *asPtr();
 		}
 
+		bool isSet()
+		{
+			return object != nullptr;
+		}
+
 		const T& get() const
 		{
 			return *asPtr();
@@ -225,11 +230,6 @@ namespace GC
 		{
 			return static_cast<T*>(object->getRaw());
 		}
-
-//		void storeRef(Ref<T>** ref)
-//		{
-//			storeMeta(reinterpret_cast<Meta**>(ref));
-//		}
 
 		void store(Object<T>** object) const
 		{
@@ -293,38 +293,26 @@ namespace GC
 		 *
 		 * @param meta Information about the object to allocate.
 		 * @param root The allocated object.
+		 *
+		 * @return The result of the allocation.
 		 */
 		AllocResult allocateRaw(Meta& meta, RawRoot& root);
 
-//		/**
-//		 * Allocates data on the context.
-//		 *
-//		 * @tparam T The type of object to allocate.
-//		 *
-//		 * @param meta Information about the object to allocate.
-//		 * @param root The allocated object.
-//		 */
+		/**
+		 * Allocates garbage collected data.
+		 *
+		 * @tparam T The type of object to allocate.
+		 * @param allocator The allocator that describes the object to allocate.
+		 * @param root The root in which a reference to the allocated object
+		 * will be stored.
+		 *
+		 * @return The result of the allocation.
+		 */
 		template<typename T>
 		AllocResult allocate(Allocator<T>& allocator, Root<T>& root)
 		{
 			return allocateRaw(allocator, root);
 		}
-//		template<typename T>
-//		AllocResult allocate(Object<T>& meta, Root<T>& root)
-//		{
-//			return allocateRaw(meta, root);
-//		}
-//
-//		template<typename T>
-//		AllocResult allocate(Array<T>& meta, Root<T>& root)
-//		{
-//			return allocateRaw(meta, root);
-//		}
-//		template<typename T>
-//		AllocResult allocate(Ref<T>& meta, Root<T>& root)
-//		{
-//			return allocateRaw(meta, root);
-//		}
 
 		/**
 		 * Creates a root to an object.

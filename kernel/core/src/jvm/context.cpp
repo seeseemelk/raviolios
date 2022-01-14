@@ -9,6 +9,11 @@
 
 using namespace Java;
 
+VM::VM(NativeClassLoader& classLoader)
+	: m_classLoader(classLoader)
+{
+}
+
 GC::Context& VM::gc()
 {
 	return m_gc;

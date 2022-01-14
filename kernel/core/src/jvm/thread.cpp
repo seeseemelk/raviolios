@@ -10,6 +10,18 @@ void Operand::describer(GC::Meta* /*object*/, GC::MetaVisitor& /*visitor*/)
 {
 }
 
+void Frame::push(Java::Operand& operand)
+{
+	stack->get(stackIndex) = operand;
+	stackIndex++;
+}
+
+Java::Operand Frame::pop()
+{
+	stackIndex--;
+	return stack->get(stackIndex);
+}
+
 void Frame::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 {
 	Frame* frame = object->as<Frame>();
@@ -71,7 +83,7 @@ void VM::createFrame(GC::Root<Frame>& frame, MethodInfo& method)
 ThreadState VM::step(GC::Root<Thread>& thread)
 {
 	if (thread.get().top == nullptr)
-		return ThreadState::ENDED;
+		return ThreadState::STOPPED;
 
 	GC::Root<Frame> frame;
 	m_gc.makeRoot(thread.get().top, frame);
@@ -87,7 +99,7 @@ ThreadState VM::step(GC::Root<Thread>& thread)
 		pushInteger(frame.get(), 4);
 		break;
 	case Instruction::ireturn:
-		Log::critical("ireturn (0xAC) not implemented");
+		returnInteger(thread);
 		break;
 	default:
 		Log::critical("Invalid opcode");
@@ -102,13 +114,20 @@ void VM::pushInteger(Frame& frame, i32 number)
 {
 	Operand operand;
 	operand.integer = number;
-	frame.stack->get(frame.stackIndex) = operand;
-	frame.stackIndex++;
+	frame.push(operand);
 }
 
+void VM::returnInteger(GC::Root<Thread>& thread)
+{
+	Frame& topFrame = thread.get().top->object;
+	Frame* previousFrame = &topFrame.previous->object;
 
+	if (topFrame.previous != nullptr)
+	{
+		Operand value = topFrame.pop();
+		previousFrame->push(value);
+	}
 
-//Thread::Thread(VM& vm, Method& method)
-//	: m_vm(vm)
-//{
-//}
+	thread.get().top = topFrame.previous;
+}
+

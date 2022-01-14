@@ -29,6 +29,20 @@ namespace Java
 		u16 pc;
 		u16 stackIndex;
 
+		/**
+		 * Pushes an item onto the stack.
+		 *
+		 * @param operand The item to push.
+		 */
+		void push(Operand& operand);
+
+		/**
+		 * Pops an item from the stack.
+		 *
+		 * @return The item that was popped.
+		 */
+		Operand pop();
+
 		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
 	};
 

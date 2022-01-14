@@ -11,16 +11,19 @@
 
 namespace Java
 {
+	class VM;
+
 	enum class ClassError
 	{
 		GOOD,
+		NOT_FOUND,
 		BAD_CONSTANT
 	};
 
 	enum class ThreadState
 	{
 		RUNNING,
-		ENDED
+		STOPPED
 	};
 
 	enum class ThreadCreateResult
@@ -30,11 +33,38 @@ namespace Java
 	};
 
 	/**
+	 * A class-loader to be implemented in C/C++.
+	 */
+	class NativeClassLoader
+	{
+	public:
+		virtual ~NativeClassLoader() = default;
+
+		/**
+		 * Loads a class.
+		 *
+		 * The loader should call @ref VM::defineClass with the contents of the
+		 * class file.
+		 * If the class could not be found, the root should not be set.
+		 *
+		 * @param vm The VM to load the class into.
+		 * @param root The GC root the class file should be loaded into.
+		 * @param name The name of the class to load.
+		 *
+		 * @return The return value of @ref VM::defineClass, or @ref ClassError::NOT_FOUND
+		 * if the class could not be found.
+		 */
+		virtual ClassError loadClass(VM& vm, GC::Root<ClassFile>& root, const GC::Root<char>& name) = 0;
+	};
+
+	/**
 	 * A thing that can load and run Java code.
 	 */
 	class VM
 	{
 	public:
+		VM(NativeClassLoader& loader);
+
 		/**
 		 * Get the garbage collector of the VM.
 		 *
@@ -77,10 +107,25 @@ namespace Java
 		 * @param classfile A root to the loaded class file.
 		 * @param data The class file.
 		 * @param length The number of bytes in the file.
+		 *
+		 * @return An error code if the class could not be loaded.
 		 */
-		ClassError defineClass(GC::Root<Java::ClassFile>& classfile, const u8* data, size_t length);
+		ClassError defineClass(GC::Root<ClassFile>& classfile, const u8* data, size_t length);
+
+		/**
+		 * Loads a class into the VM.
+		 *
+		 * @param classfile The loaded class file.
+		 * @param name The name of the class.
+		 *
+		 * @return An error code if the class could not be loaded.
+		 */
+		ClassError loadClass(GC::Root<ClassFile>& classfile, const char* name);
 
 	private:
+		/// The native class loader.
+		NativeClassLoader& m_classLoader;
+
 		/// The GC context
 		GC::Context m_gc;
 
@@ -109,6 +154,14 @@ namespace Java
 		void loadCodeAttribute(GC::Root<ClassFile>& classfile, GC::Root<CodeAttribute>& root, Loader& loader);
 
 		void createFrame(GC::Root<Frame>& frame, MethodInfo& method);
+
+		/**
+		 * Pops a frame and pushed the item on the top of the current stack to
+		 * the new stack.
+		 *
+		 * @param thread The thread to pop.
+		 */
+		void returnInteger(GC::Root<Thread>& thread);
 
 		void pushInteger(Frame& frame, i32 number);
 	};
