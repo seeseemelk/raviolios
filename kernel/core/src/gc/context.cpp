@@ -1,8 +1,7 @@
 #include "gc.hpp"
 
 #include "log.hpp"
-
-#include <cstring>
+#include "util.hpp"
 
 using namespace GC;
 
@@ -79,7 +78,7 @@ void Context::createObject(Meta& meta, RawRoot& root)
 	size_t size = meta.size + sizeof(Meta);
 	u8* object = m_memCurrent;
 	m_memCurrent += size;
-	memset(object, 0, size);
+	memorySet(object, static_cast<u8>(0), size);
 
 	Meta* objectMeta = reinterpret_cast<Meta*>(object);
 	object += sizeof(Meta);
@@ -132,7 +131,6 @@ void Context::mark()
 	}
 }
 
-#include <iostream>
 void Context::sweepUpdate()
 {
 	Meta* object = firstObject();
@@ -221,9 +219,9 @@ void Context::sweepMove()
 		}
 		else if (offset > 0)
 		{
-			void* source = static_cast<void*>(object);
-			void* destination = static_cast<u8*>(source) - offset;
-			std::memmove(destination, source, sizeof(Meta) + object->size);
+			u8* source = reinterpret_cast<u8*>(object);
+			u8* destination = static_cast<u8*>(source) - offset;
+			memoryMove(destination, source, sizeof(Meta) + object->size);
 			object = reinterpret_cast<Meta*>(object);
 			m_objects--;
 		}

@@ -12,9 +12,11 @@ Buffer::~Buffer()
 	}
 }
 
-void loadFile(Buffer& buf, std::string& file)
+bool loadFile(Buffer& buf, std::string& file)
 {
 	std::ifstream input(file);
+	if (!input)
+		return false;
 
 	input.seekg(0, std::ios_base::end);
 	size_t pos = input.tellg();
@@ -23,10 +25,11 @@ void loadFile(Buffer& buf, std::string& file)
 
 	input.seekg(0);
 	input.read(reinterpret_cast<char*>(buf.data), buf.length);
+	return true;
 }
 
-void loadTestClass(Buffer& buf, std::string file)
+bool loadTestClass(Buffer& buf, std::string file)
 {
 	std::string path = "bin/test/kernel/test/java/" + file + ".class";
-	loadFile(buf, path);
+	return loadFile(buf, path);
 }

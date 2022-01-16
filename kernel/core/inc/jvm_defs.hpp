@@ -10,6 +10,8 @@
 
 namespace Java
 {
+	struct ClassFile;
+
 	struct ConstantPoolUtf8
 	{
 		u16 length;
@@ -122,6 +124,8 @@ namespace Java
 		u16 attributesCount;
 		GC::Array<AttributeInfo>* attributes;
 
+		Opcode getOpcode(size_t index);
+
 		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
 	};
 
@@ -154,11 +158,12 @@ namespace Java
 
 	struct MethodInfo
 	{
+		GC::Array<AttributeInfo>* attributes;
+		GC::Object<ClassFile>* classFile;
 		u16 accessFlags;
 		u16 nameIndex;
 		u16 descriptorIndex;
 		u16 attributesCount;
-		GC::Array<AttributeInfo>* attributes;
 
 		/**
 		 * Gets an attribute of a specific type.
@@ -169,6 +174,20 @@ namespace Java
 		 * given type.
 		 */
 		AttributeInfo* getAttributeOfType(AttributeType type);
+
+		/**
+		 * Gets whether the method is a native method or not.
+		 *
+		 * @return `true` if the method is native, `false` if it is a normal method.
+		 */
+		bool isNative();
+
+		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
+	};
+
+	struct MethodRef
+	{
+		GC::Object<MethodInfo>* method;
 
 		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
 	};
@@ -183,14 +202,26 @@ namespace Java
 		u16 accessFlags;
 		u16 thisClass;
 		u16 superClass;
+		GC::Object<ClassFile>* superClassObj;
 		u16 interfacesCount;
 		GC::Array<u16>* interfaces;
 		u16 fieldsCount;
 		GC::Array<FieldInfo>* fields;
 		u16 methodCount;
-		GC::Array<MethodInfo>* methods;
+		GC::Array<MethodRef>* methods;
 		u16 attributesCount;
 		GC::Array<AttributeInfo>* attributes;
+
+		/**
+		 * Finds a method by its name and type.
+		 *
+		 * @param name The name of the method.
+		 * @param type The type of the method.
+		 *
+		 * @return An index into the @ref methods array. Contains a value of
+		 * `-1` if the method was not found.
+		 */
+		u16 findMethodByNameAndType(GC::Root<char>& name, GC::Root<char>& type) const;
 
 		/**
 		 * Finds a method by its name.
@@ -213,10 +244,15 @@ namespace Java
 		ACC_STATIC = 0x0008,
 		ACC_FINAL = 0x0010,
 		ACC_SUPER = 0x0020,
+		ACC_SYNCHRONIZED = 0x0020,
 		ACC_VOLATILE = 0x0040,
+		ACC_BRIDGE = 0x0040,
 		ACC_TRANSIENT = 0x0080,
+		ACC_VARARGS = 0x0080,
+		ACC_NATIVE = 0x0100,
 		ACC_INTERACE = 0x0200,
 		ACC_ABSTRACT = 0x0400,
+		ACC_STRICT = 0x0800,
 		ACC_SYNTHETIC = 0x1000,
 		ACC_ANNOTATION = 0x2000,
 		ACC_ENUM = 0x4000,

@@ -17,7 +17,10 @@ namespace Java
 	{
 		GOOD,
 		NOT_FOUND,
-		BAD_CONSTANT
+		BAD_CONSTANT,
+		// Ignores the loaded class. Is used to bootstrap the java/lang/Object
+		// class.
+		IGNORE
 	};
 
 	enum class ThreadState
@@ -32,14 +35,20 @@ namespace Java
 		NO_METHOD
 	};
 
+	struct NativeMethod
+	{
+		const char* className;
+		const char* methodName;
+		const char* methodType;
+		void (*method)();
+	};
+
 	/**
 	 * A class-loader to be implemented in C/C++.
 	 */
 	class NativeClassLoader
 	{
 	public:
-		virtual ~NativeClassLoader() = default;
-
 		/**
 		 * Loads a class.
 		 *
@@ -54,6 +63,7 @@ namespace Java
 		 * @return The return value of @ref VM::defineClass, or @ref ClassError::NOT_FOUND
 		 * if the class could not be found.
 		 */
+		[[nodiscard]]
 		virtual ClassError loadClass(VM& vm, GC::Root<ClassFile>& root, const GC::Root<char>& name) = 0;
 	};
 
@@ -63,7 +73,7 @@ namespace Java
 	class VM
 	{
 	public:
-		VM(NativeClassLoader& loader);
+		VM(NativeClassLoader& loader, NativeMethod* nativeMethods, size_t nativeMethodCount);
 
 		/**
 		 * Get the garbage collector of the VM.
@@ -106,14 +116,31 @@ namespace Java
 		ThreadState step(GC::Root<Thread>& thread);
 
 		/**
-		 * Loads a class into the VM.
+		 * Gets a root to a class by the FQN of the class.
+		 *
+		 * If needed, the class will be loaded into the VM.
 		 *
 		 * @param classfile The loaded class file.
 		 * @param name The name of the class.
 		 *
 		 * @return An error code if the class could not be loaded.
 		 */
-		ClassError loadClass(GC::Root<ClassFile>& classfile, const GC::Root<char> name);
+		[[nodiscard]]
+		ClassError getClass(GC::Root<ClassFile>& classfile, const GC::Root<char> name);
+
+//		/**
+//		 * Gets a root to a method by the FQN of the class and the name of the method.
+//		 *
+//		 * If needed, the class will be loaded into the VM.
+//		 *
+//		 * @param method The method.
+//		 * @param className The name of the class.
+//		 * @param methodName The name of the method.
+//		 *
+//		 * @return An error code if the class could not be loaded.
+//		 */
+//		[[nodiscard]]
+//		ClassError getMethod(GC::Root<MethodInfo>& method, const GC::Root<char> className, const GC::Root<char> methodName);
 
 		/**
 		 * Loads a class into the VM.
@@ -128,6 +155,7 @@ namespace Java
 		 *
 		 * @return An error code if the class could not be loaded.
 		 */
+		[[nodiscard]]
 		ClassError defineClass(GC::Root<ClassFile>& classfile, const u8* data, size_t length);
 
 	private:
@@ -136,6 +164,12 @@ namespace Java
 
 		/// The GC context
 		GC::Context m_gc;
+
+		/// The number of registered native methods.
+		size_t m_nativeMethodCount = 0;
+
+		/// An array of native methods.
+		NativeMethod* m_nativeMethods;
 
 		/**
 		 * Allocates an array on the heap.
@@ -161,7 +195,9 @@ namespace Java
 
 		void loadCodeAttribute(GC::Root<ClassFile>& classfile, GC::Root<CodeAttribute>& root, Loader& loader);
 
-		void createFrame(GC::Root<Frame>& frame, MethodInfo& method);
+		void createFrame(GC::Root<Frame>& frame, GC::Root<MethodInfo>& method);
+
+		void returnFromMethod(GC::Root<Thread>& thread);
 
 		/**
 		 * Pops a frame and pushed the item on the top of the current stack to
@@ -172,6 +208,8 @@ namespace Java
 		void returnInteger(GC::Root<Thread>& thread);
 
 		void pushInteger(Frame& frame, i32 number);
+		void invokeStatic(GC::Root<Thread>& thread);
+		void invokeNativeMethod(const GC::Root<char>& className, const GC::Root<char>& methodName, const GC::Root<char>& methodType);
 	};
 }
 

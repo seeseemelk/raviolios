@@ -5,6 +5,7 @@
 #define _DEFS_HPP_
 
 extern "C" {
+#include <stddef.h>
 #include <stdint.h>
 }
 

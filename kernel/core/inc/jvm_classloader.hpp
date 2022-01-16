@@ -37,6 +37,7 @@ namespace Java
 	public:
 		CachingClassLoader(NativeClassLoader& parent);
 
+		[[nodiscard]]
 		ClassError loadClass(VM& vm, GC::Root<ClassFile>& root, const GC::Root<char>& name) override;
 
 	private:

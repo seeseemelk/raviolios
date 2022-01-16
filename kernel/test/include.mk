@@ -10,7 +10,7 @@ JAVA_OBJ = $(JAVA_SRC:%.java=$(KERNEL_BIN_DIR)/%.class)
 
 CFLAGS = -Wall -Wextra -Werror -pedantic $(KERNEL_INC:%=-I%) -ggdb \
 	-fsanitize=address -O0
-CPPFLAGS = $(CFLAGS) -std=c++11
+CPPFLAGS = $(CFLAGS) -std=c++20
 
 .PHONY: kernel
 kernel: $(TEST_ELF) $(JAVA_OBJ)

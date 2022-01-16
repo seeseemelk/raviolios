@@ -31,9 +31,27 @@ TEST("Can load class file")
 	cut.makeRoot(classfile.fields, fields);
 
 	assertEquals(ACC_PRIVATE, fields[0].accessFlags, "Correct field access flags");
-	assertStringEqual("field", fields[0].name->asPtr(), "Correct field name");
+	assertStringEqual("field", fields[0].name, "Correct field name");
 
-	GC::Root<MethodInfo> methods;
+	GC::Root<MethodRef> methods;
 	cut.makeRoot(classfile.methods, methods);
 	assertEquals(1U, methods.count(), "Correct number of methods");
+}
+
+TEST("Can load super classes automatically")
+{
+	CUT cut;
+
+	GC::Root<ClassFile> child;
+	GC::Root<ClassFile> parent;
+
+	cut.loadClass(child, "Test1");
+	cut.loadClass(parent, "java/lang/Object");
+
+	assertNotNull(child.object, "Loaded child class");
+	assertNotNull(parent.object, "Loaded parent class");
+
+	GC::Object<ClassFile>* parentPtr = child.get().superClassObj;
+	assertNotNull(parentPtr, "Parent was set");
+	assertEquals(&parentPtr->object, parent.asPtr(), "Correctly set super class");
 }

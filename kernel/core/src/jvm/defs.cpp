@@ -1,6 +1,6 @@
 #include "jvm_defs.hpp"
 
-#include <cstring>
+#include "util.hpp"
 
 using namespace Java;
 
@@ -14,16 +14,32 @@ void ClassFile::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 	visitor.visit(&classfile->attributes);
 }
 
-u16 ClassFile::findMethodByName(const char* name) const
+u16 ClassFile::findMethodByNameAndType(GC::Root<char>& name, GC::Root<char>& type) const
 {
-	size_t length = strlen(name);
 	for (u16 i = 0; i < methodCount; i++)
 	{
-		MethodInfo& methodInfo = methods->get(i);
+		MethodInfo& methodInfo = methods->get(i).method->object;
+		u16 nameIndex = methodInfo.nameIndex;
+		u16 typeIndex = methodInfo.descriptorIndex;
+		ConstantPoolUtf8& methodName = constantPool->get(nameIndex).c_utf8;
+		ConstantPoolUtf8& methodType = constantPool->get(typeIndex).c_utf8;
+
+		if (equals(name, methodName.bytes) && equals(type, methodType.bytes))
+			return i;
+	}
+	return -1;
+}
+
+u16 ClassFile::findMethodByName(const char* name) const
+{
+	size_t length = stringLength(name);
+	for (u16 i = 0; i < methodCount; i++)
+	{
+		MethodInfo& methodInfo = methods->get(i).method->object;
 		u16 nameIndex = methodInfo.nameIndex;
 		ConstantPoolUtf8& methodName = constantPool->get(nameIndex).c_utf8;
 
-		if (length == methodName.length && strcmp(name, methodName.bytes->asPtr()) == 0)
+		if (length == methodName.length && equals(methodName.bytes, name))
 			return i;
 	}
 	return -1;
@@ -49,6 +65,11 @@ void ConstantPoolInfo::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 	{
 		infos[i].describe(visitor);
 	}
+}
+
+Opcode CodeAttribute::getOpcode(size_t index)
+{
+	return code->get(index);
 }
 
 void CodeAttribute::describer(GC::Meta* object, GC::MetaVisitor& visitor)
@@ -95,8 +116,20 @@ AttributeInfo* MethodInfo::getAttributeOfType(AttributeType type)
 	return nullptr;
 }
 
+bool MethodInfo::isNative()
+{
+	return (accessFlags & ACC_NATIVE) != 0;
+}
+
 void MethodInfo::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 {
-	MethodInfo* method = static_cast<MethodInfo*>(object->getRaw());
+	MethodInfo* method = object->as<MethodInfo>();
 	visitor.visit(&method->attributes);
+	visitor.visit(&method->classFile);
+}
+
+void MethodRef::describer(GC::Meta* object, GC::MetaVisitor& visitor)
+{
+	MethodRef* methodRef = object->as<MethodRef>();
+	visitor.visit(&methodRef->method);
 }

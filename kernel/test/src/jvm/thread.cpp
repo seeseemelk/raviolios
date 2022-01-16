@@ -36,3 +36,39 @@ TEST("Can run a thread")
 	state = cut.vm.step(thread);
 	assertEquals(ThreadState::STOPPED, state, "Thread has stopped");
 }
+
+static bool s_called = false;
+
+static void setCalledToTrue()
+{
+	s_called = true;
+}
+
+TEST("Can call a native method")
+{
+	NativeMethod nativeMethods[] = {
+			{
+					.className = "Tests",
+					.methodName = "nativeTest",
+					.methodType = "()V",
+					.method = setCalledToTrue
+			}
+	};
+
+	CUT cut(nativeMethods, 1);
+
+	GC::Root<Thread> thread;
+	GC::Root<ClassFile> classfile;
+	cut.loadClass(classfile, "Tests");
+	ThreadCreateResult result = cut.vm.createThread(thread, classfile, "callNative");
+	assertEquals(ThreadCreateResult::CREATED, result, "Thread was created");
+
+	s_called = false;
+	ThreadState state;
+	do
+	{
+		state = cut.vm.step(thread);
+	}
+	while (state == ThreadState::RUNNING);
+	assertTrue(s_called, "Native method was called");
+}

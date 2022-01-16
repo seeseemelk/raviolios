@@ -6,13 +6,10 @@
 
 #include "defs.hpp"
 
-#include <cstddef>
-
 namespace GC
 {
 	class Context;
 	struct Meta;
-//	template<typename T> struct Ref;
 	template<typename T> struct Object;
 	template<typename T> struct Array;
 
@@ -22,8 +19,6 @@ namespace GC
 	class MetaVisitor
 	{
 	public:
-		virtual ~MetaVisitor() = default;
-
 		/**
 		 * Visits a reference to an object.
 		 *
@@ -115,6 +110,7 @@ namespace GC
 		 * @returns A pointer to the owned object.
 		 */
 		void* getRaw();
+		const void* getRaw() const;
 
 		template<typename T>
 		T* as()
@@ -170,6 +166,11 @@ namespace GC
 		T* asPtr()
 		{
 			return reinterpret_cast<T*>(getRaw());
+		}
+
+		const T* asPtr() const
+		{
+			return reinterpret_cast<const T*>(getRaw());
 		}
 
 		size_t count()

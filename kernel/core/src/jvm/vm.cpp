@@ -3,14 +3,15 @@
 #include "gc.hpp"
 #include "jvm_defs.hpp"
 #include "jvm_loader.hpp"
-
-#include <cstdio>
-#include <cstring>
+#include "log.hpp"
+#include "util.hpp"
 
 using namespace Java;
 
-VM::VM(NativeClassLoader& classLoader)
+VM::VM(NativeClassLoader& classLoader, NativeMethod* nativeMethods, size_t nativeMethodCount)
 	: m_classLoader(classLoader)
+	, m_nativeMethodCount(nativeMethodCount)
+	, m_nativeMethods(nativeMethods)
 {
 }
 
@@ -33,12 +34,13 @@ void VM::allocateArray(GC::Root<char>& root, size_t length)
 
 void VM::allocateString(GC::Root<char>& root, const char* str)
 {
-	size_t length = strlen(str);
+	size_t length = stringLength(str);
 	allocateArray(root, length);
-	memcpy(&root.get(), str, length);
+	for (size_t i = 0; i < length; i++)
+		root[i] = str[i];
 }
 
-ClassError VM::loadClass(GC::Root<ClassFile>& classfile, const GC::Root<char> name)
+ClassError VM::getClass(GC::Root<ClassFile>& classfile, const GC::Root<char> name)
 {
 	return m_classLoader.loadClass(*this, classfile, name);
 }
@@ -73,7 +75,7 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, const u8* data, size_
 		{
 		case CONSTANT_utf8:
 			info->c_utf8.length = loader.readU16();
-			allocateArray(array, info->c_utf8.length + 1);
+			allocateArray(array, info->c_utf8.length);
 			info = &constantPoolRoot[i];
 			loader.readBuf(&array.get(), info->c_utf8.length);
 			array.store(&info->c_utf8.bytes);
@@ -94,15 +96,22 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, const u8* data, size_
 			info->c_nameAndType.descriptorIndex = loader.readU16() - 1;
 			break;
 		default:
-			printf("Unknown tag: %d at index %d (of %d)\n", info->tag, (int)i, (int)classfile.get().constantPoolCount);
+//			printf("Unknown tag: %d at index %d (of %d)\n", info->tag, (int)i, (int)classfile.get().constantPoolCount);
+			Log::info("Unknown tag");
 			return ClassError::BAD_CONSTANT;
 		}
 	}
 
 	// Continue loading class file header
 	classfile.get().accessFlags = loader.readU16();
-	classfile.get().thisClass = loader.readU16() - 1;
-	classfile.get().superClass = loader.readU16() - 1;
+	u16 thisClass = loader.readU16() - 1;
+	u16 superClass = loader.readU16() - 1;
+	classfile.get().thisClass = thisClass;
+	classfile.get().superClass = superClass;
+
+	GC::Root<char> className;
+	u16 classNameIndex = classfile.get().constantPool->get(thisClass).c_class.nameIndex;
+	m_gc.makeRoot(classfile.get().constantPool->get(classNameIndex).c_utf8.bytes, className);
 
 	// Load interfaces
 	classfile.get().interfacesCount = loader.readU16();
@@ -136,22 +145,28 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, const u8* data, size_
 
 	// Load methods
 	classfile.get().methodCount = loader.readU16();
-	GC::Allocator<MethodInfo> methodInfoMeta(classfile.get().methodCount, MethodInfo::describer);
-	GC::Root<MethodInfo> methodInfo;
-	m_gc.allocate(methodInfoMeta, methodInfo);
-	methodInfo.store(&classfile.get().methods);
+	GC::Allocator<MethodRef> methodRefsMeta(classfile.get().methodCount, MethodRef::describer);
+	GC::Root<MethodRef> methodRefs;
+	m_gc.allocate(methodRefsMeta, methodRefs);
+	methodRefs.store(&classfile.get().methods);
 	for (size_t i = 0; i < classfile.get().methodCount; i++)
 	{
-		methodInfo[i].accessFlags = loader.readU16();
-		methodInfo[i].nameIndex = loader.readU16() - 1;
-		methodInfo[i].descriptorIndex = loader.readU16() - 1;
+		GC::Allocator<MethodInfo> methodInfoMeta(MethodInfo::describer);
+		GC::Root<MethodInfo> methodInfo;
+		m_gc.allocate(methodInfoMeta, methodInfo);
+		methodInfo.store(&methodRefs[i].method);
+
+		methodInfo.get().accessFlags = loader.readU16();
+		methodInfo.get().nameIndex = loader.readU16() - 1;
+		methodInfo.get().descriptorIndex = loader.readU16() - 1;
 
 		u16 attributesCount = loader.readU16();
-		methodInfo[i].attributesCount = attributesCount;
+		methodInfo.get().attributesCount = attributesCount;
+		classfile.store(&methodInfo.get().classFile);
 
 		GC::Root<AttributeInfo> attributeInfo;
 		loadAttributes(classfile, attributeInfo, loader, attributesCount);
-		attributeInfo.store(&methodInfo[i].attributes);
+		attributeInfo.store(&methodInfo.get().attributes);
 	}
 
 	// Load attributes
@@ -160,6 +175,19 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, const u8* data, size_
 	GC::Root<AttributeInfo> attributeRoot;
 	loadAttributes(classfile, attributeRoot, loader, attributeCount);
 	attributeRoot.store(&classfile.get().attributes);
+
+	// Load super class
+	if (!equals(className, "raviolios/java/lang/Object"))
+	{
+		GC::Root<ClassFile> superClassObj;
+		GC::Root<char> superClassName;
+		u16 superClassNameIndex = classfile.get().constantPool->get(superClass).c_class.nameIndex;
+		m_gc.makeRoot(classfile.get().constantPool->get(superClassNameIndex).c_utf8.bytes, superClassName);
+		ClassError error = getClass(superClassObj, superClassName);
+		if (error != ClassError::GOOD)
+			return error;
+		superClassObj.store(&classfile.get().superClassObj);
+	}
 
 	return ClassError::GOOD;
 }
@@ -176,8 +204,8 @@ void VM::loadAttributes(GC::Root<ClassFile>& classfile, GC::Root<AttributeInfo>&
 		root.get().attributeNameIndex = attributeNameIndex;
 		root.get().attributeLength = attributeLength;;
 
-		char* name = classfile.get().constantPool->get(attributeNameIndex).c_utf8.bytes->asPtr();
-		if (strcmp(name, "Code") == 0)
+		GC::Array<char>* name = classfile.get().constantPool->get(attributeNameIndex).c_utf8.bytes;
+		if (equals(name, "Code"))
 		{
 			root.get().attributeType = AttributeType::code;
 			GC::Root<CodeAttribute> codeAttribute;
@@ -186,7 +214,7 @@ void VM::loadAttributes(GC::Root<ClassFile>& classfile, GC::Root<AttributeInfo>&
 		}
 		else
 		{
-			printf("Unknown attribute: %s\n", name);
+			Log::info("Unknown attribute");
 			loader.advance(attributeLength);
 			return;
 		}

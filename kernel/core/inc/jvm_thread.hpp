@@ -22,12 +22,19 @@ namespace Java
 
 	struct Frame
 	{
+		GC::Object<MethodInfo>* methodInfo;
 		GC::Object<Frame>* previous = nullptr;
 		GC::Array<Operand>* locals;
 		GC::Array<Operand>* stack;
 		GC::Object<CodeAttribute>* code;
 		u16 pc;
 		u16 stackIndex;
+
+		Opcode getOpcode(size_t index);
+
+		u16 getU16FromCode(size_t index);
+
+		GC::Object<ClassFile>* getClassFile();
 
 		/**
 		 * Pushes an item onto the stack.

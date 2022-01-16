@@ -17,7 +17,10 @@ struct Buffer
 	size_t length = 0;
 };
 
-void loadFile(Buffer& buf, std::string& file);
-void loadTestClass(Buffer& buf, std::string file);
+[[nodiscard]]
+bool loadFile(Buffer& buf, std::string& file);
+
+[[nodiscard]]
+bool loadTestClass(Buffer& buf, std::string file);
 
 #endif /* _FILELOADER_HPP_ */

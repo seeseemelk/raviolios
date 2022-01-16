@@ -1,6 +1,6 @@
 #include "jvm_classloader.hpp"
 
-#include <cstring>
+#include "util.hpp"
 
 using namespace Java;
 
@@ -15,8 +15,8 @@ ClassError CachingClassLoader::loadClass(VM& vm, GC::Root<ClassFile>& root, cons
 	for (size_t i = 0; i < list.size; i++)
 	{
 		GC::Object<ClassFile>* classFile = list.entries->get(i).classFile;
-		const char* entryName = list.entries->get(i).name->asPtr();
-		if (classFile != nullptr && strcmp(entryName, name.asPtr()) == 0)
+		GC::Array<char>* entryName = list.entries->get(i).name;
+		if (classFile != nullptr && equals(name, entryName))
 		{
 			vm.gc().makeRoot(classFile, root);
 			return ClassError::GOOD;

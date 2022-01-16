@@ -4,7 +4,7 @@ KERNEL_ELF = $(KERNEL_BIN_DIR)/kernel.elf
 
 KERNEL_SRC += \
 	$(wildcard kernel/x86/src/*.cpp) \
-	$(wildcard kernel/x86/src/*.S) \
+	$(wildcard kernel/x86/src/*.S)
 KERNEL_INC += kernel/x86/inc
 KERNEL_LDSCRIPT = kernel/x86/src/kernel.ld
 
@@ -20,19 +20,17 @@ kernel: $(KERNEL_ELF)
 
 $(KERNEL_ELF): $(KERNEL_OBJ) $(KERNEL_LDSCRIPT)
 	mkdir -p $(dir $@)
-	$(CC) $(KERNEL_LDFLAGS) -T $(KERNEL_LDSCRIPT) -o $@.tmp $(filter-out $(KERNEL_LDSCRIPT),$^)
+	$(CC) $(KERNEL_LDFLAGS) -T $(KERNEL_LDSCRIPT) -o $@.tmp $(KERNEL_OBJ)
 	grub-file --is-x86-multiboot $@.tmp 
 	mv $@.tmp $@
 
 $(KERNEL_BIN_DIR)/%.cpp.o: %.cpp
 	mkdir -p $(dir $@)
-	$(CPP) $(KERNEL_CPPFLAGS) -MMD -MF $@.d -c -o $@.tmp $<
-	mv $@.tmp $@
+	$(CPP) $(KERNEL_CPPFLAGS) -MP -MD -MF $@.d -c -o $@ $<
 
 $(KERNEL_BIN_DIR)/%.S.o: %.S
 	mkdir -p $(dir $@)
-	$(AS) $(KERNEL_ASFLAGS) -c -o $@.tmp $<
-	mv $@.tmp $@
+	$(AS) $(KERNEL_ASFLAGS) -c -o $@ $<
 	
 .PHONY: clean_kernel
 clean: clean_kernel

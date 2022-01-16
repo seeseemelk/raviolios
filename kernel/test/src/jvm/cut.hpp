@@ -19,6 +19,7 @@ public:
 	void* memory;
 
 	CUT(size_t memorySize = MB(1));
+	CUT(Java::NativeMethod* nativeMethods, size_t nativeMethodCount, size_t memorySize = MB(1));
 	~CUT();
 	Java::ClassError loadClass(GC::Root<Java::ClassFile>& classfile, std::string classname);
 	Java::ClassError loadClass(Java::VM& vm, GC::Root<Java::ClassFile>& root, const GC::Root<char>& name) override;

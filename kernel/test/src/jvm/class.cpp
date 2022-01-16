@@ -14,5 +14,5 @@ TEST("Can get name of class file")
 
 	GC::Root<char> name;
 	cl.name(name);
-	assertStringEqual("Test1", name.asPtr(), "Name is correct");
+	assertStringEqual("Test1", name, "Name is correct");
 }

@@ -5,7 +5,6 @@
 #define _JVM_LOADER_HPP_
 
 #include "defs.hpp"
-#include <cstddef>
 
 namespace Java
 {
