@@ -1,8 +1,7 @@
 #include "cut.hpp"
 
 #include "asserts.hpp"
-
-#include <cstring>
+#include "util.hpp"
 
 using namespace Java;
 
@@ -27,22 +26,25 @@ CUT::~CUT()
 	free(memory);
 }
 
-ClassError CUT::loadClass(GC::Root<Java::ClassFile>& classfile, std::string classname)
+ClassError CUT::loadClass(GC::Root<Java::ClassFile>& classfile, std::string className)
 {
-	Buffer buffer;
-	loadTestClass(buffer, classname);
-	Java::ClassError error = vm.defineClass(classfile, buffer.data, buffer.length);
-	assertEquals(Java::ClassError::GOOD, error, "Class loaded without errors");
-	return error;
+	GC::Root<char> classNameRoot;
+	vm.allocateString(classNameRoot, className.c_str());
+	return vm.loadClass(classfile, classNameRoot);
 }
 
-ClassError CUT::loadClass(VM& /*vm*/, GC::Root<ClassFile>& root, const GC::Root<char>& name)
+ClassError CUT::loadClass(VM& /*vm*/, GC::Root<ClassFile>& classfile, const GC::Root<char>& name)
 {
 	for (size_t i = 0; i < s_validClassesCount; i++)
 	{
-		if (strcmp(name.asPtr(), s_validClasses[i]) == 0)
+		if (equals(name, s_validClasses[i]) == 0)
 		{
-			return loadClass(root, std::string(name.asPtr()));
+			Buffer buffer;
+			std::string nameStr(name.asPtr(), name.object->size);
+			loadTestClass(buffer, nameStr);
+			Java::ClassError error = vm.defineClass(classfile, buffer.data, buffer.length);
+			assertEquals(Java::ClassError::GOOD, error, "Class loaded without errors");
+			return error;
 		}
 	}
 	return ClassError::NOT_FOUND;

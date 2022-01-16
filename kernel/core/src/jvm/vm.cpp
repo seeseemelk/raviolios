@@ -31,6 +31,18 @@ void VM::allocateArray(GC::Root<char>& root, size_t length)
 	m_gc.allocate(meta, root);
 }
 
+void VM::allocateString(GC::Root<char>& root, const char* str)
+{
+	size_t length = strlen(str);
+	allocateArray(root, length);
+	memcpy(&root.get(), str, length);
+}
+
+ClassError VM::loadClass(GC::Root<ClassFile>& classfile, const GC::Root<char> name)
+{
+	return m_classLoader.loadClass(*this, classfile, name);
+}
+
 ClassError VM::defineClass(GC::Root<ClassFile>& classfile, const u8* data, size_t length)
 {
 	Loader loader(data, length);
@@ -218,8 +230,6 @@ void VM::loadCodeAttribute(GC::Root<ClassFile>& classfile, GC::Root<CodeAttribut
 	loadAttributes(classfile, attributesRoot, loader, attributesCount);
 	attributesRoot.store(&root.get().attributes);
 }
-
-// ViEwEr PaRtIcIpaTiOn
 
 
 

@@ -73,6 +73,14 @@ namespace Java
 		GC::Context& gc();
 
 		/**
+		 * Allocates a string on the garbage collected heap.
+		 *
+		 * @param root A root to the allocated string.
+		 * @param str The string to allocate.
+		 */
+		void allocateString(GC::Root<char>& root, const char* str);
+
+		/**
 		 * Creates a thread.
 		 *
 		 * @param thread The thread to create.
@@ -100,6 +108,16 @@ namespace Java
 		/**
 		 * Loads a class into the VM.
 		 *
+		 * @param classfile The loaded class file.
+		 * @param name The name of the class.
+		 *
+		 * @return An error code if the class could not be loaded.
+		 */
+		ClassError loadClass(GC::Root<ClassFile>& classfile, const GC::Root<char> name);
+
+		/**
+		 * Loads a class into the VM.
+		 *
 		 * Note that it does not create any references to the class within the
 		 * VM, so a garbage collection cycle will remove the class unless you
 		 * do something with its root.
@@ -111,16 +129,6 @@ namespace Java
 		 * @return An error code if the class could not be loaded.
 		 */
 		ClassError defineClass(GC::Root<ClassFile>& classfile, const u8* data, size_t length);
-
-		/**
-		 * Loads a class into the VM.
-		 *
-		 * @param classfile The loaded class file.
-		 * @param name The name of the class.
-		 *
-		 * @return An error code if the class could not be loaded.
-		 */
-		ClassError loadClass(GC::Root<ClassFile>& classfile, const char* name);
 
 	private:
 		/// The native class loader.
