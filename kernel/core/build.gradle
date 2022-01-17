@@ -5,7 +5,7 @@ plugins {
 sourceSets {
     main {
         java {
-            srcDirs = Collections.singleton(file("java"))
+            srcDirs = Collections.singleton(file("java/java.base"))
             destinationDirectory.set(file("../../bin/java/core"))
         }
     }

@@ -1,2 +1,4 @@
 rootProject.name = 'raviolios'
-include(':kernel:core')
+
+include ':kernel:core'
+include ':tools:icb-tool'

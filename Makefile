@@ -1,5 +1,6 @@
 ARCH ?= x86
-BIN_DIR = bin/$(ARCH)
+BASE_BIN_DIR = bin
+BIN_DIR = $(BASE_BIN_DIR)/$(ARCH)
 
 .PHONY: all clean run
 all: kernel

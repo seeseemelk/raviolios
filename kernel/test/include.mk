@@ -5,12 +5,15 @@ KERNEL_INC += kernel/test/inc
 
 KERNEL_OBJ = $(KERNEL_SRC:%=$(KERNEL_BIN_DIR)/%.o)
 
-JAVA_SRC = $(shell find kernel/test/java -iname *.java)
-JAVA_OBJ = $(JAVA_SRC:%.java=$(KERNEL_BIN_DIR)/%.class)
+#JAVA_SRC += $(shell find kernel/test/java -iname *.java)
+#JAVA_OBJ = $(JAVA_SRC:%.java=$(KERNEL_BIN_DIR)/%.class)
 
 CFLAGS = -Wall -Wextra -Werror -pedantic $(KERNEL_INC:%=-I%) -ggdb \
 	-fsanitize=address -O0
 CPPFLAGS = $(CFLAGS) -std=c++20
+
+$(info Java src: $(JAVA_SRC))
+$(info Java obj: $(JAVA_OBJ))
 
 .PHONY: kernel
 kernel: $(TEST_ELF) $(JAVA_OBJ)
@@ -26,11 +29,11 @@ $(KERNEL_BIN_DIR)/%.cpp.o: %.cpp
 	mkdir -p $(dir $@)
 	$(CPP) $(CPPFLAGS) -MP -MD -MF $@.d -c -o $@ $<
 
-$(BIN_DIR)/java/%.class: kernel/test/java/%.java $(firstword $(JAVA_OBJ))
+#$(BIN_DIR)/java/%.class: kernel/test/java/%.java $(firstword $(JAVA_OBJ))
 
-$(firstword $(JAVA_OBJ)): $(JAVA_SRC)
-	mkdir -p $(dir $@)
-	javac --release 11 -g:none -d $(dir $@) $(JAVA_SRC)
+#$(firstword $(JAVA_OBJ)): $(JAVA_SRC)
+#	mkdir -p $(dir $@)
+#	javac --release 11 -g:none -d $(dir $@) $(JAVA_SRC)
 
 .PHONY: clean_test
 clean: clean_test
