@@ -1,9 +1,19 @@
 plugins {
     id 'groovy-gradle-plugin'
+    id 'java-gradle-plugin'
 }
 
 repositories {
     mavenCentral()
     mavenLocal()
     gradlePluginPortal()
+}
+
+gradlePlugin {
+    plugins {
+        simplePlugin {
+            id = 'raviolios.cpp'
+            implementationClass = 'be.seeseemelk.raviolios.gradle.cpp.CppPlugin'
+        }
+    }
 }

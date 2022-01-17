@@ -1,4 +1,5 @@
 rootProject.name = 'raviolios'
 
 include ':kernel:core'
+include ':kernel:x86'
 include ':tools:icb-tool'
