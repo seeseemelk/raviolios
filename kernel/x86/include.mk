@@ -10,8 +10,8 @@ KERNEL_LDSCRIPT = kernel/x86/src/kernel.ld
 
 KERNEL_OBJ = $(KERNEL_SRC:%=$(KERNEL_BIN_DIR)/%.o)
 
-KERNEL_CFLAGS = -Wall -Wextra -Werror -pedantic -ffreestanding $(KERNEL_INC:%=-I%)
-KERNEL_CPPFLAGS = $(KERNEL_CFLAGS) -fno-rtti -fno-exceptions -std=c++11
+KERNEL_CFLAGS = -Wall -Wextra -Werror -pedantic -ffreestanding $(KERNEL_INC:%=-I%) -ggdb
+KERNEL_CPPFLAGS = $(KERNEL_CFLAGS) -fno-rtti -fno-exceptions -std=c++11 -fno-use-cxa-atexit
 KERNEL_LDFLAGS = -nostdlib -ffreestanding -lgcc
 KERNEL_ASFLAGS = 
 

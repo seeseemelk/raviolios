@@ -17,7 +17,7 @@ public class IcbPacker implements AutoCloseable
 	public IcbPacker(Path outputFile) throws IOException
 	{
 		Files.createDirectories(outputFile.getParent());
-		output = new BufferedOutputStream(Files.newOutputStream(outputFile, StandardOpenOption.CREATE));
+		output = new BufferedOutputStream(Files.newOutputStream(outputFile, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING));
 
 		output.write("ICB1".getBytes());
 	}

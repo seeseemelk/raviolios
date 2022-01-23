@@ -23,9 +23,9 @@ CUT::CUT(size_t memorySize)
 }
 
 CUT::CUT(Java::NativeMethod* nativeMethods, size_t nativeMethodCount, size_t memorySize)
-	: vm(m_cachingClassLoader, nativeMethods, nativeMethodCount)
-	, m_cachingClassLoader(*this)
 {
+	m_cachingClassLoader.parent(*this);
+	vm.init(m_cachingClassLoader, nativeMethods, nativeMethodCount);
 	memory = malloc(memorySize);
 	vm.gc().init(memory, memorySize);
 }

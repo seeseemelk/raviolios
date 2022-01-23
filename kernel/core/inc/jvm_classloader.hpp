@@ -35,13 +35,13 @@ namespace Java
 	class CachingClassLoader : public NativeClassLoader
 	{
 	public:
-		CachingClassLoader(NativeClassLoader& parent);
+		void parent(NativeClassLoader& parent);
 
 		[[nodiscard]]
 		ClassError loadClass(VM& vm, GC::Root<ClassFile>& root, const GC::Root<char>& name) override;
 
 	private:
-		NativeClassLoader& m_parent;
+		NativeClassLoader* m_parent;
 		GC::Root<ClassList> m_classList;
 
 		ClassList& classList(VM& vm);

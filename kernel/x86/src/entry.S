@@ -38,12 +38,15 @@ _start:
 	Setup the stack.
 	*/
 	mov $stack_top, %esp
+	mov $stack_top, %ebp
 
 	/*
 	Call the kernel_main. We _MUST_ have a 16-byte aligned stack at this point,
 	otherwise we might have trouble.
 	However, there is no reason for the stack not to be aligned as we have just
 	configured it.
+	We also push ebx as it contains a pointer to the multiboot header. Pushing
+	it allows us to access it as a function argument.
 	*/
 	push %ebx
 	call arch_main

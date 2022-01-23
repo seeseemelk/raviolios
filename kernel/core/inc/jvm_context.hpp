@@ -18,10 +18,9 @@ namespace Java
 		GOOD,
 		NOT_FOUND,
 		BAD_CONSTANT,
-		// Ignores the loaded class. Is used to bootstrap the java/lang/Object
-		// class.
-		IGNORE
 	};
+
+	const char* toString(ClassError error);
 
 	enum class ThreadState
 	{
@@ -34,6 +33,8 @@ namespace Java
 		CREATED,
 		NO_METHOD
 	};
+
+	const char* toString(ThreadCreateResult error);
 
 	struct NativeMethod
 	{
@@ -73,7 +74,7 @@ namespace Java
 	class VM
 	{
 	public:
-		VM(NativeClassLoader& loader, NativeMethod* nativeMethods, size_t nativeMethodCount);
+		void init(NativeClassLoader& loader, NativeMethod* nativeMethods, size_t nativeMethodCount);
 
 		/**
 		 * Get the garbage collector of the VM.
@@ -160,7 +161,7 @@ namespace Java
 
 	private:
 		/// The native class loader.
-		NativeClassLoader& m_classLoader;
+		NativeClassLoader* m_classLoader;
 
 		/// The GC context
 		GC::Context m_gc;

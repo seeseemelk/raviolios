@@ -38,6 +38,8 @@ public abstract class IcbTask extends DefaultTask
 		{
 			for (File file : classes)
 			{
+				if (file.getName().equals("module-info.class"))
+					continue;
 				Path toPath = file.toPath();
 				packer.addFile(toPath);
 			}

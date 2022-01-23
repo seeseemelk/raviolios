@@ -4,9 +4,9 @@
 
 using namespace Java;
 
-CachingClassLoader::CachingClassLoader(NativeClassLoader& parent)
-	: m_parent(parent)
+void CachingClassLoader::parent(NativeClassLoader& parent)
 {
+	m_parent = &parent;
 }
 
 ClassError CachingClassLoader::loadClass(VM& vm, GC::Root<ClassFile>& root, const GC::Root<char>& name)
@@ -22,7 +22,7 @@ ClassError CachingClassLoader::loadClass(VM& vm, GC::Root<ClassFile>& root, cons
 			return ClassError::GOOD;
 		}
 	}
-	ClassError error = m_parent.loadClass(vm, root, name);
+	ClassError error = m_parent->loadClass(vm, root, name);
 	if (error != ClassError::GOOD)
 		return error;
 
