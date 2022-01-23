@@ -230,7 +230,7 @@ void VM::invokeNativeMethod(const GC::Root<char>& className, const GC::Root<char
 {
 	for (size_t i = 0; i < m_nativeMethodCount; i++)
 	{
-		NativeMethod& nativeMethod = m_nativeMethods[i];
+		const NativeMethod& nativeMethod = m_nativeMethods[i];
 		if (!equals(className, nativeMethod.className))
 			continue;
 		if (!equals(methodName, nativeMethod.methodName))

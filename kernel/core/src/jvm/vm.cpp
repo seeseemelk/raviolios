@@ -8,9 +8,10 @@
 
 using namespace Java;
 
-void VM::init(NativeClassLoader& classLoader, NativeMethod* nativeMethods, size_t nativeMethodCount)
+void VM::init(const NativeClassLoader& classLoaderVtable, void* classLoader, const NativeMethod* nativeMethods, size_t nativeMethodCount)
 {
-	m_classLoader = &classLoader;
+	m_classLoaderVtable = &classLoaderVtable;
+	m_classLoader = classLoader;
 	m_nativeMethodCount = nativeMethodCount;
 	m_nativeMethods = nativeMethods;
 }
@@ -42,7 +43,7 @@ void VM::allocateString(GC::Root<char>& root, const char* str)
 
 ClassError VM::getClass(GC::Root<ClassFile>& classfile, const GC::Root<char> name)
 {
-	return m_classLoader->loadClass(*this, classfile, name);
+	return m_classLoaderVtable->loadClass(m_classLoader, *this, classfile, name);
 }
 
 ClassError VM::defineClass(GC::Root<ClassFile>& classfile, const u8* data, size_t length)

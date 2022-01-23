@@ -1,15 +1,24 @@
 #include "arch.hpp"
 #include "defs.hpp"
+#include "gc.hpp"
+#include "icb.hpp"
+#include "jvm_context.hpp"
 #include "log.hpp"
 #include "multiboot.hpp"
+#include "natives.hpp"
 #include "x86.hpp"
-#include "icb.hpp"
-#include "gc.hpp"
-#include "jvm_context.hpp"
 
 static ICB::Loader s_loader;
 static Java::CachingClassLoader s_cacheLoader;
 static Java::VM s_vm;
+
+extern "C" void _init(void);
+
+static multiboot_memory_map_t* next(multiboot_memory_map_t* entry)
+{
+	u8* mem = reinterpret_cast<u8*>(entry);
+	return reinterpret_cast<multiboot_memory_map_t*>(mem + entry->size);
+}
 
 static void initMemory()
 {
@@ -20,20 +29,23 @@ static void initMemory()
 		Arch::panic();
 	}
 
-	multiboot_memory_map_t* entry = reinterpret_cast<multiboot_memory_map_t*>(Multiboot::mbt->mmap_addr - sizeof(u32));
-	while (entry->type != MULTIBOOT_MEMORY_AVAILABLE)
-		entry++;
+	multiboot_memory_map_t* entry = reinterpret_cast<multiboot_memory_map_t*>(Multiboot::mbt->mmap_addr);
+	while (entry->type != MULTIBOOT_MEMORY_AVAILABLE || entry->len < 4096)
+	{
+		entry = next(entry);
+	}
+	Log::infof("Found %d KiB of free memory", entry->len / 1024);
 	s_vm.gc().init(reinterpret_cast<u8*>(entry->addr), entry->len);
+}
 
+static void initICB()
+{
 	if (!Multiboot::hasMultibootFlag(MULTIBOOT_INFO_MODS) || Multiboot::mbt->mods_count == 0)
 	{
 		Log::critical("No modules found");
 		Arch::panic();
 	}
-}
 
-static void initICB()
-{
 	Log::info("Initialising ICB");
 	size_t moduleCount = Multiboot::mbt->mods_count;
 	Log::infof("Found %d modules", moduleCount);
@@ -74,8 +86,8 @@ static void initICB()
 static void initVM()
 {
 	Log::info("Initialising VM");
-	s_cacheLoader.parent(s_loader);
-	s_vm.init(s_loader, nullptr, 0);
+	s_cacheLoader.parent(s_loader.vtable, &s_loader);
+	s_vm.init(s_cacheLoader.vtable, &s_cacheLoader, g_nativeMethods, g_nativeMethodsCount);
 }
 
 extern "C" void arch_main(multiboot_info_t* mbt)
@@ -92,13 +104,10 @@ extern "C" void arch_main(multiboot_info_t* mbt)
 
 	Log::info("Loading startup class");
 	GC::Root<Java::ClassFile> startupClass;
-//	(void) s_cacheLoader.loadClass(s_vm, startupClass, startupClassName);
-	Log::info("A");
 	Java::ClassError error = s_vm.getClass(startupClass, startupClassName);
-	Log::info("B");
 	if (error != Java::ClassError::GOOD)
 	{
-		Log::criticalf("Failed to load raviolios.Startup: %s", Java::toString(error));
+		Log::criticalf("Failed to load raviolios/Startup: %s", Java::toString(error));
 		Arch::panic();
 	}
 	Log::info("Startup class loaded");
@@ -114,6 +123,7 @@ extern "C" void arch_main(multiboot_info_t* mbt)
 
 	while (s_vm.step(thread) == Java::ThreadState::RUNNING)
 	{
+		Log::info("Stepping");
 	}
 	Log::critical("Thread stopped");
 

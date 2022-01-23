@@ -47,26 +47,30 @@ namespace Java
 	/**
 	 * A class-loader to be implemented in C/C++.
 	 */
-	class NativeClassLoader
+	struct NativeClassLoader
 	{
-	public:
-		/**
-		 * Loads a class.
-		 *
-		 * The loader should call @ref VM::defineClass with the contents of the
-		 * class file.
-		 * If the class could not be found, the root should not be set.
-		 *
-		 * @param vm The VM to load the class into.
-		 * @param root The GC root the class file should be loaded into.
-		 * @param name The name of the class to load.
-		 *
-		 * @return The return value of @ref VM::defineClass, or @ref ClassError::NOT_FOUND
-		 * if the class could not be found.
-		 */
-		[[nodiscard]]
-		virtual ClassError loadClass(VM& vm, GC::Root<ClassFile>& root, const GC::Root<char>& name) = 0;
+		ClassError (*loadClass)(void*, VM& vm, GC::Root<ClassFile>& root, const GC::Root<char>& name);
 	};
+//	class NativeClassLoader
+//	{
+//	public:
+//		/**
+//		 * Loads a class.
+//		 *
+//		 * The loader should call @ref VM::defineClass with the contents of the
+//		 * class file.
+//		 * If the class could not be found, the root should not be set.
+//		 *
+//		 * @param vm The VM to load the class into.
+//		 * @param root The GC root the class file should be loaded into.
+//		 * @param name The name of the class to load.
+//		 *
+//		 * @return The return value of @ref VM::defineClass, or @ref ClassError::NOT_FOUND
+//		 * if the class could not be found.
+//		 */
+//		[[nodiscard]]
+//		virtual ClassError loadClass(VM& vm, GC::Root<ClassFile>& root, const GC::Root<char>& name) = 0;
+//	};
 
 	/**
 	 * A thing that can load and run Java code.
@@ -74,7 +78,7 @@ namespace Java
 	class VM
 	{
 	public:
-		void init(NativeClassLoader& loader, NativeMethod* nativeMethods, size_t nativeMethodCount);
+		void init(const NativeClassLoader& loaderVtable, void* loader, const NativeMethod* nativeMethods, size_t nativeMethodCount);
 
 		/**
 		 * Get the garbage collector of the VM.
@@ -129,20 +133,6 @@ namespace Java
 		[[nodiscard]]
 		ClassError getClass(GC::Root<ClassFile>& classfile, const GC::Root<char> name);
 
-//		/**
-//		 * Gets a root to a method by the FQN of the class and the name of the method.
-//		 *
-//		 * If needed, the class will be loaded into the VM.
-//		 *
-//		 * @param method The method.
-//		 * @param className The name of the class.
-//		 * @param methodName The name of the method.
-//		 *
-//		 * @return An error code if the class could not be loaded.
-//		 */
-//		[[nodiscard]]
-//		ClassError getMethod(GC::Root<MethodInfo>& method, const GC::Root<char> className, const GC::Root<char> methodName);
-
 		/**
 		 * Loads a class into the VM.
 		 *
@@ -161,7 +151,8 @@ namespace Java
 
 	private:
 		/// The native class loader.
-		NativeClassLoader* m_classLoader;
+		const NativeClassLoader* m_classLoaderVtable;
+		void* m_classLoader;
 
 		/// The GC context
 		GC::Context m_gc;
@@ -170,7 +161,7 @@ namespace Java
 		size_t m_nativeMethodCount = 0;
 
 		/// An array of native methods.
-		NativeMethod* m_nativeMethods;
+		const NativeMethod* m_nativeMethods;
 
 		/**
 		 * Allocates an array on the heap.

@@ -2,8 +2,10 @@ package raviolios;
 
 public abstract class Startup
 {
-	public void startup()
+	public static native void printHelloWorld();
+
+	public static void startup()
 	{
-		Arch.printHelloWorld();
+		printHelloWorld();
 	}
 }

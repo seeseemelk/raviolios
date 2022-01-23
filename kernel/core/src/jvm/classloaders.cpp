@@ -4,14 +4,16 @@
 
 using namespace Java;
 
-void CachingClassLoader::parent(NativeClassLoader& parent)
+void CachingClassLoader::parent(const NativeClassLoader& parentVtable, void* parent)
 {
-	m_parent = &parent;
+	m_parentVtable = &parentVtable;
+	m_parent = parent;
 }
 
-ClassError CachingClassLoader::loadClass(VM& vm, GC::Root<ClassFile>& root, const GC::Root<char>& name)
+static ClassError loadClass(void* arg, VM& vm, GC::Root<ClassFile>& root, const GC::Root<char>& name)
 {
-	ClassList& list = classList(vm);
+	CachingClassLoader& classLoader = *static_cast<CachingClassLoader*>(arg);
+	ClassList& list = classLoader.classList(vm);
 	for (size_t i = 0; i < list.size; i++)
 	{
 		GC::Object<ClassFile>* classFile = list.entries->get(i).classFile;
@@ -22,14 +24,14 @@ ClassError CachingClassLoader::loadClass(VM& vm, GC::Root<ClassFile>& root, cons
 			return ClassError::GOOD;
 		}
 	}
-	ClassError error = m_parent->loadClass(vm, root, name);
+	ClassError error = classLoader.m_parentVtable->loadClass(classLoader.m_parent, vm, root, name);
 	if (error != ClassError::GOOD)
 		return error;
 
 	ClassListEntry entry;
 	name.store(&entry.name);
 	root.store(&entry.classFile);
-	ClassList::add(vm.gc(), m_classList, entry);
+	ClassList::add(vm.gc(), classLoader.m_classList, entry);
 	return ClassError::GOOD;
 }
 
@@ -41,6 +43,10 @@ ClassList& CachingClassLoader::classList(VM& vm)
 	}
 	return m_classList.get();
 }
+
+const Java::NativeClassLoader Java::CachingClassLoader::vtable = {
+		.loadClass = &loadClass
+};
 
 void ClassList::create(GC::Context& gc, GC::Root<ClassList>& root)
 {

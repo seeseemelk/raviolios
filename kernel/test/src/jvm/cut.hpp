@@ -12,9 +12,10 @@
 
 #include <string>
 
-class CUT : public Java::NativeClassLoader
+class CUT
 {
 public:
+	static const Java::NativeClassLoader vtable;
 	Java::VM vm;
 	void* memory;
 
@@ -22,7 +23,6 @@ public:
 	CUT(Java::NativeMethod* nativeMethods, size_t nativeMethodCount, size_t memorySize = MB(1));
 	~CUT();
 	Java::ClassError loadClass(GC::Root<Java::ClassFile>& classfile, std::string classname);
-	Java::ClassError loadClass(Java::VM& vm, GC::Root<Java::ClassFile>& root, const GC::Root<char>& name) override;
 
 	template<typename T>
 	void makeRoot(GC::Array<T>* ref, GC::Root<T>& root)

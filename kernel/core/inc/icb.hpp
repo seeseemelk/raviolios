@@ -96,17 +96,25 @@ namespace ICB
 	/**
 	 * Loads classes from an ICB bundle.
 	 */
-	class Loader final : public Java::NativeClassLoader
+	struct Loader
 	{
-	public:
+		static const Java::NativeClassLoader vtable;
+
 		void bundle(Bundle& bundle);
 
-		[[nodiscard]]
-		Java::ClassError loadClass(Java::VM& vm, GC::Root<Java::ClassFile>& root, const GC::Root<char>& name) override;
-
-	private:
 		Bundle m_bundle;
 	};
+//	class Loader final : public Java::NativeClassLoader
+//	{
+//	public:
+//		void bundle(Bundle& bundle);
+//
+//		[[nodiscard]]
+//		Java::ClassError loadClass(Java::VM& vm, GC::Root<Java::ClassFile>& root, const GC::Root<char>& name) override;
+//
+//	private:
+//		Bundle m_bundle;
+//	};
 }
 
 #endif /* _ICB_HPP_ */

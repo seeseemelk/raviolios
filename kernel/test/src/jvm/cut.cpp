@@ -24,8 +24,8 @@ CUT::CUT(size_t memorySize)
 
 CUT::CUT(Java::NativeMethod* nativeMethods, size_t nativeMethodCount, size_t memorySize)
 {
-	m_cachingClassLoader.parent(*this);
-	vm.init(m_cachingClassLoader, nativeMethods, nativeMethodCount);
+	m_cachingClassLoader.parent(vtable, this);
+	vm.init(m_cachingClassLoader.vtable, &m_cachingClassLoader, nativeMethods, nativeMethodCount);
 	memory = malloc(memorySize);
 	vm.gc().init(memory, memorySize);
 }
@@ -44,8 +44,9 @@ ClassError CUT::loadClass(GC::Root<Java::ClassFile>& classfile, std::string clas
 	return vm.getClass(classfile, classNameRoot);
 }
 
-ClassError CUT::loadClass(VM& /*vm*/, GC::Root<ClassFile>& classfile, const GC::Root<char>& name)
+static ClassError loadClass(void* arg, VM& /*vm*/, GC::Root<ClassFile>& classfile, const GC::Root<char>& name)
 {
+	CUT& cut = *static_cast<CUT*>(arg);
 	for (size_t i = 0; i < s_validClassesCount; i++)
 	{
 		if (equals(name, s_validClasses[i]) == 0)
@@ -54,10 +55,15 @@ ClassError CUT::loadClass(VM& /*vm*/, GC::Root<ClassFile>& classfile, const GC::
 			std::string nameStr(name.asPtr(), name.object->size);
 			if (!loadTestClass(buffer, nameStr))
 				return ClassError::NOT_FOUND;
-			Java::ClassError error = vm.defineClass(classfile, buffer.data, buffer.length);
+			Java::ClassError error = cut.vm.defineClass(classfile, buffer.data, buffer.length);
 			assertEquals(Java::ClassError::GOOD, error, "Class loaded without errors");
 			return error;
 		}
 	}
 	return ClassError::NOT_FOUND;
 }
+
+const Java::NativeClassLoader CUT::vtable = {
+		.loadClass = &::loadClass
+};
+

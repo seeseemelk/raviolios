@@ -5,6 +5,7 @@
 #define _JVM_CLASSLOADER_HPP_
 
 #include "jvm_context.hpp"
+#include "util.hpp"
 
 namespace Java
 {
@@ -32,20 +33,33 @@ namespace Java
 	 * A class loader which will cache already-loaded classes. It will prevent
 	 * classes from being loaded twice.
 	 */
-	class CachingClassLoader : public NativeClassLoader
+	struct CachingClassLoader
 	{
-	public:
-		void parent(NativeClassLoader& parent);
+		static const NativeClassLoader vtable;
 
-		[[nodiscard]]
-		ClassError loadClass(VM& vm, GC::Root<ClassFile>& root, const GC::Root<char>& name) override;
+		void parent(const NativeClassLoader& parentVtable, void* parent);
 
-	private:
-		NativeClassLoader* m_parent;
+		const NativeClassLoader* m_parentVtable;
+		void* m_parent;
+
 		GC::Root<ClassList> m_classList;
 
 		ClassList& classList(VM& vm);
 	};
+//	class CachingClassLoader : public NativeClassLoader
+//	{
+//	public:
+//		void parent(NativeClassLoader& parent);
+//
+//		[[nodiscard]]
+//		ClassError loadClass(VM& vm, GC::Root<ClassFile>& root, const GC::Root<char>& name) override;
+//
+//	private:
+//		NativeClassLoader* m_parent;
+//		GC::Root<ClassList> m_classList;
+//
+//		ClassList& classList(VM& vm);
+//	};
 }
 
 #endif /* _JVM_CLASSLOADER_HPP_ */
