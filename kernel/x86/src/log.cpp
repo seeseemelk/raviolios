@@ -56,6 +56,11 @@ static void put(const char c)
 	reg_data.outb(c);
 }
 
+void Arch::log(char chr)
+{
+	put(chr);
+}
+
 void Arch::log(const char* text)
 {
 	while (*text != 0)

@@ -8,6 +8,6 @@ clean:
 
 .PHONY:
 test:
-	$(MAKE) ARCH=test
+	$(MAKE) -f gradle.mk ARCH=test
 
 include kernel/include.mk

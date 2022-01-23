@@ -14,6 +14,12 @@ namespace Arch
 	void log(const char* text);
 
 	/**
+	 * Log a single character string.
+	 * @param chr The character to log.
+	 */
+	void log(char chr);
+
+	/**
 	 * Makes the system do whatever panic function it wants.
 	 * It may, for instance:
 	 *  - Hang forever

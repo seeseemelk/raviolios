@@ -1,6 +1,7 @@
 package java.lang;
 
-public class Object {
+public class Object
+{
 	private int hashCode = 0;
 
 	public int getHashCode()
@@ -8,6 +9,11 @@ public class Object {
 		if (hashCode == 0)
             hashCode = getAddressHashCode();
         return hashCode;
+	}
+
+	public boolean equals(Object object)
+	{
+		return this == object;
 	}
 
     private native int getAddressHashCode();

@@ -12,11 +12,8 @@ CFLAGS = -Wall -Wextra -Werror -pedantic $(KERNEL_INC:%=-I%) -ggdb \
 	-fsanitize=address -O0
 CPPFLAGS = $(CFLAGS) -std=c++20
 
-$(info Java src: $(JAVA_SRC))
-$(info Java obj: $(JAVA_OBJ))
-
 .PHONY: kernel
-kernel: $(TEST_ELF) $(JAVA_OBJ)
+kernel: $(TEST_ELF)
 	$(TEST_ELF)
 	
 build_test: $(TEST_ELF)

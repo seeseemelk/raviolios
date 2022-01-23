@@ -59,7 +59,7 @@ TEST("Can call a native method")
 
 	GC::Root<Thread> thread;
 	GC::Root<ClassFile> classfile;
-	cut.loadClass(classfile, "Tests");
+	assertEquals(ClassError::GOOD, cut.loadClass(classfile, "Tests"), "Class file was loaded successfully");
 	ThreadCreateResult result = cut.vm.createThread(thread, classfile, "callNative");
 	assertEquals(ThreadCreateResult::CREATED, result, "Thread was created");
 

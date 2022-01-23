@@ -1,6 +1,6 @@
 PREFIX = i386-elf-
 
-KERNEL_ELF = $(KERNEL_BIN_DIR)/kernel.elf
+KERNEL_ELF = $(KERNEL_BIN_DIR)/raviolios-i386.elf
 
 KERNEL_SRC += \
 	$(wildcard kernel/x86/src/*.cpp) \

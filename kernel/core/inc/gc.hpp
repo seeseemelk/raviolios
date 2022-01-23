@@ -5,6 +5,7 @@
 #define _GC_HPP_
 
 #include "defs.hpp"
+#include "arch.hpp"
 
 namespace GC
 {
@@ -219,6 +220,8 @@ namespace GC
 
 		const T& get() const
 		{
+			if (object == nullptr)
+				Arch::panic();
 			return *asPtr();
 		}
 

@@ -45,6 +45,7 @@ _start:
 	However, there is no reason for the stack not to be aligned as we have just
 	configured it.
 	*/
+	push %ebx
 	call arch_main
 
 	/*

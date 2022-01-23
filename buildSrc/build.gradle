@@ -9,11 +9,17 @@ repositories {
     gradlePluginPortal()
 }
 
+dependencies {
+    implementation 'org.ow2.asm:asm-util:9.2'
+}
+
 gradlePlugin {
     plugins {
+        /*
         simplePlugin {
-            id = 'raviolios.cpp'
-            implementationClass = 'be.seeseemelk.raviolios.gradle.cpp.CppPlugin'
+            id = 'raviolios.icb'
+            implementationClass = 'be.seeseemelk.raviolios.gradle.icb.IcbPlugin'
         }
+        */
     }
 }

@@ -177,7 +177,7 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, const u8* data, size_
 	attributeRoot.store(&classfile.get().attributes);
 
 	// Load super class
-	if (!equals(className, "raviolios/java/lang/Object"))
+	if (superClass != static_cast<u16>(-1))
 	{
 		GC::Root<ClassFile> superClassObj;
 		GC::Root<char> superClassName;
@@ -202,7 +202,7 @@ void VM::loadAttributes(GC::Root<ClassFile>& classfile, GC::Root<AttributeInfo>&
 		u16 attributeNameIndex = loader.readU16() - 1;
 		u16 attributeLength = loader.readU32();
 		root.get().attributeNameIndex = attributeNameIndex;
-		root.get().attributeLength = attributeLength;;
+		root.get().attributeLength = attributeLength;
 
 		GC::Array<char>* name = classfile.get().constantPool->get(attributeNameIndex).c_utf8.bytes;
 		if (equals(name, "Code"))
@@ -214,9 +214,8 @@ void VM::loadAttributes(GC::Root<ClassFile>& classfile, GC::Root<AttributeInfo>&
 		}
 		else
 		{
-			Log::info("Unknown attribute");
+			Log::warning("Unknown attribute, skipping");
 			loader.advance(attributeLength);
-			return;
 		}
 	}
 }

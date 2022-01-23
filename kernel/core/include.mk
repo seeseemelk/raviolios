@@ -17,4 +17,5 @@ $(ICB_FILE): build_icb
 
 .PHONY: build_java
 build_java:
-	./gradlew classes
+	javac $(JAVA_SRC)
+#./gradlew classes

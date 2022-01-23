@@ -1,4 +1,4 @@
-package raviolios.tools.icb;
+package be.seeseemelk.raviolios.gradle.icb;
 
 public enum Tag
 {

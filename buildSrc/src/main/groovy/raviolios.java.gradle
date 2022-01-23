@@ -1,0 +1,15 @@
+plugins {
+    id 'java'
+}
+
+buildDir = new File(new File(new File(rootDir, 'bin'), 'java'), project.name)
+
+/*
+sourceSets {
+    main {
+        java {
+            destinationDirectory.set(file(getRootDir(), "bin", getName()))
+        }
+    }
+}
+*/

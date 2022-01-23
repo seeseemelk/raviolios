@@ -1,7 +1,6 @@
-package raviolios.tools.icb;
+package be.seeseemelk.raviolios.gradle.icb;
 
 import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.tree.ClassNode;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -9,7 +8,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Set;
+import java.util.Collection;
 
 public class IcbPacker implements AutoCloseable
 {
@@ -20,7 +19,7 @@ public class IcbPacker implements AutoCloseable
 		Files.createDirectories(outputFile.getParent());
 		output = new BufferedOutputStream(Files.newOutputStream(outputFile, StandardOpenOption.CREATE));
 
-		output.write("ICB".getBytes());
+		output.write("ICB1".getBytes());
 	}
 
 	@Override
@@ -31,19 +30,23 @@ public class IcbPacker implements AutoCloseable
 
 	public void addFile(Path classFile) throws IOException
 	{
+		System.out.format("Adding %s%n", classFile);
+		byte[] content = Files.readAllBytes(classFile);
+
 		// Write tag
 		output.write(Tag.CLASS.asByte());
 
 		// Write null-terminated string
-		String name = getClassNameOf(classFile);
-		output.write(name.getBytes());
-		output.write(0);
+		writeZString(getClassNameOf(classFile));
+
+		// Write the length of the class file
+		writeU32(content.length);
 
 		// Write class file
-		output.write(Files.readAllBytes(classFile));
+		writeBytes(content);
 	}
 
-	public void addFiles(Set<Path> classFiles) throws IOException
+	public void addFiles(Collection<Path> classFiles) throws IOException
 	{
 		for (Path classFile : classFiles)
 		{
@@ -55,5 +58,28 @@ public class IcbPacker implements AutoCloseable
 	{
 		ClassReader reader = new ClassReader(Files.newInputStream(classFile, StandardOpenOption.READ));
 		return reader.getClassName();
+	}
+
+	private void writeZString(String str) throws IOException
+	{
+		output.write(str.getBytes());
+		output.write(0);
+	}
+
+	private void writeBytes(byte[] array) throws IOException
+	{
+		output.write(array);
+	}
+
+	private void writeU32(int num) throws IOException
+	{
+		writeU16(num);
+		writeU16(num >> 16);
+	}
+
+	private void writeU16(int num) throws IOException
+	{
+		output.write(num);
+		output.write(num >> 8);
 	}
 }

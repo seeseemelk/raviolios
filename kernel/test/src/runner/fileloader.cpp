@@ -30,6 +30,9 @@ bool loadFile(Buffer& buf, std::string& file)
 
 bool loadTestClass(Buffer& buf, std::string file)
 {
-	std::string path = "bin/test/kernel/test/java/" + file + ".class";
-	return loadFile(buf, path);
+	std::string path = "bin/java/test/classes/java/main/" + file + ".class";
+	if (loadFile(buf, path))
+		return true;
+	std::string corePath = "bin/java/core/classes/java/main/" + file + ".class";
+	return loadFile(buf, corePath);
 }
