@@ -4,6 +4,7 @@
 #include "icb.hpp"
 #include "jvm_context.hpp"
 #include "log.hpp"
+#include "memory.hpp"
 #include "multiboot.hpp"
 #include "natives.hpp"
 #include "x86.hpp"
@@ -14,29 +15,26 @@ static Java::VM s_vm;
 
 extern "C" void _init(void);
 
-static multiboot_memory_map_t* next(multiboot_memory_map_t* entry)
-{
-	u8* mem = reinterpret_cast<u8*>(entry);
-	return reinterpret_cast<multiboot_memory_map_t*>(mem + entry->size);
-}
-
-static void initMemory()
-{
-	Log::info("Initialising memory");
-	if (!Multiboot::hasMultibootFlag(MULTIBOOT_INFO_MEM_MAP))
-	{
-		Log::critical("No memory map provided");
-		Arch::panic();
-	}
-
-	multiboot_memory_map_t* entry = reinterpret_cast<multiboot_memory_map_t*>(Multiboot::mbt->mmap_addr);
-	while (entry->type != MULTIBOOT_MEMORY_AVAILABLE || entry->len < 4096)
-	{
-		entry = next(entry);
-	}
-	Log::infof("Found %d KiB of free memory", entry->len / 1024);
-	s_vm.gc().init(reinterpret_cast<u8*>(entry->addr), entry->len);
-}
+//static void initMemory()
+//{
+//	Log::info("Initialising memory");
+//	if (!Multiboot::hasMultibootFlag(MULTIBOOT_INFO_MEM_MAP))
+//	{
+//		Log::critical("No memory map provided");
+//		Arch::panic();
+//	}
+//
+//	Multiboot::MapIterator iterator;
+//	while (iterator.next())
+//	{
+//		if (iterator.entry->type == MULTIBOOT_MEMORY_AVAILABLE && iterator.entry->len > 4096)
+//		{
+//			Log::infof("Found %d KiB of free memory", iterator.entry->len / 1024);
+//			s_vm.gc().init(reinterpret_cast<u8*>(iterator.entry->addr), iterator.entry->len);
+//			break;
+//		}
+//	}
+//}
 
 static void initICB()
 {
@@ -95,7 +93,7 @@ extern "C" void arch_main(multiboot_info_t* mbt)
 	Multiboot::mbt = mbt;
 
 	Arch::init_serial();
-	initMemory();
+	Memory::init();
 	initICB();
 	initVM();
 

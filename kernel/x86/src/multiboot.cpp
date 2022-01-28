@@ -14,3 +14,34 @@ bool Multiboot::hasMultibootFlag(u32 flag)
 {
 	return (Multiboot::mbt->flags & flag) != 0;
 }
+
+bool MapIterator::next()
+{
+	if (entry == nullptr)
+	{
+		entry = reinterpret_cast<multiboot_memory_map_t*>(mbt->mmap_addr);
+		bytesLeft = mbt->mmap_length;
+		return true;
+	}
+	else if (bytesLeft > 0)
+	{
+		u8* mem = reinterpret_cast<u8*>(entry);
+		entry = reinterpret_cast<multiboot_memory_map_t*>(mem + entry->size + 4);
+		bytesLeft -= entry->size + 4;
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool MapIterator::nextAvailable()
+{
+	while (next())
+	{
+		if (entry->type == MULTIBOOT_MEMORY_AVAILABLE)
+			return true;
+	}
+	return false;
+}

@@ -21,6 +21,29 @@ namespace Multiboot
 	};
 
 	bool hasMultibootFlag(u32 flag);
+
+	struct MapIterator
+	{
+		multiboot_memory_map_t* entry = nullptr;
+		size_t bytesLeft = 0;
+
+		/**
+		 * Gets the next entry in the list.
+		 *
+		 * @return `true` if the next entry was found, `false` if the end of the
+		 * list was reached.
+		 */
+		bool next();
+
+		/**
+		 * Gets the next available entry.
+		 *
+		 * @return `true` if the next entry was found, `false` if the end of the
+		 * list was reached.
+		 */
+		bool nextAvailable();
+	};
+
 }
 
 #endif
