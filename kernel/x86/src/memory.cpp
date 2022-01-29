@@ -8,7 +8,6 @@
 
 using namespace Memory;
 
-
 struct MetaTable
 {
 	Paging::PageTable tables[1024];
@@ -69,6 +68,15 @@ static void* allocateMemory(size_t amount)
 	return nullptr;
 }
 
+//static void reloadPageDirectory()
+//{
+//	asm(
+//			"mov $g_page_directory, %eax\n"
+//			"sub $0xFFC00000, %eax\n"
+//			"mov %eax, %cr3"
+//	);
+//}
+
 void Memory::init()
 {
 	Log::info("Initialising memory");
@@ -83,21 +91,39 @@ void Memory::init()
 	size_t tablesNeeded = Math::ceildiv(pagesNeeded, 1024);
 	pagesNeeded -= tablesNeeded;
 
+	for (size_t i = 0; i < 1024; i++)
+		s_metaTable.entries[i] = {};
+
 	// Map the meta table.
-	Paging::PageEntry& entry = g_page_directory.last(-1);
-	entry.rw = 1;
+	u32 dirAddr = reinterpret_cast<u32>(&g_page_directory);
+	Paging::PageTable* table = reinterpret_cast<Paging::PageTable*>(dirAddr - 0xFFC00000);
+	Paging::PageEntry& entry = table->last(1);
 	entry.setAddressFromVirtual(&s_metaTable);
+	entry.rw = 1;
 	entry.present = 1;
 
 	// Allocate page tables
 	size_t i = 1;
 	while (tablesNeeded > 0 && i < 1023)
 	{
-		void* memory = allocateMemory(sizeof(Paging::PageTable));
+		void* newTable = allocateMemory(sizeof(Paging::PageTable));
+
+		// Clear the table.
+		Paging::PageTable* asPageTable = static_cast<Paging::PageTable*>(newTable);
+		*asPageTable = {};
+
+		// Configure the page directory to use the table.
 		Paging::PageEntry& entry = g_page_directory.first(i);
+		entry.setAddress(newTable);
 		entry.rw = 1;
-		entry.setAddress(memory);
 		entry.present = 1;
+
+		// Map it in the meta table.
+		Paging::PageEntry& metaEntry = s_metaTable.first(i);
+		metaEntry.setAddress(newTable);
+		metaEntry.rw = 1;
+		metaEntry.present = 1;
+
 		i++;
 		tablesNeeded--;
 	}
@@ -111,7 +137,10 @@ void Memory::init()
 		entry.setAddress(memory);
 		entry.rw = 1;
 		entry.present = 1;
-		entryIndex++;
 		g_heapSize += KB(4);
+		entryIndex++;
+		pagesNeeded--;
 	}
+
+	Log::infof("Have %d MiB (%d KiB) of heap memory", g_heapSize / MB(1), g_heapSize / KB(1));
 }

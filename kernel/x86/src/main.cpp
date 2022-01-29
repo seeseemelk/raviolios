@@ -1,6 +1,7 @@
 #include "arch.hpp"
 #include "defs.hpp"
 #include "gc.hpp"
+#include "gdt.hpp"
 #include "icb.hpp"
 #include "jvm_context.hpp"
 #include "log.hpp"
@@ -85,6 +86,7 @@ static void initVM()
 {
 	Log::info("Initialising VM");
 	s_cacheLoader.parent(s_loader.vtable, &s_loader);
+	s_vm.gc().init(Memory::g_heap, Memory::g_heapSize);
 	s_vm.init(s_cacheLoader.vtable, &s_cacheLoader, g_nativeMethods, g_nativeMethodsCount);
 }
 
@@ -93,6 +95,7 @@ extern "C" void arch_main(multiboot_info_t* mbt)
 	Multiboot::mbt = mbt;
 
 	Arch::init_serial();
+	GDT::init();
 	Memory::init();
 	initICB();
 	initVM();

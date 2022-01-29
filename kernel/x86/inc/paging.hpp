@@ -15,8 +15,8 @@ namespace Paging
 		u32 userspace : 1;
 		u32 pwt : 1;
 		u32 pcd : 1;
-		u32 a : 1;
-		u32 d : 1;
+		u32 accessed : 1;
+		u32 dirty : 1;
 		u32 pat : 1;
 		u32 global : 1;
 		u32 ignored : 3;
