@@ -32,6 +32,7 @@ namespace Java
 
 		Opcode getOpcode(size_t index);
 
+		u8 getU8FromCode(size_t index);
 		u16 getU16FromCode(size_t index);
 
 		GC::Object<ClassFile>* getClassFile();

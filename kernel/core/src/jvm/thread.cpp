@@ -16,10 +16,15 @@ Opcode Frame::getOpcode(size_t index)
 	return code->object.getOpcode(index);
 }
 
+u8 Frame::getU8FromCode(size_t index)
+{
+	return static_cast<u16>(getOpcode(index).opcode);
+}
+
 u16 Frame::getU16FromCode(size_t index)
 {
-	u16 high = static_cast<u16>(getOpcode(index).opcode);
-	u16 low = static_cast<u16>(getOpcode(index + 1).opcode);
+	u16 high = getU8FromCode(index);
+	u16 low = getU8FromCode(index + 1);
 	return (high << 8) | low;
 }
 
@@ -134,6 +139,36 @@ ThreadState VM::step(GC::Root<Thread>& thread)
 	case Instruction::iconst_5:
 		pushInteger(frame.get(), 5);
 		goto valid_opcode;
+	case Instruction::bipush:
+		pushByte(frame.get());
+		goto valid_opcode;
+	case Instruction::sipush:
+		pushShort(frame.get());
+		goto valid_opcode;
+	case Instruction::iload_0:
+		pushIntegerFromVariable(frame.get(), 0);
+		goto valid_opcode;
+	case Instruction::iload_1:
+		pushIntegerFromVariable(frame.get(), 1);
+		goto valid_opcode;
+	case Instruction::iload_2:
+		pushIntegerFromVariable(frame.get(), 2);
+		goto valid_opcode;
+	case Instruction::iload_3:
+		pushIntegerFromVariable(frame.get(), 3);
+		goto valid_opcode;
+	case Instruction::if_icmpne:
+		jumpIfIntegerNotEqual(frame.get());
+		goto valid_opcode;
+	case Instruction::if_icmplt:
+		jumpIfIntegerLessThan(frame.get());
+		goto valid_opcode;
+	case Instruction::goto_:
+		jumpUnconditionally(frame.get());
+		goto valid_opcode;
+	case Instruction::getstatic:
+		getStatic(frame.get());
+		goto valid_opcode;
 	case Instruction::return_:
 		returnFromMethod(thread);
 		goto valid_opcode;
@@ -157,6 +192,66 @@ void VM::pushInteger(Frame& frame, i32 number)
 	Operand operand;
 	operand.integer = number;
 	frame.push(operand);
+}
+
+void VM::pushIntegerFromVariable(Frame& frame, i32 number)
+{
+	Operand& operand = frame.locals->get(number);
+	frame.push(operand);
+}
+
+void VM::pushShort(Frame& frame)
+{
+	i16 value = frame.getU16FromCode(frame.pc);
+	frame.pc += 2;
+	Operand operand;
+	operand.integer = value;
+	frame.push(operand);
+}
+
+void VM::pushByte(Frame& frame)
+{
+	i8 value = frame.getU8FromCode(frame.pc);
+	frame.pc++;
+	Operand operand;
+	operand.integer = value;
+	frame.push(operand);
+}
+
+void VM::jumpIfIntegerNotEqual(Frame& frame)
+{
+	Operand b = frame.pop();
+	Operand a = frame.pop();
+	i16 target = frame.getU16FromCode(frame.pc);
+	if (a.integer != b.integer)
+		frame.pc += target;
+	else
+		frame.pc += 2;
+}
+
+void VM::jumpIfIntegerLessThan(Frame& frame)
+{
+	Operand b = frame.pop();
+	Operand a = frame.pop();
+	i16 target = frame.getU16FromCode(frame.pc) - 1;
+	if (a.integer < b.integer)
+		frame.pc += target;
+	else
+		frame.pc += 2;
+}
+
+void VM::jumpUnconditionally(Frame& frame)
+{
+	i16 target = frame.getU16FromCode(frame.pc) - 1;
+	frame.pc += target;
+}
+
+void VM::getStatic(Frame& frame)
+{
+//	u16 index = frame.getU16FromCode(frame.pc);
+//	frame.pc += 2;
+//	ClassFile& classFile = frame.getClassFile()->object;
+//	classFile.
 }
 
 void VM::returnFromMethod(GC::Root<Thread>& thread)
@@ -238,7 +333,10 @@ void VM::invokeNativeMethod(const GC::Root<char>& className, const GC::Root<char
 		if (!equals(methodType, nativeMethod.methodType))
 			continue;
 		nativeMethod.method();
+		return;
 	}
+	Log::critical("No native method handler found");
+	Arch::panic();
 }
 
 
