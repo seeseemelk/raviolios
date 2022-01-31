@@ -9,10 +9,11 @@ public class StaticProperty
 	{
 		Asserts.assertEquals(0, intProp);
 	}
-	
+
 	private static int intPropNonZero = 42;
-	private static void intPropNonZeroIsNotZero()
+	public static void intPropNonZeroIsNotZero()
 	{
+		Asserts.assertEquals(42, intPropNonZero);
 		Asserts.assertEquals(0, intPropNonZero);
 	}
 }

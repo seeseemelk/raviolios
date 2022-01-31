@@ -45,6 +45,20 @@ u16 ClassFile::findMethodByName(const char* name) const
 	return -1;
 }
 
+u16 ClassFile::findFieldByName(GC::Root<char>& name) const
+{
+	for (u16 i = 0; i < fieldsCount; i++)
+	{
+		FieldInfo& fieldInfo = fields->get(i);
+		u16 nameIndex = fieldInfo.nameIndex;
+		ConstantPoolUtf8& methodName = constantPool->get(nameIndex).c_utf8;
+
+		if (equals(name, methodName.bytes))
+			return i;
+	}
+	return -1;
+}
+
 void ConstantPoolInfo::describe(GC::MetaVisitor& visitor)
 {
 	switch (tag)

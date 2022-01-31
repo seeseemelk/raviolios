@@ -208,6 +208,7 @@ namespace Java
 		void jumpIfIntegerNotEqual(Frame& frame);
 		void jumpIfIntegerLessThan(Frame& frame);
 		void jumpUnconditionally(Frame& frame);
+		void getStatic(GC::Root<Frame>& frame);
 	};
 }
 

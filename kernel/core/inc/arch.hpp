@@ -26,6 +26,7 @@ namespace Arch
 	 *  - Reboot
 	 *  - Pause for a debugger
 	 */
+	[[noreturn]]
 	void panic();
 }
 

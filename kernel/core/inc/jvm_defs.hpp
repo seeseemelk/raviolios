@@ -111,6 +111,16 @@ namespace Java
 		Instruction opcode;
 	};
 
+	struct Operand
+	{
+		union
+		{
+			i32 integer;
+		};
+
+		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
+	};
+
 	struct AttributeInfo;
 
 	struct CodeAttribute
@@ -152,6 +162,9 @@ namespace Java
 		u16 attributesCount;
 		GC::Array<AttributeInfo>* attributes;
 		GC::Array<char>* name;
+
+		/// The value of the field, if it is a static field.
+		Operand value;
 
 		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
 	};
@@ -232,6 +245,16 @@ namespace Java
 		 * `-1` if the method was not found.
 		 */
 		u16 findMethodByName(const char* name) const;
+
+		/**
+		 * Finds a field by its name.
+		 *
+		 * @param name The name of the field.
+		 *
+		 * @return An index into the @ref fields array. Contains a value of `-1`
+		 * if the field could not be found.
+		 */
+		u16 findFieldByName(GC::Root<char>& name) const;
 
 		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
 	};

@@ -10,16 +10,6 @@
 
 namespace Java
 {
-	struct Operand
-	{
-		union
-		{
-			i32 integer;
-		};
-
-		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
-	};
-
 	struct Frame
 	{
 		GC::Object<MethodInfo>* methodInfo;

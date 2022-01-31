@@ -52,7 +52,7 @@ static void runJavaTest(const char* className, const char* methodName)
 	GC::Root<Thread> thread;
 	GC::Root<ClassFile> classfile;
 
-	s_failed = true;
+	s_failed = false;
 	ClassError error = cut.loadClass(classfile, className);
 	assertEquals(ClassError::GOOD, error, "Classes loaded correctly");
 

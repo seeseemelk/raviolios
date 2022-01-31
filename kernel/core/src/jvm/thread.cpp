@@ -1,7 +1,8 @@
-#include "jvm_context.hpp"
 #include "jvm_thread.hpp"
 
 #include "arch.hpp"
+#include "jvm_context.hpp"
+#include "jvm_type.hpp"
 #include "log.hpp"
 #include "util.hpp"
 
@@ -31,6 +32,15 @@ u16 Frame::getU16FromCode(size_t index)
 GC::Object<ClassFile>* Frame::getClassFile()
 {
 	return methodInfo->object.classFile;
+}
+
+static void dumpStack(Frame& frame)
+{
+	Log::infof("Stack dump (length %d):", frame.stack->count());
+	for (size_t i = 0; i < frame.stack->count(); i++)
+	{
+		Log::infof("[%d] %d", i, frame.stack->get(i).integer);
+	}
 }
 
 void Frame::push(Java::Operand& operand)
@@ -119,6 +129,8 @@ ThreadState VM::step(GC::Root<Thread>& thread)
 
 	CodeAttribute* codeAttribute = &frame.get().code->object;
 	Instruction opcode = codeAttribute->code->get(pc).opcode;
+	Log::infof("Executing opcode %d (byte index: %d)", opcode, pc);
+	dumpStack(frame.get());
 	switch (opcode)
 	{
 	case Instruction::iconst_0:
@@ -167,7 +179,7 @@ ThreadState VM::step(GC::Root<Thread>& thread)
 		jumpUnconditionally(frame.get());
 		goto valid_opcode;
 	case Instruction::getstatic:
-		getStatic(frame.get());
+		getStatic(frame);
 		goto valid_opcode;
 	case Instruction::return_:
 		returnFromMethod(thread);
@@ -184,6 +196,7 @@ ThreadState VM::step(GC::Root<Thread>& thread)
 	Log::critical("Invalid opcode");
 	Arch::panic();
 valid_opcode:
+	dumpStack(frame.get());
 	return ThreadState::RUNNING;
 }
 
@@ -196,7 +209,7 @@ void VM::pushInteger(Frame& frame, i32 number)
 
 void VM::pushIntegerFromVariable(Frame& frame, i32 number)
 {
-	Operand& operand = frame.locals->get(number);
+	Operand operand = frame.locals->get(number);
 	frame.push(operand);
 }
 
@@ -222,7 +235,9 @@ void VM::jumpIfIntegerNotEqual(Frame& frame)
 {
 	Operand b = frame.pop();
 	Operand a = frame.pop();
-	i16 target = frame.getU16FromCode(frame.pc);
+	i16 target = frame.getU16FromCode(frame.pc) - 1;
+	Log::infof("A=%d, B=%d", a.integer, b.integer);
+	Log::infof("Target = %d", target);
 	if (a.integer != b.integer)
 		frame.pc += target;
 	else
@@ -246,12 +261,35 @@ void VM::jumpUnconditionally(Frame& frame)
 	frame.pc += target;
 }
 
-void VM::getStatic(Frame& frame)
+void VM::getStatic(GC::Root<Frame>& frame)
 {
-//	u16 index = frame.getU16FromCode(frame.pc);
-//	frame.pc += 2;
-//	ClassFile& classFile = frame.getClassFile()->object;
-//	classFile.
+	u16 index = frame.get().getU16FromCode(frame.get().pc) - 1;
+	frame.get().pc += 2;
+	GC::Root<ClassFile> classFile;
+	m_gc.makeRoot(frame.get().getClassFile(), classFile);
+
+	u16 targetClassIndex = classFile.get().constantPool->get(index).c_field.classIndex;
+	u16 targetFieldNameTypeIndex = classFile.get().constantPool->get(index).c_field.nameAndTypeIndex;
+
+	u16 targetClassNameIndex = classFile.get().constantPool->get(targetClassIndex).c_class.nameIndex;
+	u16 fieldNameIndex = classFile.get().constantPool->get(targetFieldNameTypeIndex).c_nameAndType.nameIndex;
+
+	GC::Root<char> targetClassName;
+	GC::Root<char> fieldName;
+
+	m_gc.makeRoot(classFile.get().constantPool->get(targetClassNameIndex).c_utf8.bytes, targetClassName);
+	m_gc.makeRoot(classFile.get().constantPool->get(fieldNameIndex).c_utf8.bytes, fieldName);
+
+	GC::Root<ClassFile> targetClass;
+	if (getClass(targetClass, targetClassName) != ClassError::GOOD)
+	{
+		Log::critical("Could not find class");
+		Arch::panic();
+	}
+
+	u16 fieldIndex = targetClass.get().findFieldByName(fieldName);
+
+	frame.get().push(targetClass.get().fields->get(fieldIndex).value);
 }
 
 void VM::returnFromMethod(GC::Root<Thread>& thread)
@@ -318,6 +356,12 @@ void VM::invokeStatic(GC::Root<Thread>& thread)
 		createFrame(newFrame, targetMethod);
 		frame.store(&newFrame.get().previous);
 		newFrame.store(&thread.get().top);
+
+		TypeDescriptor methodTypeDescriptor = TypeDescriptor::parse(methodType);
+		for (size_t i = 0; i < methodTypeDescriptor.arguments; i++)
+		{
+			newFrame.get().locals->get(i) = frame.get().pop();
+		}
 	}
 }
 
