@@ -178,7 +178,6 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, const u8* data, size_
 	attributeRoot.store(&classfile.get().attributes);
 
 	// Load super class
-	Log::info("A");
 	if (superClass != static_cast<u16>(-1))
 	{
 		GC::Root<ClassFile> superClassObj;
@@ -191,7 +190,6 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, const u8* data, size_
 		superClassObj.store(&classfile.get().superClassObj);
 	}
 
-	Log::info("B");
 	return ClassError::GOOD;
 }
 
