@@ -34,6 +34,7 @@ namespace Java
 		goto_ = 0xA7,
 		return_ = 0xB1,
 		getstatic = 0xB2,
+		putstatic = 0xB3,
 		invokestatic = 0xB8,
 		ireturn = 0xAC,
 	};

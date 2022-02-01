@@ -4,16 +4,17 @@ import raviolios.Asserts;
 
 public class StaticProperty
 {
-	private static int intProp = 0;
-	public static void intPropIsZero()
+	private static int propInt = 0;
+	public static void propertyStartsAsZero()
 	{
-		Asserts.assertEquals(0, intProp);
+		Asserts.assertEquals(0, propInt);
 	}
 
-	private static int intPropNonZero = 42;
-	public static void intPropNonZeroIsNotZero()
+	public static void propertyCanBeChanged()
 	{
-		Asserts.assertEquals(42, intPropNonZero);
-		Asserts.assertEquals(0, intPropNonZero);
+		propInt = 42;
+		Asserts.assertEquals(42, propInt);
+		propInt = 0;
+		Asserts.assertEquals(0, propInt);
 	}
 }
