@@ -58,8 +58,8 @@ TEST("Can perform collection cycles")
 	Meta meta;
 	meta.size = 4;
 
-	RawRoot rootA;
-	RawRoot rootB;
+	RawRoot rootA {};
+	RawRoot rootB {};
 	dut.context.allocateRaw(meta, rootA);
 	dut.context.allocateRaw(meta, rootB);
 

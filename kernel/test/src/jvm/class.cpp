@@ -9,7 +9,7 @@ TEST("Can get name of class file")
 {
 	CUT cut;
 	GC::Root<ClassFile> classfile;
-	cut.loadClass(classfile, "Test1");
+	assertEquals(ClassError::GOOD, cut.loadClass(classfile, "Test1"), "Class loaded succesfully");
 	Class cl(cut.vm, classfile);
 
 	GC::Root<char> name;

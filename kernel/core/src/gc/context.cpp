@@ -70,6 +70,7 @@ AllocResult Context::allocateRaw(Meta& meta, RawRoot& root)
 
 void Context::makeRootRaw(Meta* meta, RawRoot& root)
 {
+	root.clear();
 	root.set(meta, &m_root, m_root.next);
 }
 

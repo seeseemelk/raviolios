@@ -131,7 +131,7 @@ namespace Java
 		 * @return An error code if the class could not be loaded.
 		 */
 		[[nodiscard]]
-		ClassError getClass(GC::Root<ClassFile>& classfile, const GC::Root<char> name);
+		ClassError getClass(GC::Root<ClassFile>& classfile, const GC::Root<char>& name);
 
 		/**
 		 * Loads a class into the VM.

@@ -41,6 +41,8 @@ ClassError CUT::loadClass(GC::Root<Java::ClassFile>& classfile, std::string clas
 {
 	GC::Root<char> classNameRoot;
 	vm.allocateString(classNameRoot, className.c_str());
+	(void) classfile;
+	//return ClassError::GOOD;
 	return vm.getClass(classfile, classNameRoot);
 }
 

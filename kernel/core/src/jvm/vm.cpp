@@ -41,7 +41,7 @@ void VM::allocateString(GC::Root<char>& root, const char* str)
 		root[i] = str[i];
 }
 
-ClassError VM::getClass(GC::Root<ClassFile>& classfile, const GC::Root<char> name)
+ClassError VM::getClass(GC::Root<ClassFile>& classfile, const GC::Root<char>& name)
 {
 	return m_classLoaderVtable->loadClass(m_classLoader, *this, classfile, name);
 }
@@ -178,6 +178,7 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, const u8* data, size_
 	attributeRoot.store(&classfile.get().attributes);
 
 	// Load super class
+	Log::info("A");
 	if (superClass != static_cast<u16>(-1))
 	{
 		GC::Root<ClassFile> superClassObj;
@@ -190,6 +191,7 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, const u8* data, size_
 		superClassObj.store(&classfile.get().superClassObj);
 	}
 
+	Log::info("B");
 	return ClassError::GOOD;
 }
 

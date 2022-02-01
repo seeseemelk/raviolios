@@ -39,3 +39,23 @@ TEST("Can chain roots")
 	assertEquals(&rootB, rootC.next, "Root C points forward to B");
 	assertNull(rootC.previous, "Root C has no previous");
 }
+
+TEST("Can clear root twice")
+{
+	Meta metaA;
+	Meta metaB;
+	Meta metaC;
+
+	RawRoot rootA;
+	RawRoot rootB;
+	RawRoot rootC;
+
+	rootA.set(&metaA, nullptr, nullptr);
+	rootB.set(&metaB, nullptr, &rootA);
+	rootC.set(&metaC, nullptr, &rootB);
+
+	rootB.clear();
+	rootA.set(&metaA, nullptr, nullptr);
+	rootB.clear();
+	rootC.clear();
+}

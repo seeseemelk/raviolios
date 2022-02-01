@@ -1,5 +1,8 @@
 #include "gc.hpp"
 
+#include "log.hpp"
+#include "arch.hpp"
+
 using namespace GC;
 
 RawRoot::~RawRoot()
@@ -14,6 +17,7 @@ void RawRoot::storeMeta(Meta** meta) const
 
 void RawRoot::set(Meta* object, RawRoot* previous, RawRoot* next)
 {
+	clear();
 	this->object = object;
 	this->previous = previous;
 	this->next = next;
@@ -25,16 +29,32 @@ void RawRoot::set(Meta* object, RawRoot* previous, RawRoot* next)
 
 void RawRoot::set(const RawRoot& root)
 {
-	clear();
 	set(root.object, root.next, root.previous);
 }
 
 void RawRoot::clear()
 {
 	if (next != nullptr)
+	{
+		if (next->previous != this)
+		{
+			Log::critical("Bad next->previous");
+			Arch::panic();
+		}
 		next->previous = previous;
+	}
 	if (previous != nullptr)
+	{
+		if (previous->next != this)
+		{
+			Log::critical("Bad previous->next");
+			Arch::panic();
+		}
 		previous->next = next;
+	}
+	object = nullptr;
+	next = nullptr;
+	previous = nullptr;
 }
 
 //Root::Root(Meta* object, Root* previous, Root* next)
