@@ -4,6 +4,9 @@ plugins {
 
 buildDir = new File(new File(new File(rootDir, 'bin'), 'java'), project.name)
 
+sourceCompatibility = '11'
+targetCompatibility = '11'
+
 /*
 sourceSets {
     main {
