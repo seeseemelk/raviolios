@@ -6,13 +6,13 @@ using namespace Java;
 static bool s_expectFail = false;
 static bool s_failed = false;
 static size_t s_assertsCalled = 0;
-static void j_assertSuccess()
+static void j_assertSuccess(VM& /*vm*/, GC::Root<Thread>& /*thread*/)
 {
 	s_assertsCalled++;
 	Test::succeed("Success from Java");
 }
 
-static void j_assertFails()
+static void j_assertFails(VM& /*vm*/, GC::Root<Thread>& /*thread*/)
 {
 	s_assertsCalled++;
 	s_failed = true;

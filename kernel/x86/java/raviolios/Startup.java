@@ -1,11 +1,14 @@
 package raviolios;
 
-public abstract class Startup
+public final class Startup
 {
-	public static native void printHelloWorld();
+	private Startup() {}
 
-	public static void startup()
+	public static void main()
 	{
-		printHelloWorld();
+		Arch.trace('j');
+		Arch.trace('a');
+		Arch.trace('v');
+		Arch.trace('a');
 	}
 }

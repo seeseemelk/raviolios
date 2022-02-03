@@ -14,7 +14,7 @@ CRTEND_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtend.o)
 KERNEL_OBJ = $(KERNEL_SRC:%=$(KERNEL_BIN_DIR)/%.o) $(CRTBEGIN_OBJ) $(CRTEND_OBJ)
 
 KERNEL_CFLAGS = -Wall -Wextra -Werror -pedantic -ffreestanding $(KERNEL_INC:%=-I%) -ggdb
-KERNEL_CPPFLAGS = $(KERNEL_CFLAGS) -fno-rtti -fno-exceptions -std=c++20 -fno-use-cxa-atexit
+KERNEL_CPPFLAGS = $(KERNEL_CFLAGS) -fno-rtti -fno-exceptions -std=c++2a -fno-use-cxa-atexit
 KERNEL_LDFLAGS = -nostdlib -ffreestanding -lgcc
 KERNEL_ASFLAGS = 
 

@@ -383,7 +383,7 @@ void VM::invokeStatic(GC::Root<Thread>& thread)
 
 	if (targetMethod.get().isNative())
 	{
-		invokeNativeMethod(className, methodName, methodType);
+		invokeNativeMethod(thread, className, methodName, methodType);
 	}
 	else
 	{
@@ -400,7 +400,7 @@ void VM::invokeStatic(GC::Root<Thread>& thread)
 	}
 }
 
-void VM::invokeNativeMethod(const GC::Root<char>& className, const GC::Root<char>& methodName, const GC::Root<char>& methodType)
+void VM::invokeNativeMethod(GC::Root<Thread>& thread, const GC::Root<char>& className, const GC::Root<char>& methodName, const GC::Root<char>& methodType)
 {
 	for (size_t i = 0; i < m_nativeMethodCount; i++)
 	{
@@ -411,7 +411,7 @@ void VM::invokeNativeMethod(const GC::Root<char>& className, const GC::Root<char
 			continue;
 		if (!equals(methodType, nativeMethod.methodType))
 			continue;
-		nativeMethod.method();
+		nativeMethod.method(*this, thread);
 		return;
 	}
 	Log::critical("No native method handler found");

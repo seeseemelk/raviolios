@@ -16,27 +16,6 @@ static Java::VM s_vm;
 
 extern "C" void _init(void);
 
-//static void initMemory()
-//{
-//	Log::info("Initialising memory");
-//	if (!Multiboot::hasMultibootFlag(MULTIBOOT_INFO_MEM_MAP))
-//	{
-//		Log::critical("No memory map provided");
-//		Arch::panic();
-//	}
-//
-//	Multiboot::MapIterator iterator;
-//	while (iterator.next())
-//	{
-//		if (iterator.entry->type == MULTIBOOT_MEMORY_AVAILABLE && iterator.entry->len > 4096)
-//		{
-//			Log::infof("Found %d KiB of free memory", iterator.entry->len / 1024);
-//			s_vm.gc().init(reinterpret_cast<u8*>(iterator.entry->addr), iterator.entry->len);
-//			break;
-//		}
-//	}
-//}
-
 static void initICB()
 {
 	if (!Multiboot::hasMultibootFlag(MULTIBOOT_INFO_MODS) || Multiboot::mbt->mods_count == 0)
@@ -114,7 +93,7 @@ extern "C" void arch_main(multiboot_info_t* mbt)
 	Log::info("Startup class loaded");
 
 	GC::Root<Java::Thread> thread;
-	Java::ThreadCreateResult result = s_vm.createThread(thread, startupClass, "startup");
+	Java::ThreadCreateResult result = s_vm.createThread(thread, startupClass, "main");
 	if (result != Java::ThreadCreateResult::CREATED)
 	{
 		Log::criticalf("Could not create thread: %s", Java::toString(result));

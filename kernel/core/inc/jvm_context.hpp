@@ -41,7 +41,7 @@ namespace Java
 		const char* className;
 		const char* methodName;
 		const char* methodType;
-		void (*method)();
+		void (*method)(VM& vm, GC::Root<Thread>& thread);
 	};
 
 	/**
@@ -204,7 +204,7 @@ namespace Java
 		void pushShort(Frame& frame);
 		void pushByte(Frame& frame);
 		void invokeStatic(GC::Root<Thread>& thread);
-		void invokeNativeMethod(const GC::Root<char>& className, const GC::Root<char>& methodName, const GC::Root<char>& methodType);
+		void invokeNativeMethod(GC::Root<Thread>& thread, const GC::Root<char>& className, const GC::Root<char>& methodName, const GC::Root<char>& methodType);
 		void jumpIfIntegerNotEqual(Frame& frame);
 		void jumpIfIntegerLessThan(Frame& frame);
 		void jumpUnconditionally(Frame& frame);

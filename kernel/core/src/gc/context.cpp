@@ -45,13 +45,25 @@ size_t Context::getUsed()
 
 void* Context::permAlloc(size_t size)
 {
-	if (m_memStart != m_memCurrent)
+	/*if (m_memStart != m_memCurrent)
 	{
 		return NULL;
 	}
 	void* object = m_memStart;
 	m_memStart += size;
 	m_memCurrent = m_memStart;
+	m_permUsed += size;
+	return object;*/
+	if (getFree() <= size)
+		collect();
+	if (getFree() <= size)
+	{
+		Log::error("Out of memory");
+		return nullptr;
+	}
+
+	u8* memEnd = m_memStart + m_memCapacity;
+	void* object = memEnd - size;
 	m_permUsed += size;
 	return object;
 }

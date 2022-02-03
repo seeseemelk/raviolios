@@ -39,7 +39,7 @@ TEST("Can run a thread")
 
 static bool s_called = false;
 
-static void setCalledToTrue()
+static void setCalledToTrue(VM& /*vm*/, GC::Root<Thread>& /*thread*/)
 {
 	s_called = true;
 }
