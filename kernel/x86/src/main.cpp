@@ -10,8 +10,11 @@
 #include "natives.hpp"
 #include "x86.hpp"
 
+//[[no_destroy]]
 static ICB::Loader s_loader;
+//[[no_destroy]]
 static Java::CachingClassLoader s_cacheLoader;
+//[[no_destroy]]
 static Java::VM s_vm;
 
 extern "C" void _init(void);
