@@ -200,9 +200,14 @@ namespace Java
 		void returnInteger(GC::Root<Thread>& thread);
 
 		void pushIntegerFromVariable(Frame& frame, i32 number);
+		void storeIntegerToVariable(Frame& frame, i32 number);
 		void pushInteger(Frame& frame, i32 number);
 		void pushShort(Frame& frame);
 		void pushByte(Frame& frame);
+		void pushConstant(Frame& frame);
+		void swap(Frame& frame);
+		void addIntegers(Frame& frame);
+		void increment(Frame& frame);
 		void invokeStatic(GC::Root<Thread>& thread);
 		void invokeNativeMethod(GC::Root<Thread>& thread, const GC::Root<char>& className, const GC::Root<char>& methodName, const GC::Root<char>& methodType);
 		void jumpIfIntegerNotEqual(Frame& frame);

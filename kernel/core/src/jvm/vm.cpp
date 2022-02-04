@@ -81,6 +81,9 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, const u8* data, size_
 			loader.readBuf(&array.get(), info->c_utf8.length);
 			array.store(&info->c_utf8.bytes);
 			break;
+		case CONSTANT_integer:
+			info->c_integer.integer = loader.readU32();
+			break;
 		case CONSTANT_class:
 			info->c_class.nameIndex = loader.readU16() - 1;
 			break;

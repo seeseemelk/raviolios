@@ -18,6 +18,11 @@ namespace Java
 		GC::Array<char>* bytes;
 	};
 
+	struct ConstantPoolInteger
+	{
+		i32 integer;
+	};
+
 	struct ConstantPoolClass
 	{
 		u16 nameIndex;
@@ -47,7 +52,7 @@ namespace Java
 		union
 		{
 			ConstantPoolUtf8 c_utf8; /* Tag: 1 */
-			// ConstantPoolInteger c_integer; /* Tag: 3 */
+			ConstantPoolInteger c_integer; /* Tag: 3 */
 			// ConstantPoolFloat c_float; /* Tag: 4 */
 			// ConstantPoolLong c_long; /* Tag: 5 */
 			// ConstantPoolDouble c_double; /* Tag: 6 */

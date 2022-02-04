@@ -1,0 +1,3 @@
+display_library: x, options="gui_debug"
+ata0-slave: type=cdrom, path="bin/x86/raviolios-i386.iso", status=inserted
+boot: cdrom

@@ -5,6 +5,7 @@
 #define _PAGING_HPP_
 
 #include "defs.hpp"
+#include "gc.hpp"
 
 namespace Paging
 {
@@ -25,8 +26,17 @@ namespace Paging
 		template<typename T>
 		void setAddress(T* address)
 		{
-			u32 value = reinterpret_cast<u32>(address);
-			this->address = value >> 12;
+			setAddress(reinterpret_cast<u32>(address));
+		}
+
+		inline void setAddress(u32 address)
+		{
+			this->address = address >> 12;
+		}
+
+		inline u32 getAddress()
+		{
+			return this->address << 12;
 		}
 
 		template<typename T>
@@ -51,6 +61,24 @@ namespace Paging
 			return entries[1023 - n];
 		}
 	} __attribute__ ((aligned(4096)));
+
+	/**
+	 * Gets the page table which corresponds to a given 4 megabyte page.
+	 *
+	 * @param address The virtual address.
+	 *
+	 * @return The page table for the address.
+	 */
+	PageTable& getPageTableForAddress(GC::Context& gc, u32 address);
+
+	/**
+	 * Gets the page entry which corresponds to a given 4 kilobyte page.
+	 *
+	 * @param address The virtual address.
+	 *
+	 * @return The page entry for the address.
+	 */
+	PageEntry& getPageEntryForAddress(GC::Context& gc, u32 address);
 }
 
 extern Paging::PageTable g_page_directory;

@@ -47,7 +47,12 @@ static size_t totalMemoryAvailable()
 	size_t bytes = 0;
 	while (iterator.nextAvailable())
 	{
-		bytes += iterator.entry->len;
+		u32 start = Math::ceilg(iterator.entry->addr, KB(4));
+		u32 end = Math::floorg(start + iterator.entry->len, KB(4));
+		u32 useable = end - start;
+		iterator.entry->addr = start;
+		iterator.entry->len = useable;
+		bytes += useable;
 	}
 	return bytes;
 }
@@ -65,17 +70,42 @@ static void* allocateMemory(size_t amount)
 			return ptr;
 		}
 	}
+	Log::criticalf("Out of memory when allocating %d bytes", amount);
+	Arch::panic();
 	return nullptr;
 }
 
-//static void reloadPageDirectory()
-//{
-//	asm(
-//			"mov $g_page_directory, %eax\n"
-//			"sub $0xFFC00000, %eax\n"
-//			"mov %eax, %cr3"
-//	);
-//}
+Paging::PageTable& Paging::getPageTableForAddress(GC::Context& gc, u32 address)
+{
+	Paging::PageEntry& metaEntry = s_metaTable.first(address / MB(4));
+	if (!metaEntry.present)
+	{
+		void* newTable = gc.permAlloc(sizeof(Paging::PageTable));
+		Paging::PageEntry& originalEntry = getPageEntryForAddress(gc, reinterpret_cast<u32>(newTable));
+		u32 tableAddress = originalEntry.getAddress();
+
+		// Configure the page directory to use the table.
+		Paging::PageEntry& entry = g_page_directory.first(address / MB(4));
+		entry.setAddress(tableAddress);
+		entry.rw = 1;
+		entry.present = 1;
+
+		// Map it in the meta table.
+		metaEntry.setAddress(tableAddress);
+		metaEntry.rw = 1;
+		metaEntry.present = 1;
+
+		// Clear the table.
+		Paging::PageTable* asPageTable = static_cast<Paging::PageTable*>(newTable);
+		*asPageTable = {};
+	}
+	return s_tables.tables[address / MB(4)];
+}
+
+Paging::PageEntry& Paging::getPageEntryForAddress(GC::Context& gc, u32 address)
+{
+	return getPageTableForAddress(gc, address).entries[(address % MB(4)) / KB(4)];
+}
 
 void Memory::init()
 {

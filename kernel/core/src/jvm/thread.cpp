@@ -154,10 +154,13 @@ ThreadState VM::step(GC::Root<Thread>& thread)
 	case Instruction::bipush:
 		pushByte(frame.get());
 		goto valid_opcode;
-	case Instruction::sipush:
+	case Instruction::sipush: // 0x11
 		pushShort(frame.get());
 		goto valid_opcode;
-	case Instruction::iload_0:
+	case Instruction::ldc: // 0x12
+		pushConstant(frame.get());
+		goto valid_opcode;
+	case Instruction::iload_0: // 0x1A
 		pushIntegerFromVariable(frame.get(), 0);
 		goto valid_opcode;
 	case Instruction::iload_1:
@@ -169,10 +172,31 @@ ThreadState VM::step(GC::Root<Thread>& thread)
 	case Instruction::iload_3:
 		pushIntegerFromVariable(frame.get(), 3);
 		goto valid_opcode;
-	case Instruction::if_icmpne:
+	case Instruction::istore_0: // 0x3B
+		storeIntegerToVariable(frame.get(), 0);
+		goto valid_opcode;
+	case Instruction::istore_1: // 0x3C
+		storeIntegerToVariable(frame.get(), 1);
+		goto valid_opcode;
+	case Instruction::istore_2: // 0x3D
+		storeIntegerToVariable(frame.get(), 2);
+		goto valid_opcode;
+	case Instruction::istore_3: // 0x3E
+		storeIntegerToVariable(frame.get(), 3);
+		goto valid_opcode;
+	case Instruction::swap: // 0x5F
+		swap(frame.get());
+		goto valid_opcode;
+	case Instruction::iadd: // 0x60
+		addIntegers(frame.get());
+		goto valid_opcode;
+	case Instruction::iinc: // 0x84
+		increment(frame.get());
+		goto valid_opcode;
+	case Instruction::if_icmpne: // 0xA0
 		jumpIfIntegerNotEqual(frame.get());
 		goto valid_opcode;
-	case Instruction::if_icmplt:
+	case Instruction::if_icmplt: // 0xA1
 		jumpIfIntegerLessThan(frame.get());
 		goto valid_opcode;
 	case Instruction::goto_:
@@ -196,7 +220,7 @@ ThreadState VM::step(GC::Root<Thread>& thread)
 	}
 
 //invalid_opcode:
-	Log::critical("Invalid opcode");
+	Log::criticalf("Invalid opcode: %x", opcode);
 	Arch::panic();
 valid_opcode:
 	dumpStack(frame.get());
@@ -216,6 +240,12 @@ void VM::pushIntegerFromVariable(Frame& frame, i32 number)
 	frame.push(operand);
 }
 
+void VM::storeIntegerToVariable(Frame& frame, i32 number)
+{
+	Operand operand = frame.pop();
+	frame.locals->get(number) = operand;
+}
+
 void VM::pushShort(Frame& frame)
 {
 	i16 value = frame.getU16FromCode(frame.pc);
@@ -232,6 +262,46 @@ void VM::pushByte(Frame& frame)
 	Operand operand;
 	operand.integer = value;
 	frame.push(operand);
+}
+
+void VM::pushConstant(Frame& frame)
+{
+	u16 index = frame.getU8FromCode(frame.pc) - 1;
+	frame.pc++;
+	ConstantPoolInfo& info = frame.getClassFile()->object.constantPool->get(index);
+	switch (info.tag)
+	{
+	case CONSTANT_integer:
+		pushInteger(frame, info.c_integer.integer);
+		break;
+	default:
+		Log::criticalf("Unknown constant pool tag: %d", info.tag);
+		break;
+	}
+}
+
+void VM::swap(Frame& frame)
+{
+	Operand a = frame.pop();
+	Operand b = frame.pop();
+	frame.push(a);
+	frame.push(b);
+}
+
+void VM::addIntegers(Frame& frame)
+{
+	Operand a = frame.pop();
+	Operand b = frame.pop();
+	Operand result;
+	result.integer = a.integer + b.integer;
+	frame.push(result);
+}
+
+void VM::increment(Frame& frame)
+{
+	u8 index = frame.getU8FromCode(frame.pc++);
+	u8 amount = frame.getU8FromCode(frame.pc++);
+	frame.locals->get(index).integer += amount;
 }
 
 void VM::jumpIfIntegerNotEqual(Frame& frame)

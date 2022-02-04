@@ -95,3 +95,7 @@ JAVA_TEST("tests/Assertions", "equalsSucceedsWhenSame");
 JAVA_FAIL("tests/Assertions", "equalsFailsWhenDifferent");
 JAVA_TEST("tests/StaticProperty", "propertyStartsAsZero");
 JAVA_TEST("tests/StaticProperty", "propertyCanBeChanged");
+JAVA_TEST("tests/Constants", "canUseLargeIntegers");
+JAVA_TEST("tests/Variables", "canSaveVariables");
+JAVA_TEST("tests/Arithmetic", "canAddNumbers");
+JAVA_TEST("tests/Arithmetic", "canIncrementNumbers");
