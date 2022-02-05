@@ -10,7 +10,7 @@ void CachingClassLoader::parent(const NativeClassLoader& parentVtable, void* par
 	m_parent = parent;
 }
 
-static ClassError loadClass(void* arg, VM& vm, GC::Root<ClassFile>& root, const GC::Root<char>& name)
+static ClassError loadClass(void* arg, VM& vm, GC::Root<Java::Thread>& thread, GC::Root<ClassFile>& root, const GC::Root<char>& name)
 {
 	CachingClassLoader& classLoader = *static_cast<CachingClassLoader*>(arg);
 	ClassList& list = classLoader.classList(vm);
@@ -24,7 +24,7 @@ static ClassError loadClass(void* arg, VM& vm, GC::Root<ClassFile>& root, const 
 			return ClassError::GOOD;
 		}
 	}
-	ClassError error = classLoader.m_parentVtable->loadClass(classLoader.m_parent, vm, root, name);
+	ClassError error = classLoader.m_parentVtable->loadClass(classLoader.m_parent, vm, thread, root, name);
 	if (error != ClassError::GOOD)
 		return error;
 

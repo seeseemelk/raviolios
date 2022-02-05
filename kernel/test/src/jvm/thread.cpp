@@ -12,7 +12,8 @@ TEST("Can create a thread")
 
 	GC::Root<Thread> thread;
 	GC::Root<ClassFile> classfile;
-	cut.loadClass(classfile, "Test1");
+	cut.createThread(thread);
+	cut.loadClass(classfile, thread, "Test1");
 	ThreadCreateResult result = cut.vm.createThread(thread, classfile, "<init>");
 	assertEquals(ThreadCreateResult::CREATED, result, "Thread was created");
 }
@@ -23,7 +24,8 @@ TEST("Can run a thread")
 
 	GC::Root<Thread> thread;
 	GC::Root<ClassFile> classfile;
-	cut.loadClass(classfile, "StaticReturnsInt");
+	cut.createThread(thread);
+	cut.loadClass(classfile, thread, "StaticReturnsInt");
 	ThreadCreateResult result = cut.vm.createThread(thread, classfile, "returns1");
 	assertEquals(ThreadCreateResult::CREATED, result, "Thread was created");
 
@@ -59,7 +61,8 @@ TEST("Can call a native method")
 
 	GC::Root<Thread> thread;
 	GC::Root<ClassFile> classfile;
-	assertEquals(ClassError::GOOD, cut.loadClass(classfile, "Tests"), "Class file was loaded successfully");
+	cut.createThread(thread);
+	assertEquals(ClassError::GOOD, cut.loadClass(classfile, thread, "Tests"), "Class file was loaded successfully");
 	ThreadCreateResult result = cut.vm.createThread(thread, classfile, "callNative");
 	assertEquals(ThreadCreateResult::CREATED, result, "Thread was created");
 

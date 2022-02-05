@@ -41,12 +41,12 @@ void VM::allocateString(GC::Root<char>& root, const char* str)
 		root[i] = str[i];
 }
 
-ClassError VM::getClass(GC::Root<ClassFile>& classfile, const GC::Root<char>& name)
+ClassError VM::getClass(GC::Root<ClassFile>& classfile, GC::Root<Thread>& thread, const GC::Root<char>& name)
 {
-	return m_classLoaderVtable->loadClass(m_classLoader, *this, classfile, name);
+	return m_classLoaderVtable->loadClass(m_classLoader, *this, thread, classfile, name);
 }
 
-ClassError VM::defineClass(GC::Root<ClassFile>& classfile, const u8* data, size_t length)
+ClassError VM::defineClass(GC::Root<ClassFile>& classfile, GC::Root<Thread>& thread, const u8* data, size_t length)
 {
 	Loader loader(data, length);
 
@@ -180,6 +180,13 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, const u8* data, size_
 	loadAttributes(classfile, attributeRoot, loader, attributeCount);
 	attributeRoot.store(&classfile.get().attributes);
 
+	// Queue clinit method for execution, if there is one.
+	u16 clinitMethod = classfile.get().findMethodByName("<clinit>");
+	if (clinitMethod != U16_MAX)
+	{
+		invokeMethod(thread, classfile, clinitMethod, true);
+	}
+
 	// Load super class
 	if (superClass != static_cast<u16>(-1))
 	{
@@ -187,7 +194,7 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, const u8* data, size_
 		GC::Root<char> superClassName;
 		u16 superClassNameIndex = classfile.get().constantPool->get(superClass).c_class.nameIndex;
 		m_gc.makeRoot(classfile.get().constantPool->get(superClassNameIndex).c_utf8.bytes, superClassName);
-		ClassError error = getClass(superClassObj, superClassName);
+		ClassError error = getClass(superClassObj, thread, superClassName);
 		if (error != ClassError::GOOD)
 			return error;
 		superClassObj.store(&classfile.get().superClassObj);

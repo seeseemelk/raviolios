@@ -53,7 +53,8 @@ static void runJavaTest(const char* className, const char* methodName)
 	GC::Root<ClassFile> classfile;
 
 	s_failed = false;
-	ClassError error = cut.loadClass(classfile, className);
+	cut.createThread(thread);
+	ClassError error = cut.loadClass(classfile, thread, className);
 	assertEquals(ClassError::GOOD, error, "Classes loaded correctly");
 
 	ThreadCreateResult result = cut.vm.createThread(thread, classfile, methodName);
@@ -95,6 +96,7 @@ JAVA_TEST("tests/Assertions", "equalsSucceedsWhenSame");
 JAVA_FAIL("tests/Assertions", "equalsFailsWhenDifferent");
 JAVA_TEST("tests/StaticProperty", "propertyStartsAsZero");
 JAVA_TEST("tests/StaticProperty", "propertyCanBeChanged");
+JAVA_TEST("tests/StaticProperty", "propertiesHaveDefaultValues");
 JAVA_TEST("tests/Constants", "canUseLargeIntegers");
 JAVA_TEST("tests/Variables", "canSaveVariables");
 JAVA_TEST("tests/Arithmetic", "canAddNumbers");

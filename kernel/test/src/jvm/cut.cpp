@@ -37,16 +37,21 @@ CUT::~CUT()
 	free(memory);
 }
 
-ClassError CUT::loadClass(GC::Root<Java::ClassFile>& classfile, std::string className)
+void CUT::createThread(GC::Root<Java::Thread>& thread)
+{
+	vm.createThread(thread);
+}
+
+ClassError CUT::loadClass(GC::Root<Java::ClassFile>& classfile, GC::Root<Java::Thread>& thread, std::string className)
 {
 	GC::Root<char> classNameRoot;
 	vm.allocateString(classNameRoot, className.c_str());
 	(void) classfile;
 	//return ClassError::GOOD;
-	return vm.getClass(classfile, classNameRoot);
+	return vm.getClass(classfile, thread, classNameRoot);
 }
 
-static ClassError loadClass(void* arg, VM& /*vm*/, GC::Root<ClassFile>& classfile, const GC::Root<char>& name)
+static ClassError loadClass(void* arg, VM& /*vm*/, GC::Root<Thread>& thread, GC::Root<ClassFile>& classfile, const GC::Root<char>& name)
 {
 	CUT& cut = *static_cast<CUT*>(arg);
 	for (size_t i = 0; i < s_validClassesCount; i++)
@@ -57,7 +62,7 @@ static ClassError loadClass(void* arg, VM& /*vm*/, GC::Root<ClassFile>& classfil
 			std::string nameStr(name.asPtr(), name.object->size);
 			if (!loadTestClass(buffer, nameStr))
 				return ClassError::NOT_FOUND;
-			Java::ClassError error = cut.vm.defineClass(classfile, buffer.data, buffer.length);
+			Java::ClassError error = cut.vm.defineClass(classfile, thread, buffer.data, buffer.length);
 			assertEquals(Java::ClassError::GOOD, error, "Class loaded without errors");
 			return error;
 		}

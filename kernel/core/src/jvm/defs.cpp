@@ -42,7 +42,7 @@ u16 ClassFile::findMethodByName(const char* name) const
 		if (length == methodName.length && equals(methodName.bytes, name))
 			return i;
 	}
-	return -1;
+	return U16_MAX;
 }
 
 u16 ClassFile::findFieldByName(GC::Root<char>& name) const

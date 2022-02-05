@@ -49,28 +49,8 @@ namespace Java
 	 */
 	struct NativeClassLoader
 	{
-		ClassError (*loadClass)(void*, VM& vm, GC::Root<ClassFile>& root, const GC::Root<char>& name);
+		ClassError (*loadClass)(void*, VM& vm, GC::Root<Java::Thread>& thread, GC::Root<ClassFile>& root, const GC::Root<char>& name);
 	};
-//	class NativeClassLoader
-//	{
-//	public:
-//		/**
-//		 * Loads a class.
-//		 *
-//		 * The loader should call @ref VM::defineClass with the contents of the
-//		 * class file.
-//		 * If the class could not be found, the root should not be set.
-//		 *
-//		 * @param vm The VM to load the class into.
-//		 * @param root The GC root the class file should be loaded into.
-//		 * @param name The name of the class to load.
-//		 *
-//		 * @return The return value of @ref VM::defineClass, or @ref ClassError::NOT_FOUND
-//		 * if the class could not be found.
-//		 */
-//		[[nodiscard]]
-//		virtual ClassError loadClass(VM& vm, GC::Root<ClassFile>& root, const GC::Root<char>& name) = 0;
-//	};
 
 	/**
 	 * A thing that can load and run Java code.
@@ -99,6 +79,13 @@ namespace Java
 		 * Creates a thread.
 		 *
 		 * @param thread The thread to create.
+		 */
+		void createThread(GC::Root<Thread>& thread);
+
+		/**
+		 * Creates a thread.
+		 *
+		 * @param thread The thread to create.
 		 * @param classfile The classfile containing the method to start executing.
 		 * @param method The index into the classfile where the method can be found.
 		 */
@@ -114,6 +101,15 @@ namespace Java
 		ThreadCreateResult createThread(GC::Root<Thread>& thread, const GC::Root<ClassFile>& classfile, const char* method);
 
 		/**
+		 * Adds a frame to a thread.
+		 *
+		 * @param thread The thread to add a frame on.
+		 * @param classfile The classfile containing the method.
+		 * @param method The method for whom to add the frame for.
+		 */
+		void invokeMethod(GC::Root<Thread>& thread, const GC::Root<ClassFile>& classfile, u16 method, bool isInterrupt = false);
+
+		/**
 		 * Performs a single step in a thread.
 		 *
 		 * @param thread The thread to step through.
@@ -126,12 +122,13 @@ namespace Java
 		 * If needed, the class will be loaded into the VM.
 		 *
 		 * @param classfile The loaded class file.
+		 * @param thread The thread that is loading the class.
 		 * @param name The name of the class.
 		 *
 		 * @return An error code if the class could not be loaded.
 		 */
 		[[nodiscard]]
-		ClassError getClass(GC::Root<ClassFile>& classfile, const GC::Root<char>& name);
+		ClassError getClass(GC::Root<ClassFile>& classfile, GC::Root<Thread>& thread, const GC::Root<char>& name);
 
 		/**
 		 * Loads a class into the VM.
@@ -141,13 +138,14 @@ namespace Java
 		 * do something with its root.
 		 *
 		 * @param classfile A root to the loaded class file.
+		 * @param thread The thread that is creating the class file.
 		 * @param data The class file.
 		 * @param length The number of bytes in the file.
 		 *
 		 * @return An error code if the class could not be loaded.
 		 */
 		[[nodiscard]]
-		ClassError defineClass(GC::Root<ClassFile>& classfile, const u8* data, size_t length);
+		ClassError defineClass(GC::Root<ClassFile>& classfile, GC::Root<Thread>& thread, const u8* data, size_t length);
 
 	private:
 		/// The native class loader.
@@ -213,8 +211,8 @@ namespace Java
 		void jumpIfIntegerNotEqual(Frame& frame);
 		void jumpIfIntegerLessThan(Frame& frame);
 		void jumpUnconditionally(Frame& frame);
-		void getStatic(GC::Root<Frame>& frame);
-		void putStatic(GC::Root<Frame>& frame);
+		void getStatic(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
+		void putStatic(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
 	};
 }
 

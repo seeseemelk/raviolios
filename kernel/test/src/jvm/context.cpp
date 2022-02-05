@@ -17,7 +17,9 @@ TEST("Can load class file")
 	CUT cut;
 
 	GC::Root<ClassFile> root;
-	cut.loadClass(root, "Test1");
+	GC::Root<Thread> thread;
+	cut.createThread(thread);
+	cut.loadClass(root, thread, "Test1");
 
 	ClassFile& classfile = root.get();
 	assertEquals(55U, classfile.majorVersion, "Correct major version");
@@ -45,9 +47,11 @@ TEST("Can load super classes automatically")
 
 	GC::Root<ClassFile> child;
 	GC::Root<ClassFile> parent;
+	GC::Root<Thread> thread;
+	cut.createThread(thread);
 
-	cut.loadClass(child, "Test1");
-	cut.loadClass(parent, "java/lang/Object");
+	cut.loadClass(child, thread, "Test1");
+	cut.loadClass(parent, thread, "java/lang/Object");
 
 	assertNotNull(child.object, "Loaded child class");
 	assertNotNull(parent.object, "Loaded parent class");

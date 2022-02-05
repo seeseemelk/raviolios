@@ -68,19 +68,25 @@ void Thread::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 	visitor.visit(&thread->top);
 }
 
+void VM::createThread(GC::Root<Thread>& thread)
+{
+	GC::Allocator<Thread> allocator(Thread::describer);
+	m_gc.allocate(allocator, thread);
+}
+
 ThreadCreateResult VM::createThread(GC::Root<Thread>& thread, const GC::Root<ClassFile>& classfile, u16 methodIndex)
 {
 	if (methodIndex > classfile.get().methodCount)
 		return ThreadCreateResult::NO_METHOD;
 
-	GC::Allocator<Thread> allocator(Thread::describer);
-	m_gc.allocate(allocator, thread);
+	createThread(thread);
+	invokeMethod(thread, classfile, methodIndex);
 
-	GC::Root<MethodInfo> method;
+	/*GC::Root<MethodInfo> method;
 	m_gc.makeRoot(classfile.get().methods->get(methodIndex).method, method);
 	GC::Root<Frame> frame;
 	createFrame(frame, method);
-	frame.store(&thread.get().top);
+	frame.store(&thread.get().top);*/
 	return ThreadCreateResult::CREATED;
 }
 
@@ -203,10 +209,10 @@ ThreadState VM::step(GC::Root<Thread>& thread)
 		jumpUnconditionally(frame.get());
 		goto valid_opcode;
 	case Instruction::getstatic:
-		getStatic(frame);
+		getStatic(thread, frame);
 		goto valid_opcode;
 	case Instruction::putstatic:
-		putStatic(frame);
+		putStatic(thread, frame);
 		goto valid_opcode;
 	case Instruction::return_:
 		returnFromMethod(thread);
@@ -334,7 +340,7 @@ void VM::jumpUnconditionally(Frame& frame)
 	frame.pc += target;
 }
 
-void VM::getStatic(GC::Root<Frame>& frame)
+void VM::getStatic(GC::Root<Thread>& thread, GC::Root<Frame>& frame)
 {
 	u16 index = frame.get().getU16FromCode(frame.get().pc) - 1;
 	frame.get().pc += 2;
@@ -354,7 +360,7 @@ void VM::getStatic(GC::Root<Frame>& frame)
 	m_gc.makeRoot(classFile.get().constantPool->get(fieldNameIndex).c_utf8.bytes, fieldName);
 
 	GC::Root<ClassFile> targetClass;
-	if (getClass(targetClass, targetClassName) != ClassError::GOOD)
+	if (getClass(targetClass, thread, targetClassName) != ClassError::GOOD)
 	{
 		Log::critical("Could not find class");
 		Arch::panic();
@@ -365,7 +371,7 @@ void VM::getStatic(GC::Root<Frame>& frame)
 	frame.get().push(targetClass.get().fields->get(fieldIndex).value);
 }
 
-void VM::putStatic(GC::Root<Frame>& frame)
+void VM::putStatic(GC::Root<Thread>& thread, GC::Root<Frame>& frame)
 {
 	u16 index = frame.get().getU16FromCode(frame.get().pc) - 1;
 	frame.get().pc += 2;
@@ -385,7 +391,7 @@ void VM::putStatic(GC::Root<Frame>& frame)
 	m_gc.makeRoot(classFile.get().constantPool->get(fieldNameIndex).c_utf8.bytes, fieldName);
 
 	GC::Root<ClassFile> targetClass;
-	if (getClass(targetClass, targetClassName) != ClassError::GOOD)
+	if (getClass(targetClass, thread, targetClassName) != ClassError::GOOD)
 	{
 		Log::critical("Could not find class");
 		Arch::panic();
@@ -440,7 +446,7 @@ void VM::invokeStatic(GC::Root<Thread>& thread)
 	m_gc.makeRoot(classFile.constantPool->get(methodTypeIndex).c_utf8.bytes, methodType);
 
 	GC::Root<ClassFile> targetClass;
-	ClassError error = getClass(targetClass, className);
+	ClassError error = getClass(targetClass, thread, className);
 	if (error != ClassError::GOOD)
 	{
 		Log::error("Error while loading class");
@@ -448,7 +454,8 @@ void VM::invokeStatic(GC::Root<Thread>& thread)
 	}
 
 	u16 methodIndexInTargetClass = targetClass.get().findMethodByNameAndType(methodName, methodType);
-	GC::Root<MethodInfo> targetMethod;
+	invokeMethod(thread, targetClass, methodIndexInTargetClass);
+	/*GC::Root<MethodInfo> targetMethod;
 	m_gc.makeRoot(targetClass.get().methods->get(methodIndexInTargetClass).method, targetMethod);
 
 	if (targetMethod.get().isNative())
@@ -467,7 +474,7 @@ void VM::invokeStatic(GC::Root<Thread>& thread)
 		{
 			newFrame.get().locals->get(i) = frame.get().pop();
 		}
-	}
+	}*/
 }
 
 void VM::invokeNativeMethod(GC::Root<Thread>& thread, const GC::Root<char>& className, const GC::Root<char>& methodName, const GC::Root<char>& methodType)
@@ -487,6 +494,126 @@ void VM::invokeNativeMethod(GC::Root<Thread>& thread, const GC::Root<char>& clas
 	Log::critical("No native method handler found");
 	Arch::panic();
 }
+
+void VM::invokeMethod(GC::Root<Thread>& thread, const GC::Root<ClassFile>& targetClass, u16 method, bool isInterrupt)
+{
+	GC::Root<MethodInfo> targetMethod;
+	m_gc.makeRoot(targetClass.get().methods->get(method).method, targetMethod);
+
+	u16 classNameIndex = targetClass.get().constantPool->get(targetClass.get().thisClass).c_class.nameIndex;
+	u16 methodNameIndex = targetMethod.get().nameIndex;
+	u16 typeIndex = targetMethod.get().descriptorIndex;
+
+	GC::Root<char> methodName;
+	GC::Root<char> className;
+	GC::Root<char> type;
+	m_gc.makeRoot(targetClass.get().constantPool->get(methodNameIndex).c_utf8.bytes, methodName);
+	m_gc.makeRoot(targetClass.get().constantPool->get(classNameIndex).c_utf8.bytes, className);
+	m_gc.makeRoot(targetClass.get().constantPool->get(typeIndex).c_utf8.bytes, type);
+
+
+	if (targetMethod.get().isNative())
+	{
+		invokeNativeMethod(thread, className, methodName, type);
+	}
+	else
+	{
+		GC::Root<Frame> frame;
+		m_gc.makeRoot(thread.get().top, frame);
+
+		GC::Root<Frame> newFrame;
+		createFrame(newFrame, targetMethod);
+
+		if (isInterrupt)
+		{
+			frame.store(&newFrame.get().previous);
+			newFrame.store(&thread.get().top);
+		}
+		else
+		{
+			if (thread.get().top != nullptr && thread.get().top->object.inInterrupt)
+			{
+				GC::Object<Frame>* lastInt = thread.get().top;
+				GC::Object<Frame>* firstNormal = lastInt->object.previous;
+				while (firstNormal != nullptr && firstNormal->object.inInterrupt)
+				{
+					lastInt = firstNormal;
+					firstNormal = firstNormal->object.previous;
+				}
+				frame.get().previous = firstNormal;
+				newFrame.store(&lastInt->object.previous);
+			}
+			else
+			{
+				frame.store(&newFrame.get().previous);
+				newFrame.store(&thread.get().top);
+			}
+
+			TypeDescriptor methodTypeDescriptor = TypeDescriptor::parse(type);
+			for (size_t i = 0; i < methodTypeDescriptor.arguments; i++)
+			{
+				newFrame.get().locals->get(i) = frame.get().pop();
+			}
+		}
+
+
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

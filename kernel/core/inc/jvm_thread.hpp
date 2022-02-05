@@ -19,6 +19,7 @@ namespace Java
 		GC::Object<CodeAttribute>* code;
 		u16 pc;
 		u16 stackIndex;
+		bool inInterrupt;
 
 		Opcode getOpcode(size_t index);
 

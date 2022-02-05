@@ -23,4 +23,6 @@ typedef int64_t i64;
 #define MB(x) (KB(x) * 1024UL)
 #define GB(x) (MB(x) * 1024UL)
 
+#define U16_MAX UINT16_MAX
+
 #endif /* _DEFS_HPP_ */

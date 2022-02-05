@@ -22,7 +22,8 @@ public:
 	CUT(size_t memorySize = MB(1));
 	CUT(Java::NativeMethod* nativeMethods, size_t nativeMethodCount, size_t memorySize = MB(1));
 	~CUT();
-	Java::ClassError loadClass(GC::Root<Java::ClassFile>& classfile, std::string classname);
+	Java::ClassError loadClass(GC::Root<Java::ClassFile>& classfile, GC::Root<Java::Thread>& thread, std::string className);
+	void createThread(GC::Root<Java::Thread>& thread);
 
 	template<typename T>
 	void makeRoot(GC::Array<T>* ref, GC::Root<T>& root)
