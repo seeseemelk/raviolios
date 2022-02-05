@@ -137,10 +137,15 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, GC::Root<Thread>& thr
 		fieldInfoRoot[i].accessFlags = loader.readU16();
 		u16 nameIndex = loader.readU16() - 1;
 		fieldInfoRoot[i].nameIndex = nameIndex;
-		fieldInfoRoot[i].descriptorIndex = loader.readU16();
+		u16 descriptorIndex = loader.readU16() - 1;
+		fieldInfoRoot[i].descriptorIndex = descriptorIndex;
 		fieldInfoRoot[i].attributesCount = loader.readU16();
 
 		fieldInfoRoot[i].name = classfile.get().constantPool->get(nameIndex).c_utf8.bytes;
+
+		GC::Root<char> descriptor;
+		m_gc.makeRoot(constantPoolRoot[descriptorIndex].c_utf8.bytes, descriptor);
+		fieldInfoRoot[i].type = TypeDescriptor::parse(descriptor);
 
 		GC::Root<AttributeInfo> attributeInfo;
 		loadAttributes(classfile, attributeInfo, loader, fieldInfoRoot[i].attributesCount);
@@ -198,6 +203,22 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, GC::Root<Thread>& thr
 		if (error != ClassError::GOOD)
 			return error;
 		superClassObj.store(&classfile.get().superClassObj);
+		classfile.get().objectSize = superClassObj.get().objectSize;
+	}
+	else
+	{
+		classfile.get().objectSize = sizeof(void*);
+	}
+
+	// Calculate size of object and alignment of fields.
+	for (size_t i = 0; i < classfile.get().fieldsCount; i++)
+	{
+		FieldInfo& field = fieldInfoRoot[i];
+		if (!field.isStatic())
+		{
+			field.offset = classfile.get().objectSize;
+			classfile.get().objectSize += field.type.size();
+		}
 	}
 
 	return ClassError::GOOD;

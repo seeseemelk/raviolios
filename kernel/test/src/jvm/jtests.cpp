@@ -100,3 +100,4 @@ JAVA_TEST("tests/Constants", "canUseLargeIntegers");
 JAVA_TEST("tests/Variables", "canSaveVariables");
 JAVA_TEST("tests/Arithmetic", "canAddNumbers");
 JAVA_TEST("tests/Arithmetic", "canIncrementNumbers");
+JAVA_TEST("tests/Objects", "canReadObjectProperty");

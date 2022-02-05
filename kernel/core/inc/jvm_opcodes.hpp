@@ -29,6 +29,7 @@ namespace Java
 		istore_1 = 0x3C,
 		istore_2 = 0x3D,
 		istore_3 = 0x3E,
+		dup = 0x59,
 		swap = 0x5F,
 		iadd = 0x60,
 //		ddiv = 0x6F,
@@ -40,11 +41,12 @@ namespace Java
 //		if_icmpgt = 0xA3,
 //		if_icmple = 0xA4,
 		goto_ = 0xA7,
+		ireturn = 0xAC,
 		return_ = 0xB1,
 		getstatic = 0xB2,
 		putstatic = 0xB3,
 		invokestatic = 0xB8,
-		ireturn = 0xAC,
+		new_ = 0xBB,
 	};
 }
 

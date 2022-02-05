@@ -218,6 +218,7 @@ namespace Java
 		void pushShort(Frame& frame);
 		void pushByte(Frame& frame);
 		void pushConstant(Frame& frame);
+		void dup(Frame& frame);
 		void swap(Frame& frame);
 		void addIntegers(Frame& frame);
 		void increment(Frame& frame);
@@ -228,6 +229,7 @@ namespace Java
 		void jumpUnconditionally(Frame& frame);
 		void getStatic(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
 		void putStatic(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
+		void newObject(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
 	};
 }
 

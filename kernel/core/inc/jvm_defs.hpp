@@ -7,6 +7,7 @@
 #include "defs.hpp"
 #include "gc.hpp"
 #include "jvm_opcodes.hpp"
+#include "jvm_type.hpp"
 
 namespace Java
 {
@@ -116,12 +117,22 @@ namespace Java
 		Instruction opcode;
 	};
 
+
+	struct JavaObject
+	{
+		GC::Object<ClassFile>* class_;
+
+		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
+	};
+
 	struct Operand
 	{
 		union
 		{
 			i32 integer;
+			GC::Object<JavaObject>* object;
 		};
+		bool isObject = false;
 
 		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
 	};
@@ -167,9 +178,18 @@ namespace Java
 		u16 attributesCount;
 		GC::Array<AttributeInfo>* attributes;
 		GC::Array<char>* name;
+		TypeDescriptor type;
 
-		/// The value of the field, if it is a static field.
-		Operand value;
+		union
+		{
+			/// The value of the field, if it is a static field.
+			Operand value;
+
+			/// The offset into an object, if it is not a static field.
+			i32 offset;
+		};
+
+		bool isStatic();
 
 		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
 	};
@@ -229,6 +249,9 @@ namespace Java
 		GC::Array<MethodRef>* methods;
 		u16 attributesCount;
 		GC::Array<AttributeInfo>* attributes;
+
+		/// The number of bytes that need to be allocated for an instance of the class.
+		size_t objectSize;
 
 		/**
 		 * Finds a method by its name and type.

@@ -62,6 +62,32 @@ static char* parseDescriptor(char* str, TypeDescriptor* descriptor)
 	}
 }
 
+size_t TypeDescriptor::size()
+{
+	switch (type)
+	{
+	case Type::VOID:
+		return 0;
+	case Type::BOOLEAN:
+	case Type::BYTE:
+	case Type::CHAR:
+		return 1;
+	case Type::SHORT:
+		return 2;
+	case Type::INTEGER:
+	case Type::FLOAT:
+		return 4;
+	case Type::LONG:
+	case Type::DOUBLE:
+		return 8;
+	case Type::REFERENCE:
+		return sizeof(void*);
+	}
+	Log::critical("Attempt to get size of illegal type");
+	Arch::panic();
+	return 0;
+}
+
 TypeDescriptor TypeDescriptor::parse(GC::Root<char>& type)
 {
 	TypeDescriptor result = {};
@@ -85,7 +111,11 @@ TypeDescriptor TypeDescriptor::parse(GC::Root<char>& type)
 		}
 		str++;
 		parseDescriptor(str, &result);
-
+		return result;
+	}
+	else
+	{
+		parseDescriptor(str, &result);
 		return result;
 	}
 

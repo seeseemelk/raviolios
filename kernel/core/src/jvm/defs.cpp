@@ -114,6 +114,11 @@ void AttributeInfo::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 	}
 }
 
+bool FieldInfo::isStatic()
+{
+	return (accessFlags & ACC_STATIC) != 0;
+}
+
 void FieldInfo::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 {
 	FieldInfo* field = static_cast<FieldInfo*>(object->getRaw());

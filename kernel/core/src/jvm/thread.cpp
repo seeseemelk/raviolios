@@ -8,8 +8,15 @@
 
 using namespace Java;
 
-void Operand::describer(GC::Meta* /*object*/, GC::MetaVisitor& /*visitor*/)
+void Operand::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 {
+	Operand* operands = object->as<Operand>();
+	size_t count = object->size / sizeof(Operand);
+	for (size_t i = 0; i < count; i++)
+	{
+		if (operands[i].isObject)
+			visitor.visit(&operands[i].object);
+	}
 }
 
 Opcode Frame::getOpcode(size_t index)
@@ -190,6 +197,9 @@ ThreadState VM::step(GC::Root<Thread>& thread)
 	case Instruction::istore_3: // 0x3E
 		storeIntegerToVariable(frame.get(), 3);
 		goto valid_opcode;
+	case Instruction::dup: // 0x59
+		dup(frame.get());
+		goto valid_opcode;
 	case Instruction::swap: // 0x5F
 		swap(frame.get());
 		goto valid_opcode;
@@ -205,23 +215,26 @@ ThreadState VM::step(GC::Root<Thread>& thread)
 	case Instruction::if_icmplt: // 0xA1
 		jumpIfIntegerLessThan(frame.get());
 		goto valid_opcode;
-	case Instruction::goto_:
+	case Instruction::goto_: // 0xA7
 		jumpUnconditionally(frame.get());
 		goto valid_opcode;
-	case Instruction::getstatic:
-		getStatic(thread, frame);
-		goto valid_opcode;
-	case Instruction::putstatic:
-		putStatic(thread, frame);
-		goto valid_opcode;
-	case Instruction::return_:
-		returnFromMethod(thread);
-		goto valid_opcode;
-	case Instruction::ireturn:
+	case Instruction::ireturn: // 0xAC
 		returnInteger(thread);
 		goto valid_opcode;
-	case Instruction::invokestatic:
+	case Instruction::return_: // 0xB1
+		returnFromMethod(thread);
+		goto valid_opcode;
+	case Instruction::getstatic: // 0xB2
+		getStatic(thread, frame);
+		goto valid_opcode;
+	case Instruction::putstatic: // 0xB3
+		putStatic(thread, frame);
+		goto valid_opcode;
+	case Instruction::invokestatic: // 0xB8
 		invokeStatic(thread);
+		goto valid_opcode;
+	case Instruction::new_: // 0xBB
+		newObject(thread, frame);
 		goto valid_opcode;
 	}
 
@@ -284,6 +297,13 @@ void VM::pushConstant(Frame& frame)
 		Log::criticalf("Unknown constant pool tag: %d", info.tag);
 		break;
 	}
+}
+
+void VM::dup(Frame& frame)
+{
+	Operand operand = frame.pop();
+	frame.push(operand);
+	frame.push(operand);
 }
 
 void VM::swap(Frame& frame)
@@ -567,6 +587,46 @@ void VM::invokeMethod(GC::Root<Thread>& thread, const GC::Root<ClassFile>& class
 	invokeMethod(thread, classfile, methodIndexInTargetClass, false);
 }
 
+struct JavaObject
+{
+	GC::Object<ClassFile>* class_;
+
+	static void describer(GC::Meta* object, GC::MetaVisitor& visitor)
+	{
+		JavaObject* obj = object->as<JavaObject>();
+		visitor.visit(&obj->class_);
+	}
+};
+
+void VM::newObject(GC::Root<Thread>& thread, GC::Root<Frame>& frame)
+{
+	u16 classIndex = frame.get().getU16FromCode(frame.get().pc) - 1;
+	frame.get().pc += 2;
+
+	u16 classNameIndex = frame.get().getClassFile()->object.constantPool->get(classIndex).c_class.nameIndex;
+
+	GC::Root<char> className;
+	m_gc.makeRoot(frame.get().getClassFile()->object.constantPool->get(classNameIndex).c_utf8.bytes, className);
+
+	GC::Root<ClassFile> targetClass;
+	ClassError error = getClass(targetClass, thread, className);
+	if (error != ClassError::GOOD)
+	{
+		Log::criticalf("Failed to instantiate object: %s", toString(error));
+		Arch::panic();
+	}
+
+	GC::Allocator<JavaObject> objectAllocator(targetClass.get().objectSize, &JavaObject::describer);
+	GC::Root<JavaObject> object;
+
+	m_gc.allocate(objectAllocator, object);
+	targetClass.store(&object.get().class_);
+
+	Operand operand;
+	object.store(&operand.object);
+	operand.isObject = true;
+	frame.get().push(operand);
+}
 
 
 

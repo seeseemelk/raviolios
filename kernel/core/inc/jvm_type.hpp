@@ -41,10 +41,18 @@ namespace Java
 		/// Set if the type describes an array.
 		bool array = false;
 
+		/// Set if the type describes a method.
 		bool method = false;
 
+		/**
+		 * Gets the size of a type.
+		 * Not defined for methods.
+		 *
+		 * @return The size of a type, in bytes.
+		 */
+		size_t size();
+
 		static TypeDescriptor parse(GC::Root<char>& type);
-//		static TypeDescriptor parseReturnType(GC::Root<char>& type);
 		static TypeDescriptor parseParameter(GC::Root<char>& type);
 	};
 }
