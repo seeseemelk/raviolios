@@ -57,8 +57,7 @@ static void runJavaTest(const char* className, const char* methodName)
 	ClassError error = cut.loadClass(classfile, thread, className);
 	assertEquals(ClassError::GOOD, error, "Classes loaded correctly");
 
-	ThreadCreateResult result = cut.vm.createThread(thread, classfile, methodName);
-	assertEquals(ThreadCreateResult::CREATED, result, "Thread was created");
+	cut.vm.invokeMethod(thread, classfile, methodName);
 
 	s_assertsCalled = 0;
 	size_t steps = 0;

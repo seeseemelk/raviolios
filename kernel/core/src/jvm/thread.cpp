@@ -526,6 +526,7 @@ void VM::invokeMethod(GC::Root<Thread>& thread, const GC::Root<ClassFile>& targe
 
 		if (isInterrupt)
 		{
+			newFrame.get().inInterrupt = true;
 			frame.store(&newFrame.get().previous);
 			newFrame.store(&thread.get().top);
 		}
@@ -560,6 +561,11 @@ void VM::invokeMethod(GC::Root<Thread>& thread, const GC::Root<ClassFile>& targe
 	}
 }
 
+void VM::invokeMethod(GC::Root<Thread>& thread, const GC::Root<ClassFile>& classfile, const char* name)
+{
+	u16 methodIndexInTargetClass = classfile.get().findMethodByName(name);
+	invokeMethod(thread, classfile, methodIndexInTargetClass, false);
+}
 
 
 

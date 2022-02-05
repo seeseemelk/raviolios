@@ -101,13 +101,28 @@ namespace Java
 		ThreadCreateResult createThread(GC::Root<Thread>& thread, const GC::Root<ClassFile>& classfile, const char* method);
 
 		/**
-		 * Adds a frame to a thread.
+		 * Invokes a method on a thread.
 		 *
 		 * @param thread The thread to add a frame on.
 		 * @param classfile The classfile containing the method.
 		 * @param method The method for whom to add the frame for.
+		 * @param isInterrupt Set to `true` if the method call should be executed
+		 * before any other method calls, even before methods that are invoked
+		 * after this one (unless those too are interrupt calls).
 		 */
-		void invokeMethod(GC::Root<Thread>& thread, const GC::Root<ClassFile>& classfile, u16 method, bool isInterrupt = false);
+		void invokeMethod(GC::Root<Thread>& thread, const GC::Root<ClassFile>& targetClass, u16 method, bool isInterrupt = false);
+
+		/**
+		 * Invokes a method on a thread.
+		 *
+		 * @param thread The thread to add a frame on.
+		 * @param classfile The classfile containing the method.
+		 * @param method The method for whom to add the frame for.
+		 * @param isInterrupt Set to `true` if the method call should be executed
+		 * before any other method calls, even before methods that are invoked
+		 * after this one (unless those too are interrupt calls).
+		 */
+		void invokeMethod(GC::Root<Thread>& thread, const GC::Root<ClassFile>& classfile, const char* method);
 
 		/**
 		 * Performs a single step in a thread.
