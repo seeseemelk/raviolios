@@ -1,14 +1,17 @@
 package tests;
 
+import static raviolios.Asserts.assertEquals;
+
 public class Objects
 {
-	private class Obj
+	private static class Obj
 	{
 		public int value = 5;
 	}
 
-	public void canReadObjectProperty()
+	public static void canReadObjectProperty()
 	{
-		Objects objects = new Objects();
+		Obj object = new Obj();
+		assertEquals(5, object.value);
 	}
 }

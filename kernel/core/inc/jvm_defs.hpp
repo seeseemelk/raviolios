@@ -122,6 +122,14 @@ namespace Java
 	{
 		GC::Object<ClassFile>* class_;
 
+		void* getFieldStart();
+
+		template<typename T>
+		T* getFieldAt(size_t index)
+		{
+			return reinterpret_cast<T*>(static_cast<u8*>(getFieldStart()) + index);
+		}
+
 		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
 	};
 
@@ -212,6 +220,13 @@ namespace Java
 		 * given type.
 		 */
 		AttributeInfo* getAttributeOfType(AttributeType type);
+
+		/**
+		 * Gets whether the method is a static method or not.
+		 *
+		 * @return `true` if the method is static, `false` if it is an instance method.
+		 */
+		bool isStatic();
 
 		/**
 		 * Gets whether the method is a native method or not.

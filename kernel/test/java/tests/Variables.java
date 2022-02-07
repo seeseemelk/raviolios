@@ -4,7 +4,7 @@ import static raviolios.Asserts.assertEquals;
 
 public class Variables
 {
-	public void canSaveVariables()
+	public static void canSaveVariables()
 	{
 		int value = 123;
 		assertEquals(123, value);

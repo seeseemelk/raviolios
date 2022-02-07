@@ -121,7 +121,7 @@ class MarkVisitor : public MetaVisitor
 public:
 	void visit(Meta** object) override
 	{
-		if (*object != nullptr)
+		if (*object != nullptr && !(*object)->reachable)
 		{
 			(*object)->reachable = true;
 			(*object)->describer(*object, *this);
@@ -226,21 +226,32 @@ void Context::sweepMove()
 	size_t offset = 0;
 	while (count > 0)
 	{
+		Meta* next = nextObject(object);
+
 		if (!object->reachable)
 		{
 			offset += sizeof(Meta) + object->size;
-		}
-		else if (offset > 0)
-		{
-			u8* source = reinterpret_cast<u8*>(object);
-			u8* destination = static_cast<u8*>(source) - offset;
-			memoryMove(destination, source, sizeof(Meta) + object->size);
-			object = reinterpret_cast<Meta*>(object);
 			m_objects--;
+		}
+		else
+		{
+			object->reachable = 0;
+			MetaDescriber* describer = object->describer;
+			size_t size = object->size;
+			if (offset > 0)
+			{
+				u8* source = reinterpret_cast<u8*>(object);
+				u8* destination = static_cast<u8*>(source) - offset;
+				memoryMove(destination, source, sizeof(Meta) + object->size);
+				object = reinterpret_cast<Meta*>(destination);
+			}
+			if (describer != object->describer || size != object->size)
+			{
+				Arch::panic();
+			}
 		}
 
 		count--;
-		object->reachable = 0;
-		object = nextObject(object);
+		object = next;
 	}
 }

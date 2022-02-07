@@ -213,7 +213,9 @@ namespace Java
 		void returnInteger(GC::Root<Thread>& thread);
 
 		void pushIntegerFromVariable(Frame& frame, i32 number);
+		void pushReferenceFromVariable(Frame& frame, i32 number);
 		void storeIntegerToVariable(Frame& frame, i32 number);
+		void storeReferenceToVariable(Frame& frame, i32 number);
 		void pushInteger(Frame& frame, i32 number);
 		void pushShort(Frame& frame);
 		void pushByte(Frame& frame);
@@ -223,12 +225,16 @@ namespace Java
 		void addIntegers(Frame& frame);
 		void increment(Frame& frame);
 		void invokeStatic(GC::Root<Thread>& thread);
+		void invokeSpecial(GC::Root<Thread>& thread);
 		void invokeNativeMethod(GC::Root<Thread>& thread, const GC::Root<char>& className, const GC::Root<char>& methodName, const GC::Root<char>& methodType);
 		void jumpIfIntegerNotEqual(Frame& frame);
 		void jumpIfIntegerLessThan(Frame& frame);
 		void jumpUnconditionally(Frame& frame);
 		void getStatic(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
 		void putStatic(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
+		void getField(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
+		void putField(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
+		Operand* findField(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
 		void newObject(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
 	};
 }

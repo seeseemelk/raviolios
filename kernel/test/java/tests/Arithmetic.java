@@ -4,14 +4,14 @@ import static raviolios.Asserts.assertEquals;
 
 public class Arithmetic
 {
-	public void canAddNumbers()
+	public static void canAddNumbers()
 	{
 		int value = 5;
 		assertEquals(5, value);
 		assertEquals(6, value + 1);
 	}
 
-	public void canIncrementNumbers()
+	public static void canIncrementNumbers()
 	{
 		int value = 3;
 		assertEquals(3, value);

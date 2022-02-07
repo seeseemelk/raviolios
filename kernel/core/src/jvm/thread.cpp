@@ -67,6 +67,9 @@ void Frame::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 	Frame* frame = object->as<Frame>();
 	visitor.visit(&frame->methodInfo);
 	visitor.visit(&frame->previous);
+	visitor.visit(&frame->locals);
+	visitor.visit(&frame->stack);
+	visitor.visit(&frame->code);
 }
 
 void Thread::describer(GC::Meta* object, GC::MetaVisitor& visitor)
@@ -140,7 +143,8 @@ ThreadState VM::step(GC::Root<Thread>& thread)
 	u16 pc = frame.get().pc;
 	frame.get().pc = pc + 1;
 
-	CodeAttribute* codeAttribute = &frame.get().code->object;
+	Frame& frameL = frame.get();
+	CodeAttribute* codeAttribute = &frameL.code->object;
 	Instruction opcode = codeAttribute->code->get(pc).opcode;
 	Log::infof("Executing opcode %d (byte index: %d)", opcode, pc);
 	dumpStack(frame.get());
@@ -185,6 +189,18 @@ ThreadState VM::step(GC::Root<Thread>& thread)
 	case Instruction::iload_3:
 		pushIntegerFromVariable(frame.get(), 3);
 		goto valid_opcode;
+	case Instruction::aload_0: // 0x2A
+		pushReferenceFromVariable(frame.get(), 0);
+		goto valid_opcode;
+	case Instruction::aload_1: // 0x2A
+		pushReferenceFromVariable(frame.get(), 0);
+		goto valid_opcode;
+	case Instruction::aload_2: // 0x2A
+		pushReferenceFromVariable(frame.get(), 0);
+		goto valid_opcode;
+	case Instruction::aload_3: // 0x2A
+		pushReferenceFromVariable(frame.get(), 0);
+		goto valid_opcode;
 	case Instruction::istore_0: // 0x3B
 		storeIntegerToVariable(frame.get(), 0);
 		goto valid_opcode;
@@ -196,6 +212,18 @@ ThreadState VM::step(GC::Root<Thread>& thread)
 		goto valid_opcode;
 	case Instruction::istore_3: // 0x3E
 		storeIntegerToVariable(frame.get(), 3);
+		goto valid_opcode;
+	case Instruction::astore_0: // 0x4B
+		storeReferenceToVariable(frame.get(), 0);
+		goto valid_opcode;
+	case Instruction::astore_1: // 0x4C
+		storeReferenceToVariable(frame.get(), 1);
+		goto valid_opcode;
+	case Instruction::astore_2: // 0x4D
+		storeReferenceToVariable(frame.get(), 2);
+		goto valid_opcode;
+	case Instruction::astore_3: // 0x4E
+		storeReferenceToVariable(frame.get(), 3);
 		goto valid_opcode;
 	case Instruction::dup: // 0x59
 		dup(frame.get());
@@ -230,6 +258,15 @@ ThreadState VM::step(GC::Root<Thread>& thread)
 	case Instruction::putstatic: // 0xB3
 		putStatic(thread, frame);
 		goto valid_opcode;
+	case Instruction::getfield: // 0xB4
+		getField(thread, frame);
+		goto valid_opcode;
+	case Instruction::putfield: // 0xB5
+		putField(thread, frame);
+		goto valid_opcode;
+	case Instruction::invokespecial: // 0xB7
+		invokeSpecial(thread);
+		goto valid_opcode;
 	case Instruction::invokestatic: // 0xB8
 		invokeStatic(thread);
 		goto valid_opcode;
@@ -253,6 +290,12 @@ void VM::pushInteger(Frame& frame, i32 number)
 	frame.push(operand);
 }
 
+void VM::pushReferenceFromVariable(Frame& frame, i32 number)
+{
+	Operand operand = frame.locals->get(number);
+	frame.push(operand);
+}
+
 void VM::pushIntegerFromVariable(Frame& frame, i32 number)
 {
 	Operand operand = frame.locals->get(number);
@@ -260,6 +303,12 @@ void VM::pushIntegerFromVariable(Frame& frame, i32 number)
 }
 
 void VM::storeIntegerToVariable(Frame& frame, i32 number)
+{
+	Operand operand = frame.pop();
+	frame.locals->get(number) = operand;
+}
+
+void VM::storeReferenceToVariable(Frame& frame, i32 number)
 {
 	Operand operand = frame.pop();
 	frame.locals->get(number) = operand;
@@ -423,6 +472,50 @@ void VM::putStatic(GC::Root<Thread>& thread, GC::Root<Frame>& frame)
 	targetClass.get().fields->get(fieldIndex).value = operand;
 }
 
+void VM::getField(GC::Root<Thread>& thread, GC::Root<Frame>& frame)
+{
+	frame.get().push(*findField(thread, frame));
+}
+
+void VM::putField(GC::Root<Thread>& thread, GC::Root<Frame>& frame)
+{
+	Operand value = frame.get().pop();
+	*findField(thread, frame) = value;
+}
+
+Operand* VM::findField(GC::Root<Thread>& thread, GC::Root<Frame>& frame)
+{
+	u16 fieldIndex = frame.get().getU16FromCode(frame.get().pc) - 1;
+	frame.get().pc += 2;
+
+	GC::Root<ClassFile> executingClass;
+	m_gc.makeRoot(frame.get().getClassFile(), executingClass);
+
+	ConstantPoolFieldRef fieldRef = executingClass.get().constantPool->get(fieldIndex).c_field;
+	ConstantPoolNameAndType fieldNameAndType = executingClass.get().constantPool->get(fieldRef.nameAndTypeIndex).c_nameAndType;
+
+	u16 targetClassNameIndex = executingClass.get().constantPool->get(fieldRef.classIndex).c_class.nameIndex;
+
+	GC::Root<char> targetClassName;
+	GC::Root<char> targetFieldName;
+
+	m_gc.makeRoot(executingClass.get().constantPool->get(targetClassNameIndex).c_utf8.bytes, targetClassName);
+	m_gc.makeRoot(executingClass.get().constantPool->get(fieldNameAndType.nameIndex).c_utf8.bytes, targetFieldName);
+
+	GC::Root<ClassFile> targetClass;
+	ClassError classError = getClass(targetClass, thread, targetClassName);
+	if (classError != ClassError::GOOD)
+	{
+		Log::criticalf("Failed to get class: %s", toString(classError));
+		Arch::panic();
+	}
+	u16 targetFieldIndex = targetClass.get().findFieldByName(targetFieldName);
+	i32 offset = targetClass.get().fields->get(targetFieldIndex).offset;
+
+	Operand object = frame.get().pop();
+	return object.object->object.getFieldAt<Operand>(offset);
+}
+
 void VM::returnFromMethod(GC::Root<Thread>& thread)
 {
 	Frame& topFrame = thread.get().top->object;
@@ -441,6 +534,40 @@ void VM::returnInteger(GC::Root<Thread>& thread)
 	}
 
 	thread.get().top = topFrame.previous;
+}
+
+void VM::invokeSpecial(GC::Root<Thread>& thread)
+{
+	GC::Root<Frame> frame;
+	m_gc.makeRoot(thread.get().top, frame);
+	u16 methodIndex = frame.get().getU16FromCode(frame.get().pc) - 1;
+	frame.get().pc += 2;
+
+	ClassFile& classFile = frame.get().getClassFile()->object;
+	ConstantPoolMethodRef methodRef = classFile.constantPool->get(methodIndex).c_method;
+
+	GC::Root<char> className;
+	u16 classNameIndex = classFile.constantPool->get(methodRef.classIndex).c_class.nameIndex;
+	m_gc.makeRoot(classFile.constantPool->get(classNameIndex).c_utf8.bytes, className);
+
+	GC::Root<char> methodName;
+	u16 methodNameIndex = classFile.constantPool->get(methodRef.nameAndTypeIndex).c_nameAndType.nameIndex;
+	m_gc.makeRoot(classFile.constantPool->get(methodNameIndex).c_utf8.bytes, methodName);
+
+	GC::Root<char> methodType;
+	u16 methodTypeIndex = classFile.constantPool->get(methodRef.nameAndTypeIndex).c_nameAndType.descriptorIndex;
+	m_gc.makeRoot(classFile.constantPool->get(methodTypeIndex).c_utf8.bytes, methodType);
+
+	GC::Root<ClassFile> targetClass;
+	ClassError error = getClass(targetClass, thread, className);
+	if (error != ClassError::GOOD)
+	{
+		Log::error("Error while loading class");
+		Arch::panic();
+	}
+
+	u16 methodIndexInTargetClass = targetClass.get().findMethodByNameAndType(methodName, methodType);
+	invokeMethod(thread, targetClass, methodIndexInTargetClass);
 }
 
 void VM::invokeStatic(GC::Root<Thread>& thread)
@@ -475,26 +602,6 @@ void VM::invokeStatic(GC::Root<Thread>& thread)
 
 	u16 methodIndexInTargetClass = targetClass.get().findMethodByNameAndType(methodName, methodType);
 	invokeMethod(thread, targetClass, methodIndexInTargetClass);
-	/*GC::Root<MethodInfo> targetMethod;
-	m_gc.makeRoot(targetClass.get().methods->get(methodIndexInTargetClass).method, targetMethod);
-
-	if (targetMethod.get().isNative())
-	{
-		invokeNativeMethod(thread, className, methodName, methodType);
-	}
-	else
-	{
-		GC::Root<Frame> newFrame;
-		createFrame(newFrame, targetMethod);
-		frame.store(&newFrame.get().previous);
-		newFrame.store(&thread.get().top);
-
-		TypeDescriptor methodTypeDescriptor = TypeDescriptor::parse(methodType);
-		for (size_t i = 0; i < methodTypeDescriptor.arguments; i++)
-		{
-			newFrame.get().locals->get(i) = frame.get().pop();
-		}
-	}*/
 }
 
 void VM::invokeNativeMethod(GC::Root<Thread>& thread, const GC::Root<char>& className, const GC::Root<char>& methodName, const GC::Root<char>& methodType)
@@ -571,13 +678,14 @@ void VM::invokeMethod(GC::Root<Thread>& thread, const GC::Root<ClassFile>& targe
 			}
 
 			TypeDescriptor methodTypeDescriptor = TypeDescriptor::parse(type);
-			for (size_t i = 0; i < methodTypeDescriptor.arguments; i++)
+			size_t arguments = methodTypeDescriptor.arguments;
+			if (!targetMethod.get().isStatic())
+				arguments++;
+			for (size_t i = arguments; i > 0; i--)
 			{
-				newFrame.get().locals->get(i) = frame.get().pop();
+				newFrame.get().locals->get(i - 1) = frame.get().pop();
 			}
 		}
-
-
 	}
 }
 

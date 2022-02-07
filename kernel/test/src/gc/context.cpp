@@ -66,6 +66,9 @@ TEST("Can perform collection cycles")
 	Meta* objectA = rootA.object;
 	Meta* objectB = rootB.object;
 
+	size_t sizeA = objectA->size;
+	size_t sizeB = objectB->size;
+
 	// Before any collection
 	assertEquals(objectB, rootB.object, "Object B has not moved");
 
@@ -79,4 +82,10 @@ TEST("Can perform collection cycles")
 	dut.context.collect();
 	assertNotEquals(objectB, rootB.object, "Object B has moved");
 	assertEquals(objectA, rootB.object, "Object B moved over object A");
+
+	assertEquals(emptyDescriber, objectA->describer, "Describer of A has not changed");
+	assertEquals(sizeA, objectA->size, "Size of A has not changed");
+
+	assertEquals(emptyDescriber, objectB->describer, "Describer of B has not changed");
+	assertEquals(sizeB, objectB->size, "Size of B has not changed");
 }

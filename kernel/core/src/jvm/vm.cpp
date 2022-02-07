@@ -217,7 +217,7 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, GC::Root<Thread>& thr
 		if (!field.isStatic())
 		{
 			field.offset = classfile.get().objectSize;
-			classfile.get().objectSize += field.type.size();
+			classfile.get().objectSize += sizeof(Operand); //field.type.size();
 		}
 	}
 

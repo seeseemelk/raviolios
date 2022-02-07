@@ -6,18 +6,6 @@
 
 using namespace Java;
 
-TEST("Can create a thread")
-{
-	CUT cut;
-
-	GC::Root<Thread> thread;
-	GC::Root<ClassFile> classfile;
-	cut.createThread(thread);
-	cut.loadClass(classfile, thread, "Test1");
-	ThreadCreateResult result = cut.vm.createThread(thread, classfile, "<init>");
-	assertEquals(ThreadCreateResult::CREATED, result, "Thread was created");
-}
-
 TEST("Can run a thread")
 {
 	CUT cut;

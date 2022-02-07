@@ -100,7 +100,7 @@ namespace GC
 		u32 size : 31;
 
 		/// Set by the mark step if the object is reachable.
-		u32 reachable : 1;
+		u8 reachable : 1;
 
 		/**
 		 * Gets a void pointer to the actual object owned by this meta.
@@ -117,6 +117,12 @@ namespace GC
 		T* as()
 		{
 			return reinterpret_cast<T*>(getRaw());
+		}
+
+		template<typename T>
+		size_t count()
+		{
+			return size / sizeof(T);
 		}
 	};
 

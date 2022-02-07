@@ -12,6 +12,13 @@
 
 #include <string>
 
+/**
+ * Set to `true` to perform many garbage collection cycles during the test.
+ * This can be used to try and diagnose memory issues. Should be set to `false`
+ * after a test.
+ */
+extern bool g_aggresiveGarbageCollection;
+
 class CUT
 {
 public:

@@ -8,6 +8,7 @@
 using namespace Java;
 
 const char* s_object = "raviolios/java/lang/Object";
+bool g_aggresiveGarbageCollection = false;
 
 static const char* s_validClasses[] = {
 		"Test1",

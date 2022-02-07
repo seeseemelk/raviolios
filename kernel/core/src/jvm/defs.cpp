@@ -8,6 +8,7 @@ void ClassFile::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 {
 	ClassFile* classfile = static_cast<ClassFile*>(object->getRaw());
 	visitor.visit(&classfile->constantPool);
+	visitor.visit(&classfile->superClassObj);
 	visitor.visit(&classfile->interfaces);
 	visitor.visit(&classfile->fields);
 	visitor.visit(&classfile->methods);
@@ -121,8 +122,12 @@ bool FieldInfo::isStatic()
 
 void FieldInfo::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 {
-	FieldInfo* field = static_cast<FieldInfo*>(object->getRaw());
-	visitor.visit(&field->attributes);
+	FieldInfo* field = object->as<FieldInfo>();
+	size_t count = object->count<FieldInfo>();
+	for (size_t i = 0; i < count; i++)
+	{
+		visitor.visit(&((field + i)->attributes));
+	}
 }
 
 AttributeInfo* MethodInfo::getAttributeOfType(AttributeType type)
@@ -133,6 +138,11 @@ AttributeInfo* MethodInfo::getAttributeOfType(AttributeType type)
 			return &attributes->get(i);
 	}
 	return nullptr;
+}
+
+bool MethodInfo::isStatic()
+{
+	return (accessFlags & ACC_STATIC) != 0;
 }
 
 bool MethodInfo::isNative()
