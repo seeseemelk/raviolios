@@ -127,6 +127,7 @@ void FieldInfo::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 	for (size_t i = 0; i < count; i++)
 	{
 		visitor.visit(&((field + i)->attributes));
+		visitor.visit(&((field + i)->name));
 	}
 }
 
@@ -160,5 +161,7 @@ void MethodInfo::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 void MethodRef::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 {
 	MethodRef* methodRef = object->as<MethodRef>();
-	visitor.visit(&methodRef->method);
+	size_t count = object->count<MethodRef>();
+	for (size_t i = 0; i < count; i++)
+		visitor.visit(&(methodRef[i].method));
 }

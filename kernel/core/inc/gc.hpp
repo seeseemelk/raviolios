@@ -6,6 +6,7 @@
 
 #include "defs.hpp"
 #include "arch.hpp"
+#include "log.hpp"
 
 namespace GC
 {
@@ -216,6 +217,11 @@ namespace GC
 
 		T& get()
 		{
+			if (object == nullptr)
+			{
+				Log::critical("Null-pointer derefence");
+//				Arch::panic();
+			}
 			return *asPtr();
 		}
 
@@ -366,9 +372,16 @@ namespace GC
 		template<typename T>
 		void makeRoot(const Root<T>& base, Root<T>& target)
 		{
-			Object<T>* object;
-			base.store(&object);
-			makeRootRaw(object, target);
+			if (base.isSet())
+			{
+				Object<T>* object;
+				base.store(&object);
+				makeRootRaw(object, target);
+			}
+			else
+			{
+				target.clear();
+			}
 		}
 
 		/**

@@ -89,7 +89,6 @@ static void printFormatted(const char* fmt, va_list args)
 
 void Log::trace(const char* line)
 {
-//	(void) line;
 	Arch::log("[TRCE] ");
 	Arch::log(line);
 	Arch::log("\n");

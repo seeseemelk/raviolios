@@ -1,5 +1,6 @@
 #include "asserts.hpp"
 #include "cut.hpp"
+#include "log.hpp"
 
 using namespace Java;
 
@@ -79,10 +80,14 @@ static void runJavaTestMethod(const char* className, const char* methodName)
 
 static void runJavaTest(const char* className, const char* methodName)
 {
-	g_aggresiveGarbageCollection = false;
-	runJavaTestMethod(className, methodName);
+//	Log::info("Normal run");
+//	g_aggresiveGarbageCollection = false;
+//	runJavaTestMethod(className, methodName);
+
+	Log::info("Aggresive GC run");
 	g_aggresiveGarbageCollection = true;
 	runJavaTestMethod(className, methodName);
+
 	g_aggresiveGarbageCollection = false;
 }
 
@@ -100,16 +105,18 @@ static void runJavaTest(const char* className, const char* methodName)
 		runJavaTest(className, methodName); \
 	}
 
-JAVA_TEST("tests/Assertions", "succeeds");
-JAVA_FAIL("tests/Assertions", "fails");
-JAVA_TEST("tests/Assertions", "equalsSucceedsWhenSame");
-
+//JAVA_TEST("tests/Assertions", "succeeds");
+//JAVA_FAIL("tests/Assertions", "fails");
+//JAVA_TEST("tests/Assertions", "equalsSucceedsWhenSame");
 //JAVA_FAIL("tests/Assertions", "equalsFailsWhenDifferent");
 //JAVA_TEST("tests/StaticProperty", "propertyStartsAsZero");
-//JAVA_TEST("tests/StaticProperty", "propertyCanBeChanged");
+
+JAVA_TEST("tests/StaticProperty", "propertyCanBeChanged");
+
 //JAVA_TEST("tests/StaticProperty", "propertiesHaveDefaultValues");
 //JAVA_TEST("tests/Constants", "canUseLargeIntegers");
 //JAVA_TEST("tests/Variables", "canSaveVariables");
 //JAVA_TEST("tests/Arithmetic", "canAddNumbers");
 //JAVA_TEST("tests/Arithmetic", "canIncrementNumbers");
+
 //JAVA_TEST("tests/Objects", "canReadObjectProperty");

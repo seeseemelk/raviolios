@@ -83,7 +83,8 @@ AllocResult Context::allocateRaw(Meta& meta, RawRoot& root)
 void Context::makeRootRaw(Meta* meta, RawRoot& root)
 {
 	root.clear();
-	root.set(meta, &m_root, m_root.next);
+	if (meta != nullptr)
+		root.set(meta, &m_root, m_root.next);
 }
 
 void Context::createObject(Meta& meta, RawRoot& root)
@@ -110,7 +111,7 @@ Meta* Context::firstObject()
 
 void Context::collect()
 {
-//	Log::trace("Collecting garbage");
+	Log::trace("Collecting garbage");
 	mark();
 	sweepUpdate();
 	sweepMove();
@@ -230,7 +231,9 @@ void Context::sweepMove()
 
 		if (!object->reachable)
 		{
-			offset += sizeof(Meta) + object->size;
+			size_t size = sizeof(Meta) + object->size;
+			offset += size;
+			m_memCurrent -= size;
 			m_objects--;
 		}
 		else
