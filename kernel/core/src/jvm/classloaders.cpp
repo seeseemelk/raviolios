@@ -1,6 +1,7 @@
 #include "jvm_classloader.hpp"
 
 #include "util.hpp"
+#include "log.hpp"
 
 using namespace Java;
 
@@ -16,13 +17,25 @@ static ClassError loadClass(void* arg, VM& vm, GC::Root<Java::Thread>& thread, G
 	ClassList& list = classLoader.classList(vm);
 	for (size_t i = 0; i < list.size; i++)
 	{
+		Log::trace("A");
 		GC::Object<ClassFile>* classFile = list.entries->get(i).classFile;
+		Log::trace("B");
 		GC::Array<char>* entryName = list.entries->get(i).name;
-		if (classFile != nullptr && equals(name, entryName))
+		Log::trace("C1");
+		bool a = classFile != nullptr;
+		Log::trace("C2");
+		bool b = equals(name, entryName);
+		Log::trace("C3");
+		if (a && b)
 		{
+			Log::trace("D");
+			classFile->validate();
+			Log::trace("E");
 			vm.gc().makeRoot(classFile, root);
+			Log::trace("F");
 			return ClassError::GOOD;
 		}
+		Log::trace("G");
 	}
 	ClassError error = classLoader.m_parentVtable->loadClass(classLoader.m_parent, vm, thread, root, name);
 	if (error != ClassError::GOOD)
@@ -31,6 +44,7 @@ static ClassError loadClass(void* arg, VM& vm, GC::Root<Java::Thread>& thread, G
 	ClassListEntry entry;
 	name.store(&entry.name);
 	root.store(&entry.classFile);
+	entry.classFile->validate();
 	ClassList::add(vm.gc(), classLoader.m_classList, entry);
 	return ClassError::GOOD;
 }
@@ -90,12 +104,15 @@ void ClassList::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 
 void ClassListEntry::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 {
-	size_t count = object->size / sizeof(ClassListEntry);
-	ClassListEntry* infos = static_cast<ClassListEntry*>(object->getRaw());
+	size_t count = object->count<ClassListEntry>();
+	ClassListEntry* infos = object->as<ClassListEntry>();
 	for (size_t i = 0; i < count; i++)
 	{
-		visitor.visit(&infos->name);
-		visitor.visitWeak(&infos->classFile);
+		if (infos[i].classFile != nullptr) infos[i].classFile->validate();
+		visitor.visit(&infos[i].name);
+		if (infos[i].classFile != nullptr) infos[i].classFile->validate();
+		visitor.visitWeak(&infos[i].classFile);
+		//infos->classFile->validate();
 	}
 }
 

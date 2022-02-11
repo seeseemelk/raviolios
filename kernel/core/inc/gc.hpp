@@ -93,7 +93,7 @@ namespace GC
 	 */
 	struct Meta
 	{
-		u32 guard1 = 0xdeadbeef;
+		u32 guard1;
 		/// A function that will call a visitor on each reference to another
 		/// object within this object.
 		MetaDescriber* describer = &emptyDescriber;
@@ -104,8 +104,9 @@ namespace GC
 		/// Set by the mark step if the object is reachable.
 		u8 reachable : 1;
 
-		u32 guard2 = 0x1234abcd;
+		u32 guard2;
 
+		void writeValidators();
 		void validate() const;
 
 		/**
@@ -134,7 +135,7 @@ namespace GC
 	};
 
 	template<typename T>
-	struct Allocator : Meta
+	struct Allocator : public Meta
 	{
 		Allocator(size_t count, MetaDescriber* describer)
 		{
@@ -159,13 +160,13 @@ namespace GC
 	};
 
 	template<typename T>
-	struct Object : Meta
+	struct Object : public Meta
 	{
 		T object;
 	};
 
 	template<typename T>
-	struct Array : Meta
+	struct Array : public Meta
 	{
 		T& get(size_t index)
 		{

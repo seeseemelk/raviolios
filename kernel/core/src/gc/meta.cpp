@@ -3,6 +3,12 @@
 
 using namespace GC;
 
+void Meta::writeValidators()
+{
+	guard1 = 0xdeadbeef;
+	guard2 = 0x1234abcd;
+}
+
 void Meta::validate() const
 {
 	if (guard1 != 0xdeadbeef)

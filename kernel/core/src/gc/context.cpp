@@ -77,6 +77,8 @@ AllocResult Context::allocateRaw(Meta& meta, RawRoot& root)
 	if (getFree() < required)
 		return AllocResult::OUT_OF_MEMORY;
 	createObject(meta, root);
+	root.object->writeValidators();
+	root.object->validate();
 	return AllocResult::SUCCESS;
 }
 
@@ -122,6 +124,7 @@ class MarkVisitor : public MetaVisitor
 public:
 	void visit(Meta** object) override
 	{
+		if (*object != nullptr) (*object)->validate();
 		if (*object != nullptr && !(*object)->reachable)
 		{
 			(*object)->reachable = true;
@@ -129,8 +132,9 @@ public:
 		}
 	}
 
-	void visitWeak(Meta** /*object*/) override
+	void visitWeak(Meta** object) override
 	{
+		if (*object != nullptr) (*object)->validate();
 	}
 };
 
@@ -152,6 +156,7 @@ void Context::sweepUpdate()
 	size_t offset = 0;
 	while (count > 0)
 	{
+		object->validate();
 		if (!object->reachable)
 		{
 			offset += sizeof(Meta) + object->size;
@@ -162,6 +167,7 @@ void Context::sweepUpdate()
 			Meta* destination = reinterpret_cast<Meta*>(reinterpret_cast<u8*>(object) - offset);
 			updateAddress(object, destination);
 		}
+		object->validate();
 
 		count--;
 		object = nextObject(object);
@@ -202,8 +208,10 @@ void Context::updateAddressHeap(Meta* from, Meta* to)
 	size_t count = m_objects;
 	while (count > 0)
 	{
+		object->validate();
 		if (object->reachable)
 			object->describer(object, visitor);
+		object->validate();
 		count--;
 		object = nextObject(object);
 	}
@@ -225,10 +233,12 @@ void Context::sweepMove()
 	Meta* object = firstObject();
 	size_t count = m_objects;
 	size_t offset = 0;
+	u8* memEnd = m_memCurrent;
 	while (count > 0)
 	{
 		Meta* next = nextObject(object);
 
+		object->validate();
 		if (!object->reachable)
 		{
 			size_t size = sizeof(Meta) + object->size;
@@ -253,8 +263,11 @@ void Context::sweepMove()
 				Arch::panic();
 			}
 		}
+		object->validate();
 
 		count--;
 		object = next;
 	}
+	u8 value = 0;
+	memorySet(m_memCurrent, value, static_cast<size_t>(memEnd - m_memCurrent));
 }
