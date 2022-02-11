@@ -8,8 +8,8 @@ KERNEL_OBJ = $(KERNEL_SRC:%=$(KERNEL_BIN_DIR)/%.o)
 #JAVA_SRC += $(shell find kernel/test/java -iname *.java)
 #JAVA_OBJ = $(JAVA_SRC:%.java=$(KERNEL_BIN_DIR)/%.class)
 
-CFLAGS = -Wall -Wextra -Werror -pedantic $(KERNEL_INC:%=-I%) -ggdb -O0
-	#-fsanitize=address -O0
+CFLAGS = -Wall -Wextra -Werror -pedantic $(KERNEL_INC:%=-I%) -ggdb \
+	-fsanitize=address -O0
 CPPFLAGS = $(CFLAGS) -std=c++20
 
 .PHONY: kernel

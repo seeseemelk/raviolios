@@ -52,6 +52,11 @@ static void dumpStack(Frame& frame)
 
 void Frame::push(Java::Operand& operand)
 {
+	if (stackIndex == stack->count())
+	{
+		Log::critical("Stack is full");
+		Arch::panic();
+	}
 	stack->get(stackIndex) = operand;
 	stackIndex++;
 }
@@ -416,8 +421,13 @@ void VM::jumpUnconditionally(Frame& frame)
 
 void VM::getStatic(GC::Root<Thread>& thread, GC::Root<Frame>& frame)
 {
+	(void) thread;
 	u16 index = frame.get().getU16FromCode(frame.get().pc) - 1;
 	frame.get().pc += 2;
+//	Operand operand;
+//	operand.integer = 0;
+//	frame.get().push(operand);
+	(void) index;
 	GC::Root<ClassFile> classFile;
 	m_gc.makeRoot(frame.get().getClassFile(), classFile);
 
@@ -451,36 +461,36 @@ void VM::putStatic(GC::Root<Thread>& thread, GC::Root<Frame>& frame)
 	(void) frame;
 	u16 index = frame.get().getU16FromCode(frame.get().pc) - 1;
 	frame.get().pc += 2;
-//	GC::Root<ClassFile> classFile;
+	GC::Root<ClassFile> classFile;
 	(void) index;
 
-//	Frame& frameA = frame.get();
-//	GC::Object<ClassFile>* classFileA = frameA.getClassFile();
-//	m_gc.makeRoot(classFileA, classFile);
-//
-//	u16 targetClassIndex = classFile.get().constantPool->get(index).c_field.classIndex;
-//	u16 targetFieldNameTypeIndex = classFile.get().constantPool->get(index).c_field.nameAndTypeIndex;
-//
-//	u16 targetClassNameIndex = classFile.get().constantPool->get(targetClassIndex).c_class.nameIndex;
-//	u16 fieldNameIndex = classFile.get().constantPool->get(targetFieldNameTypeIndex).c_nameAndType.nameIndex;
-//
-//	GC::Root<char> targetClassName;
-//	GC::Root<char> fieldName;
-//
-//	m_gc.makeRoot(classFile.get().constantPool->get(targetClassNameIndex).c_utf8.bytes, targetClassName);
-//	m_gc.makeRoot(classFile.get().constantPool->get(fieldNameIndex).c_utf8.bytes, fieldName);
-//
-//	GC::Root<ClassFile> targetClass;
-//	if (getClass(targetClass, thread, targetClassName) != ClassError::GOOD)
-//	{
-//		Log::critical("Could not find class");
-//		Arch::panic();
-//	}
-//
-//	u16 fieldIndex = targetClass.get().findFieldByName(fieldName);
-//
-//	Operand operand = frame.get().pop();
-//	targetClass.get().fields->get(fieldIndex).value = operand;
+	Frame& frameA = frame.get();
+	GC::Object<ClassFile>* classFileA = frameA.getClassFile();
+	m_gc.makeRoot(classFileA, classFile);
+
+	u16 targetClassIndex = classFile.get().constantPool->get(index).c_field.classIndex;
+	u16 targetFieldNameTypeIndex = classFile.get().constantPool->get(index).c_field.nameAndTypeIndex;
+
+	u16 targetClassNameIndex = classFile.get().constantPool->get(targetClassIndex).c_class.nameIndex;
+	u16 fieldNameIndex = classFile.get().constantPool->get(targetFieldNameTypeIndex).c_nameAndType.nameIndex;
+
+	GC::Root<char> targetClassName;
+	GC::Root<char> fieldName;
+
+	m_gc.makeRoot(classFile.get().constantPool->get(targetClassNameIndex).c_utf8.bytes, targetClassName);
+	m_gc.makeRoot(classFile.get().constantPool->get(fieldNameIndex).c_utf8.bytes, fieldName);
+
+	GC::Root<ClassFile> targetClass;
+	if (getClass(targetClass, thread, targetClassName) != ClassError::GOOD)
+	{
+		Log::critical("Could not find class");
+		Arch::panic();
+	}
+
+	u16 fieldIndex = targetClass.get().findFieldByName(fieldName);
+
+	Operand operand = frame.get().pop();
+	targetClass.get().fields->get(fieldIndex).value = operand;
 }
 
 void VM::getField(GC::Root<Thread>& thread, GC::Root<Frame>& frame)
