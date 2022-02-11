@@ -23,13 +23,13 @@ GC::Context& VM::gc()
 
 void VM::allocateArray(GC::Root<u8>& root, size_t length)
 {
-	GC::Allocator<u8> meta(length);
+	GC::Allocator<u8> meta(length, GC::emptyDescriber);
 	m_gc.allocate(meta, root);
 }
 
 void VM::allocateArray(GC::Root<char>& root, size_t length)
 {
-	GC::Allocator<char> meta(length);
+	GC::Allocator<char> meta(length, GC::emptyDescriber);
 	m_gc.allocate(meta, root);
 }
 
@@ -50,8 +50,7 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, GC::Root<Thread>& thr
 {
 	Loader loader(data, length);
 
-	GC::Allocator<ClassFile> meta;
-	meta.describer = ClassFile::describer;
+	GC::Allocator<ClassFile> meta(ClassFile::describer);
 	m_gc.allocate(meta, classfile);
 
 	// Load class file header
@@ -119,7 +118,7 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, GC::Root<Thread>& thr
 
 	// Load interfaces
 	classfile.get().interfacesCount = loader.readU16();
-	GC::Allocator<u16> interfacesMeta(classfile.get().interfacesCount);
+	GC::Allocator<u16> interfacesMeta(classfile.get().interfacesCount, GC::emptyDescriber);
 	GC::Root<u16> interfacesRoot;
 	m_gc.allocate(interfacesMeta, interfacesRoot);
 	interfacesRoot.store(&classfile.get().interfaces);
@@ -261,7 +260,7 @@ void VM::loadCodeAttribute(GC::Root<ClassFile>& classfile, GC::Root<CodeAttribut
 	u16 codeLength = loader.readU32();
 	root.get().codeLength = codeLength;;
 
-	GC::Allocator<Opcode> codeAllocator(codeLength);
+	GC::Allocator<Opcode> codeAllocator(codeLength, GC::emptyDescriber);
 	GC::Root<Opcode> codeRoot;
 	m_gc.allocate(codeAllocator, codeRoot);
 	for (size_t i = 0; i < codeLength; i++)
@@ -272,7 +271,7 @@ void VM::loadCodeAttribute(GC::Root<ClassFile>& classfile, GC::Root<CodeAttribut
 
 	u16 exceptionLength = loader.readU16();
 	root.get().exceptionTableLength = exceptionLength;
-	GC::Allocator<ExceptionTableEntry> exceptionAllocator(exceptionLength);
+	GC::Allocator<ExceptionTableEntry> exceptionAllocator(exceptionLength, GC::emptyDescriber);
 	GC::Root<ExceptionTableEntry> exceptionRoot;
 	m_gc.allocate(exceptionAllocator, exceptionRoot);
 	exceptionRoot.store(&root.get().exceptionTable);

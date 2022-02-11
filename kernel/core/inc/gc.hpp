@@ -93,6 +93,7 @@ namespace GC
 	 */
 	struct Meta
 	{
+		u32 guard1 = 0xdeadbeef;
 		/// A function that will call a visitor on each reference to another
 		/// object within this object.
 		MetaDescriber* describer = &emptyDescriber;
@@ -102,6 +103,10 @@ namespace GC
 
 		/// Set by the mark step if the object is reachable.
 		u8 reachable : 1;
+
+		u32 guard2 = 0x1234abcd;
+
+		void validate() const;
 
 		/**
 		 * Gets a void pointer to the actual object owned by this meta.
@@ -117,6 +122,7 @@ namespace GC
 		template<typename T>
 		T* as()
 		{
+			validate();
 			return reinterpret_cast<T*>(getRaw());
 		}
 
@@ -136,20 +142,20 @@ namespace GC
 			this->describer = describer;
 		}
 
-		Allocator(size_t count)
+		/*Allocator(size_t count)
 			: Allocator(count, &emptyDescriber)
 		{
-		}
+		}*/
 
 		Allocator(MetaDescriber* describer)
 			: Allocator(1, describer)
 		{
 		}
 
-		Allocator()
+		/*Allocator()
 			: Allocator(1, &emptyDescriber)
 		{
-		}
+		}*/
 	};
 
 	template<typename T>
