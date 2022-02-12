@@ -12,6 +12,7 @@
 namespace Java
 {
 	struct ClassFile;
+	struct Instruction;
 
 	struct ConstantPoolUtf8
 	{
@@ -112,12 +113,6 @@ namespace Java
 		u16 catchType;
 	};
 
-	struct Opcode
-	{
-		Instruction opcode;
-	};
-
-
 	struct JavaObject
 	{
 		GC::Object<ClassFile>* class_;
@@ -139,6 +134,7 @@ namespace Java
 		{
 			i32 integer;
 			GC::Object<JavaObject>* object;
+			GC::Object<ClassFile>* classFile;
 		};
 		bool isObject = false;
 
@@ -152,13 +148,14 @@ namespace Java
 		u16 maxStack;
 		u16 maxLocals;
 		u32 codeLength;
-		GC::Array<Opcode>* code;
+		GC::Array<Instruction>* instructions;
 		u16 exceptionTableLength;
 		GC::Array<ExceptionTableEntry>* exceptionTable;
 		u16 attributesCount;
 		GC::Array<AttributeInfo>* attributes;
 
-		Opcode getOpcode(size_t index);
+//		Opcode getOpcode(size_t index);
+		Instruction& getInstruction(size_t index);
 
 		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
 	};
@@ -202,10 +199,18 @@ namespace Java
 		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
 	};
 
+	struct FieldRef
+	{
+		GC::Object<FieldInfo>* field;
+
+		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
+	};
+
 	struct MethodInfo
 	{
 		GC::Array<AttributeInfo>* attributes;
 		GC::Object<ClassFile>* classFile;
+		TypeDescriptor type;
 		u16 accessFlags;
 		u16 nameIndex;
 		u16 descriptorIndex;
@@ -259,11 +264,12 @@ namespace Java
 		u16 interfacesCount;
 		GC::Array<u16>* interfaces;
 		u16 fieldsCount;
-		GC::Array<FieldInfo>* fields;
+		GC::Array<FieldRef>* fields;
 		u16 methodCount;
 		GC::Array<MethodRef>* methods;
 		u16 attributesCount;
 		GC::Array<AttributeInfo>* attributes;
+		void* classLoader;
 
 		/// The number of bytes that need to be allocated for an instance of the class.
 		size_t objectSize;

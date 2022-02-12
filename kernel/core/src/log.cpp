@@ -37,7 +37,7 @@ static void printHex(u32 number, size_t byteLength)
 
 	for (size_t i = 0; i < nibbles; i++)
 	{
-		u8 nibble = number >> shift;
+		u8 nibble = (number >> shift) & 0xF;
 		if (nibble < 10)
 			Arch::log(nibble + '0');
 		else

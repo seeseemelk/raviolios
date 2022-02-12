@@ -10,21 +10,25 @@
 
 namespace Java
 {
+	struct Instruction;
+	class VM;
+
 	struct Frame
 	{
 		GC::Object<MethodInfo>* methodInfo;
 		GC::Object<Frame>* previous = nullptr;
 		GC::Array<Operand>* locals;
 		GC::Array<Operand>* stack;
-		GC::Object<CodeAttribute>* code;
+//		GC::Object<CodeAttribute>* code;
+		GC::Array<Instruction>* instructions;
 		u16 pc;
 		u16 stackIndex;
 		bool inInterrupt;
 
-		Opcode getOpcode(size_t index);
+		Instruction& getInstruction(size_t index);
 
-		u8 getU8FromCode(size_t index);
-		u16 getU16FromCode(size_t index);
+//		u8 getU8FromCode(size_t index);
+//		u16 getU16FromCode(size_t index);
 
 		GC::Object<ClassFile>* getClassFile();
 
@@ -50,6 +54,21 @@ namespace Java
 		GC::Object<Frame>* top = nullptr;
 
 		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
+	};
+
+	struct Instruction
+	{
+		Opcode opcode;
+
+		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
+		union
+		{
+			u16 index;
+			i32 constantInteger;
+			GC::Object<MethodInfo>* targetMethod;
+			GC::Object<FieldInfo>* targetField;
+			void (*targetNativeMethod)(VM& vm, GC::Root<Thread>& thread);
+		};
 	};
 }
 

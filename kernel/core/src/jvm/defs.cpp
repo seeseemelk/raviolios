@@ -1,5 +1,6 @@
 #include "jvm_defs.hpp"
 
+#include "jvm_thread.hpp"
 #include "util.hpp"
 
 using namespace Java;
@@ -50,7 +51,7 @@ u16 ClassFile::findFieldByName(GC::Root<char>& name) const
 {
 	for (u16 i = 0; i < fieldsCount; i++)
 	{
-		FieldInfo& fieldInfo = fields->get(i);
+		FieldInfo& fieldInfo = fields->get(i).field->object;
 		u16 nameIndex = fieldInfo.nameIndex;
 		ConstantPoolUtf8& methodName = constantPool->get(nameIndex).c_utf8;
 
@@ -82,15 +83,20 @@ void ConstantPoolInfo::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 	}
 }
 
-Opcode CodeAttribute::getOpcode(size_t index)
+//Opcode CodeAttribute::getOpcode(size_t index)
+//{
+//	return code->get(index);
+//}
+
+Instruction& CodeAttribute::getInstruction(size_t index)
 {
-	return code->get(index);
+	return instructions->get(index);
 }
 
 void CodeAttribute::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 {
 	CodeAttribute* code = static_cast<CodeAttribute*>(object->getRaw());
-	visitor.visit(&code->code);
+	visitor.visit(&code->instructions);
 	visitor.visit(&code->exceptionTable);
 	visitor.visit(&code->attributes);
 }
@@ -123,12 +129,16 @@ bool FieldInfo::isStatic()
 void FieldInfo::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 {
 	FieldInfo* field = object->as<FieldInfo>();
-	size_t count = object->count<FieldInfo>();
+	visitor.visit(&field->attributes);
+	visitor.visit(&field->name);
+}
+
+void FieldRef::describer(GC::Meta* object, GC::MetaVisitor& visitor)
+{
+	FieldRef* fields = object->as<FieldRef>();
+	size_t count = object->count<FieldRef>();
 	for (size_t i = 0; i < count; i++)
-	{
-		visitor.visit(&((field + i)->attributes));
-		visitor.visit(&((field + i)->name));
-	}
+		visitor.visit(&(fields[i].field));
 }
 
 AttributeInfo* MethodInfo::getAttributeOfType(AttributeType type)

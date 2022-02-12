@@ -127,12 +127,17 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, GC::Root<Thread>& thr
 
 	// Load fields
 	classfile.get().fieldsCount = loader.readU16();
-	GC::Allocator<FieldInfo> fieldInfoMeta(classfile.get().fieldsCount, FieldInfo::describer);
-	GC::Root<FieldInfo> fieldInfoRoot;
-	m_gc.allocate(fieldInfoMeta, fieldInfoRoot);
-	fieldInfoRoot.store(&classfile.get().fields);
+	GC::Allocator<FieldRef> fieldRefMeta(classfile.get().fieldsCount, FieldRef::describer);
+	GC::Root<FieldRef> fieldRefRoot;
+	m_gc.allocate(fieldRefMeta, fieldRefRoot);
+	fieldRefRoot.store(&classfile.get().fields);
 	for (size_t i = 0; i < classfile.get().fieldsCount; i++)
 	{
+		GC::Allocator<FieldInfo> fieldInfoMeta(FieldInfo::describer);
+		GC::Root<FieldInfo> fieldInfoRoot;
+		m_gc.allocate(fieldInfoMeta, fieldInfoRoot);
+		fieldInfoRoot.store(&fieldRefRoot[i].field);
+
 		fieldInfoRoot[i].accessFlags = loader.readU16();
 		u16 nameIndex = loader.readU16() - 1;
 		fieldInfoRoot[i].nameIndex = nameIndex;
@@ -212,11 +217,11 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, GC::Root<Thread>& thr
 	// Calculate size of object and alignment of fields.
 	for (size_t i = 0; i < classfile.get().fieldsCount; i++)
 	{
-		FieldInfo& field = fieldInfoRoot[i];
+		FieldInfo& field = fieldRefRoot[i].field->object;
 		if (!field.isStatic())
 		{
 			field.offset = classfile.get().objectSize;
-			classfile.get().objectSize += sizeof(Operand); //field.type.size();
+			classfile.get().objectSize += field.type.size();
 		}
 	}
 
@@ -260,14 +265,16 @@ void VM::loadCodeAttribute(GC::Root<ClassFile>& classfile, GC::Root<CodeAttribut
 	u16 codeLength = loader.readU32();
 	root.get().codeLength = codeLength;;
 
-	GC::Allocator<Opcode> codeAllocator(codeLength, GC::emptyDescriber);
-	GC::Root<Opcode> codeRoot;
+	GC::Allocator<Instruction> codeAllocator(codeLength, Instruction::describer);
+	GC::Root<Instruction> codeRoot;
 	m_gc.allocate(codeAllocator, codeRoot);
-	for (size_t i = 0; i < codeLength; i++)
-	{
-		codeRoot[i].opcode = static_cast<Instruction>(loader.readU8());
-	}
-	codeRoot.store(&root.get().code);
+	parseOpcodes(codeRoot, loader, codeLength);
+//	for (size_t i = 0; i < codeLength; i++)
+//	{
+//		codeRoot[i].opcode = static_cast<Instruction>(loader.readU8());
+//	}
+//	codeRoot.store(&root.get().code);
+	codeRoot.store(&root.get().instructions);
 
 	u16 exceptionLength = loader.readU16();
 	root.get().exceptionTableLength = exceptionLength;
@@ -289,6 +296,113 @@ void VM::loadCodeAttribute(GC::Root<ClassFile>& classfile, GC::Root<CodeAttribut
 	attributesRoot.store(&root.get().attributes);
 }
 
+void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_t instructionCount)
+{
+	size_t instructionIndex = 0;
+	u16 instructionMap[instructionCount];
+	for (size_t i = 0; i < instructionCount; i++)
+	{
+		u8 opcode = loader.readU8();
+		Instruction instruction;
+		switch (opcode)
+		{
+		case 0x03: /* iconst_0 */
+			instruction.opcode = Opcode::iconst;
+			instruction.constantInteger = 0;
+			break;
+		case 0x04: /* iconst_1 */
+			instruction.opcode = Opcode::iconst;
+			instruction.constantInteger = 1;
+			break;
+		case 0x05: /* iconst_2 */
+			instruction.opcode = Opcode::iconst;
+			instruction.constantInteger = 2;
+			break;
+		case 0x06: /* iconst_3 */
+			instruction.opcode = Opcode::iconst;
+			instruction.constantInteger = 3;
+			break;
+		case 0x07: /* iconst_4 */
+			instruction.opcode = Opcode::iconst;
+			instruction.constantInteger = 4;
+			break;
+		case 0x08: /* iconst_5 */
+			instruction.opcode = Opcode::iconst;
+			instruction.constantInteger = 5;
+			break;
+		case 0x10: /* bipush */
+			instruction.opcode = Opcode::iconst;
+			instruction.constantInteger = static_cast<i8>(loader.readU8());
+			i += 1;
+			break;
+		case 0x11: /* sipush */
+			instruction.opcode = Opcode::iconst;
+			instruction.constantInteger = static_cast<i16>(loader.readU16());
+			i += 2;
+			break;
+		case 0x1A: /* iload_0 */
+			instruction.opcode = Opcode::iload;
+			instruction.index = 0;
+			i += 2;
+			break;
+		case 0x1B: /* iload_1 */
+			instruction.opcode = Opcode::iload;
+			instruction.index = 1;
+			i += 2;
+			break;
+		case 0x1C: /* iload_2 */
+			instruction.opcode = Opcode::iload;
+			instruction.index = 2;
+			i += 2;
+			break;
+		case 0x1D: /* iload_3 */
+			instruction.opcode = Opcode::iload;
+			instruction.index = 3;
+			i += 2;
+			break;
+		case 0x2A: /* aload_0 */
+			instruction.opcode = Opcode::aload;
+			instruction.index = 0;
+			break;
+		case 0x2B: /* aload_1 */
+			instruction.opcode = Opcode::aload;
+			instruction.index = 1;
+			break;
+		case 0x2C: /* aload_2 */
+			instruction.opcode = Opcode::aload;
+			instruction.index = 2;
+			break;
+		case 0x2D: /* aload_3 */
+			instruction.opcode = Opcode::aload;
+			instruction.index = 3;
+			break;
+		case 0xA0: /* if_icmpne */
+			instruction.opcode = Opcode::if_icmpne;
+			break;
+		case 0xAC: /* ireturn */
+			instruction.opcode = Opcode::return_value;
+			break;
+		case 0xB1: /* return */
+			instruction.opcode = Opcode::return_;
+			break;
+		case 0xB4: /* getfield */
+			instruction.opcode = Opcode::getfield_a;
+			instruction.index = loader.readU16() - 1;
+			i += 2;
+			break;
+		case 0xB7: /* invokespecial */
+		case 0xB8: /* invokestatic */
+			instruction.opcode = Opcode::invoke_a;
+			instruction.index = loader.readU16() - 1;
+			i += 2;
+			break;
+		default:
+			Log::criticalf("Unknown opcode: %b", opcode);
+			Arch::panic();
+		}
+		instructions.asPtr()[instructionIndex++] = instruction;
+	}
+}
 
 
 

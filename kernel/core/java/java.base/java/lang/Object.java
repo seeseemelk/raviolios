@@ -2,6 +2,7 @@ package java.lang;
 
 public class Object
 {
+	/*
 	private int hashCode = 0;
 
 	public int getHashCode()
@@ -17,4 +18,5 @@ public class Object
 	}
 
     private native int getAddressHashCode();
+	 */
 }

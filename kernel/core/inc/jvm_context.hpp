@@ -123,6 +123,7 @@ namespace Java
 		 * after this one (unless those too are interrupt calls).
 		 */
 		void invokeMethod(GC::Root<Thread>& thread, const GC::Root<ClassFile>& classfile, const char* method);
+		void invokeMethod(GC::Root<Thread>& thread, GC::Root<MethodInfo>& targetMethod, bool isInterrupt = false);
 
 		/**
 		 * Performs a single step in a thread.
@@ -130,6 +131,7 @@ namespace Java
 		 * @param thread The thread to step through.
 		 */
 		ThreadState step(GC::Root<Thread>& thread);
+		ThreadState run(GC::Root<Thread>& thread);
 
 		/**
 		 * Gets a root to a class by the FQN of the class.
@@ -144,6 +146,23 @@ namespace Java
 		 */
 		[[nodiscard]]
 		ClassError getClass(GC::Root<ClassFile>& classfile, GC::Root<Thread>& thread, const GC::Root<char>& name);
+
+		/**
+		 * Finds a class using a normal JVM class-loading scheme.
+		 *
+		 * If the calling thread was loaded using a native class loader, it will
+		 * pass the call on to @ref getClass. A reference to the class will be
+		 * pushed onto the operand stack.
+		 *
+		 * If the calling thread was loaded using a Java class loader, the class
+		 * loader will be invoked as a normal method. It will push the result
+		 * onto the operand stack as a normal return value.
+		 *
+		 * @param thread The thread that will search for a class.
+		 * @param frame The frame that performed the call.
+		 * @param name The name of the class to search for.
+		 */
+		void findClass(GC::Root<Thread>& thread, GC::Root<Frame>& frame, const GC::Root<char>& name);
 
 		/**
 		 * Loads a class into the VM.
@@ -176,6 +195,11 @@ namespace Java
 		/// An array of native methods.
 		const NativeMethod* m_nativeMethods;
 
+		/// Set to true to interrupt.
+		bool m_interrupted = false;
+
+		ThreadState runUntilInterrupted(GC::Root<Thread>& thread);
+
 		/**
 		 * Allocates an array on the heap.
 		 *
@@ -200,9 +224,11 @@ namespace Java
 
 		void loadCodeAttribute(GC::Root<ClassFile>& classfile, GC::Root<CodeAttribute>& root, Loader& loader);
 
+		void parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_t instructionCount);
+
 		void createFrame(GC::Root<Frame>& frame, GC::Root<MethodInfo>& method);
 
-		void returnFromMethod(GC::Root<Thread>& thread);
+//		void returnFromMethod(GC::Root<Thread>& thread);
 
 		/**
 		 * Pops a frame and pushed the item on the top of the current stack to
@@ -210,32 +236,43 @@ namespace Java
 		 *
 		 * @param thread The thread to pop.
 		 */
-		void returnInteger(GC::Root<Thread>& thread);
+//		void returnInteger(GC::Root<Thread>& thread);
 
-		void pushIntegerFromVariable(Frame& frame, i32 number);
-		void pushReferenceFromVariable(Frame& frame, i32 number);
-		void storeIntegerToVariable(Frame& frame, i32 number);
-		void storeReferenceToVariable(Frame& frame, i32 number);
-		void pushInteger(Frame& frame, i32 number);
-		void pushShort(Frame& frame);
-		void pushByte(Frame& frame);
-		void pushConstant(Frame& frame);
-		void dup(Frame& frame);
-		void swap(Frame& frame);
-		void addIntegers(Frame& frame);
-		void increment(Frame& frame);
+//		void pushIntegerFromVariable(Frame& frame, i32 number);
+//		void pushReferenceFromVariable(Frame& frame, i32 number);
+//		void storeIntegerToVariable(Frame& frame, i32 number);
+//		void storeReferenceToVariable(Frame& frame, i32 number);
+//		void pushInteger(Frame& frame, i32 number);
+//		void pushShort(Frame& frame);
+//		void pushByte(Frame& frame);
+//		void pushConstant(Frame& frame);
+//		void dup(Frame& frame);
+//		void swap(Frame& frame);
+//		void addIntegers(Frame& frame);
+//		void increment(Frame& frame);
+		void opcodeIconst(GC::Root<Frame>& frame, i32 value);
+		void opcodeAload(GC::Root<Frame>& frame, u16 index);
+		void opcodeIload(GC::Root<Frame>& frame, u16 index);
+		Instruction opcodeGetfieldA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index);
+		Instruction opcodeGetfieldB(GC::Root<Frame>& frame, u16 index);
+		void opcodeGetfieldC(GC::Root<Frame>& frame, GC::Object<FieldInfo>* field);
+		Instruction opcodeInvokeA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index);
+		Instruction opcodeInvokeB(GC::Root<Frame>& frame, u16 index);
+		void opcodeInvokeSpecial(GC::Root<Thread>& thread, GC::Root<Frame>& frame, GC::Object<MethodInfo>* method);
+		void opcodeReturnValue(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
+		void opcodeReturn(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
 		void invokeStatic(GC::Root<Thread>& thread);
 		void invokeSpecial(GC::Root<Thread>& thread);
 		void invokeNativeMethod(GC::Root<Thread>& thread, const GC::Root<char>& className, const GC::Root<char>& methodName, const GC::Root<char>& methodType);
-		void jumpIfIntegerNotEqual(Frame& frame);
-		void jumpIfIntegerLessThan(Frame& frame);
-		void jumpUnconditionally(Frame& frame);
-		void getStatic(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
-		void putStatic(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
-		void getField(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
-		void putField(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
-		Operand* findField(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
-		void newObject(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
+//		void jumpIfIntegerNotEqual(Frame& frame);
+//		void jumpIfIntegerLessThan(Frame& frame);
+//		void jumpUnconditionally(Frame& frame);
+//		void getStatic(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
+//		void putStatic(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
+//		void getField(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
+//		void putField(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
+//		Operand* findField(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
+//		void newObject(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
 	};
 }
 

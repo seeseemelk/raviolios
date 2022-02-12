@@ -17,13 +17,17 @@ TEST("Can run a thread")
 	ThreadCreateResult result = cut.vm.createThread(thread, classfile, "returns1");
 	assertEquals(ThreadCreateResult::CREATED, result, "Thread was created");
 
+	int steps = 10;
+
 	ThreadState state = cut.vm.step(thread);
 	assertEquals(ThreadState::RUNNING, state, "Thread is running");
 
-	state = cut.vm.step(thread);
-	assertEquals(ThreadState::RUNNING, state, "Thread is running");
+	while (steps > 0 && state == ThreadState::RUNNING)
+	{
+		state = cut.vm.step(thread);
+		steps--;
+	}
 
-	state = cut.vm.step(thread);
 	assertEquals(ThreadState::STOPPED, state, "Thread has stopped");
 }
 

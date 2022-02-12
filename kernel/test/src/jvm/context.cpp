@@ -30,11 +30,11 @@ TEST("Can load class file")
 	assertEquals(0, classfile.interfacesCount, "Correct number of interfaces");
 
 	assertEquals(1, classfile.fieldsCount, "Correct number of fields");
-	GC::Root<FieldInfo> fields;
+	GC::Root<FieldRef> fields;
 	cut.makeRoot(classfile.fields, fields);
 
-	assertEquals(ACC_PRIVATE, fields[0].accessFlags, "Correct field access flags");
-	assertStringEqual("field", fields[0].name, "Correct field name");
+	assertEquals(ACC_PRIVATE, fields[0].field->object.accessFlags, "Correct field access flags");
+	assertStringEqual("field", fields[0].field->object.name, "Correct field name");
 
 	GC::Root<MethodRef> methods;
 	cut.makeRoot(classfile.methods, methods);
