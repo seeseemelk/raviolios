@@ -59,6 +59,7 @@ namespace Java
 	struct Instruction
 	{
 		Opcode opcode;
+		u16 offset;
 
 		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
 		union

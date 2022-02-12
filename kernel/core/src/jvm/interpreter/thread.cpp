@@ -134,16 +134,48 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 			opcodeIload(frame, instruction.index);
 			pc++;
 			break;
+		case Opcode::goto_a:
+			instruction.opcode = Opcode::goto_b;
+			instruction.index = findOpcodeJumpTarget(frame, instruction.index);
+			storeInstruction = true;
+			break;
+		case Opcode::goto_b:
+			pc = instruction.index;
+			break;
+		case Opcode::if_icmpne_a:
+			instruction.opcode = Opcode::if_icmpne_b;
+			instruction.index = findOpcodeJumpTarget(frame, instruction.index);
+			storeInstruction = true;
+			break;
+		case Opcode::if_icmpne_b:
+			pc = opcodeIfIcmpneB(frame, instruction.index, pc);
+			break;
 		case Opcode::getfield_a:
-			instruction = opcodeGetfieldA(thread, frame, instruction.index);
+			findOpcodeFieldA(thread, frame, instruction.index);
+			instruction.opcode = Opcode::getfield_b;
 			storeInstruction = true;
 			break;
 		case Opcode::getfield_b:
-			instruction = opcodeGetfieldB(frame, instruction.index);
+			instruction = findOpcodeFieldB(frame, instruction.index);
+			instruction.opcode = Opcode::getfield_c;
 			storeInstruction = true;
 			break;
 		case Opcode::getfield_c:
 			opcodeGetfieldC(frame, instruction.targetField);
+			pc++;
+			break;
+		case Opcode::putfield_a:
+			findOpcodeFieldA(thread, frame, instruction.index);
+			instruction.opcode = Opcode::putfield_b;
+			storeInstruction = true;
+			break;
+		case Opcode::putfield_b:
+			instruction = findOpcodeFieldB(frame, instruction.index);
+			instruction.opcode = Opcode::putfield_c;
+			storeInstruction = true;
+			break;
+		case Opcode::putfield_c:
+			opcodePutfieldC(frame, instruction.targetField);
 			pc++;
 			break;
 		case Opcode::invoke_a:
@@ -208,70 +240,25 @@ void VM::opcodeIload(GC::Root<Frame>& frame, u16 index)
 	frame.get().push(operand);
 }
 
-Instruction VM::opcodeGetfieldA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index)
+u16 VM::opcodeIfIcmpneB(GC::Root<Frame>& frame, u16 target, u16 pc)
 {
-	ClassFile& classFile = frame.get().getClassFile()->object;
-	ConstantPoolFieldRef fieldRef = classFile.constantPool->get(index).c_field;
-
-	GC::Root<char> className;
-	u16 classNameIndex = classFile.constantPool->get(fieldRef.classIndex).c_class.nameIndex;
-	m_gc.makeRoot(classFile.constantPool->get(classNameIndex).c_utf8.bytes, className);
-
-	findClass(thread, frame, className);
-
-	Instruction result;
-	result.opcode = Opcode::getfield_b;
-	result.index = index;
-	return result;
-}
-
-Instruction VM::opcodeGetfieldB(GC::Root<Frame>& frame, u16 index)
-{
-	ClassFile& classFile = frame.get().getClassFile()->object;
-	ConstantPoolFieldRef fieldRef = classFile.constantPool->get(index).c_field;
-
-	GC::Root<char> fieldName;
-	u16 fieldNameIndex = classFile.constantPool->get(fieldRef.nameAndTypeIndex).c_nameAndType.nameIndex;
-	m_gc.makeRoot(classFile.constantPool->get(fieldNameIndex).c_utf8.bytes, fieldName);
-
-	Operand operand = frame.get().pop();
-	GC::Object<ClassFile>* targetClass = operand.classFile;
-
-	u16 fieldIndex = targetClass->object.findFieldByName(fieldName);
-
-	Instruction instruction;
-	instruction.opcode = Opcode::getfield_c;
-	instruction.targetField = targetClass->object.fields->get(fieldIndex).field;
-//	switch (instruction.targetField->object.type.type)
-//	{
-//	case Type::BOOLEAN:
-//	case Type::BYTE:
-//	case Type::CHAR:
-//		instruction.opcode = Opcode::getfield_byte;
-//		break;
-//	case Type::SHORT:
-//		instruction.opcode = Opcode::getfield_short;
-//		break;
-//	case Type::INTEGER:
-//	case Type::FLOAT:
-//		instruction.opcode = Opcode::getfield_integer;
-//		break;
-//	case Type::REFERENCE:
-//		instruction.opcode = Opcode::getfield_object;
-//		break;
-//	case Type::VOID:
-//	case Type::LONG:
-//	case Type::DOUBLE:
-//		Arch::panic();
-//		break;
-//	}
-	return instruction;
+	Operand a = frame.get().pop();
+	Operand b = frame.get().pop();
+	if (a.integer != b.integer)
+		return target;
+	else
+		return pc;
 }
 
 void VM::opcodeGetfieldC(GC::Root<Frame>& frame, GC::Object<FieldInfo>* field)
 {
 	Operand& operand = field->object.value;
 	frame.get().push(operand);
+}
+
+void VM::opcodePutfieldC(GC::Root<Frame>& frame, GC::Object<FieldInfo>* field)
+{
+	field->object.value = frame.get().pop();
 }
 
 Instruction VM::opcodeInvokeA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index)
@@ -366,6 +353,77 @@ void VM::opcodeReturn(GC::Root<Thread>& thread, GC::Root<Frame>& frame)
 	thread.get().top = frame.get().previous;
 }
 
+void VM::findOpcodeFieldA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index)
+{
+	ClassFile& classFile = frame.get().getClassFile()->object;
+	ConstantPoolFieldRef fieldRef = classFile.constantPool->get(index).c_field;
+
+	GC::Root<char> className;
+	u16 classNameIndex = classFile.constantPool->get(fieldRef.classIndex).c_class.nameIndex;
+	m_gc.makeRoot(classFile.constantPool->get(classNameIndex).c_utf8.bytes, className);
+
+	findClass(thread, frame, className);
+}
+
+Instruction VM::findOpcodeFieldB(GC::Root<Frame>& frame, u16 index)
+{
+	ClassFile& classFile = frame.get().getClassFile()->object;
+	ConstantPoolFieldRef fieldRef = classFile.constantPool->get(index).c_field;
+
+	GC::Root<char> fieldName;
+	u16 fieldNameIndex = classFile.constantPool->get(fieldRef.nameAndTypeIndex).c_nameAndType.nameIndex;
+	m_gc.makeRoot(classFile.constantPool->get(fieldNameIndex).c_utf8.bytes, fieldName);
+
+	Operand operand = frame.get().pop();
+	GC::Object<ClassFile>* targetClass = operand.classFile;
+
+	u16 fieldIndex = targetClass->object.findFieldByName(fieldName);
+
+	Instruction instruction;
+//	instruction.opcode = Opcode::getfield_c;
+	instruction.targetField = targetClass->object.fields->get(fieldIndex).field;
+//	switch (instruction.targetField->object.type.type)
+//	{
+//	case Type::BOOLEAN:
+//	case Type::BYTE:
+//	case Type::CHAR:
+//		instruction.opcode = Opcode::getfield_byte;
+//		break;
+//	case Type::SHORT:
+//		instruction.opcode = Opcode::getfield_short;
+//		break;
+//	case Type::INTEGER:
+//	case Type::FLOAT:
+//		instruction.opcode = Opcode::getfield_integer;
+//		break;
+//	case Type::REFERENCE:
+//		instruction.opcode = Opcode::getfield_object;
+//		break;
+//	case Type::VOID:
+//	case Type::LONG:
+//	case Type::DOUBLE:
+//		Arch::panic();
+//		break;
+//	}
+	return instruction;
+}
+
+u16 VM::findOpcodeJumpTarget(GC::Root<Frame>& frame, u16 target)
+{
+	GC::Array<Instruction>* instructions = frame.get().instructions;
+	for (size_t i = 0; i < instructions->count(); i++)
+	{
+		Instruction instruction = instructions->get(i);
+		if (instruction.offset == target)
+		{
+			return i;
+		}
+	}
+	Log::critical("Found no target instruction for jump");
+	Arch::panic();
+	return 0;
+}
+
 void VM::findClass(GC::Root<Thread>& thread, GC::Root<Frame>& frame, const GC::Root<char>& name)
 {
 	GC::Root<ClassFile> methodClass;
@@ -380,6 +438,7 @@ void VM::findClass(GC::Root<Thread>& thread, GC::Root<Frame>& frame, const GC::R
 			Arch::panic();
 		}
 		Operand operand;
+		operand.isObject = true;
 		targetClass.store(&operand.classFile);
 		frame.get().push(operand);
 	}

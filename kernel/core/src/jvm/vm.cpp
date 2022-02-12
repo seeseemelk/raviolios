@@ -8,7 +8,12 @@
 
 using namespace Java;
 
-void VM::init(const NativeClassLoader& classLoaderVtable, void* classLoader, const NativeMethod* nativeMethods, size_t nativeMethodCount)
+void VM::init(
+	const NativeClassLoader& classLoaderVtable,
+	void* classLoader,
+	const NativeMethod* nativeMethods,
+	size_t nativeMethodCount
+)
 {
 	m_classLoaderVtable = &classLoaderVtable;
 	m_classLoader = classLoader;
@@ -298,12 +303,12 @@ void VM::loadCodeAttribute(GC::Root<ClassFile>& classfile, GC::Root<CodeAttribut
 
 void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_t instructionCount)
 {
-	size_t instructionIndex = 0;
-	u16 instructionMap[instructionCount];
+	u16 instructionIndex = 0;
 	for (size_t i = 0; i < instructionCount; i++)
 	{
 		u8 opcode = loader.readU8();
 		Instruction instruction;
+		instruction.offset = i;
 		switch (opcode)
 		{
 		case 0x03: /* iconst_0 */
@@ -377,7 +382,14 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 			instruction.index = 3;
 			break;
 		case 0xA0: /* if_icmpne */
-			instruction.opcode = Opcode::if_icmpne;
+			instruction.opcode = Opcode::if_icmpne_a;
+			instruction.index = loader.readU16();
+			i += 2;
+			break;
+		case 0xA7: /* goto */
+			instruction.opcode = Opcode::goto_a;
+			instruction.index = loader.readU16();
+			i += 2;
 			break;
 		case 0xAC: /* ireturn */
 			instruction.opcode = Opcode::return_value;
@@ -387,6 +399,11 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 			break;
 		case 0xB4: /* getfield */
 			instruction.opcode = Opcode::getfield_a;
+			instruction.index = loader.readU16() - 1;
+			i += 2;
+			break;
+		case 0xB5: /* putfield */
+			instruction.opcode = Opcode::putfield_a;
 			instruction.index = loader.readU16() - 1;
 			i += 2;
 			break;
