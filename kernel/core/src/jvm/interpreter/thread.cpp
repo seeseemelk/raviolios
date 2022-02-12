@@ -24,15 +24,15 @@ using namespace Java;
 //	u16 low = getU8FromCode(index + 1);
 //	return (high << 8) | low;
 //}
-//
-//static void dumpStack(Frame& frame)
-//{
-//	Log::infof("Stack dump (length %d):", frame.stack->count());
-//	for (size_t i = 0; i < frame.stack->count(); i++)
-//	{
-//		Log::infof("[%d] %d", i, frame.stack->get(i).integer);
-//	}
-//}
+
+static void dumpStack(Frame& frame)
+{
+	Log::infof("Stack dump (length %d):", frame.stack->count());
+	for (size_t i = 0; i < frame.stackIndex; i++)
+	{
+		Log::infof("[%d] %d", i, frame.stack->get(i).integer);
+	}
+}
 
 void Thread::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 {
@@ -120,6 +120,7 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 		Instruction instruction = frame.get().instructions->get(pc);
 		bool storeInstruction = false;
 		bool returnFromFrame = false;
+		Log::infof("Executing opcode %d (index: %d)", instruction.opcode, pc);
 		switch (instruction.opcode)
 		{
 		case Opcode::iconst:
@@ -156,7 +157,7 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 			storeInstruction = true;
 			break;
 		case Opcode::getfield_b:
-			instruction = findOpcodeFieldB(frame, instruction.index);
+			findOpcodeFieldB(frame, instruction.index, instruction);
 			instruction.opcode = Opcode::getfield_c;
 			storeInstruction = true;
 			break;
@@ -170,7 +171,7 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 			storeInstruction = true;
 			break;
 		case Opcode::putfield_b:
-			instruction = findOpcodeFieldB(frame, instruction.index);
+			findOpcodeFieldB(frame, instruction.index, instruction);
 			instruction.opcode = Opcode::putfield_c;
 			storeInstruction = true;
 			break;
@@ -179,11 +180,12 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 			pc++;
 			break;
 		case Opcode::invoke_a:
-			instruction = opcodeInvokeA(thread, frame, instruction.index);
+			opcodeInvokeA(thread, frame, instruction.index);
+			instruction.opcode = Opcode::invoke_b;
 			storeInstruction = true;
 			break;
 		case Opcode::invoke_b:
-			instruction = opcodeInvokeB(frame, instruction.index);
+			opcodeInvokeB(frame, instruction.index, instruction);
 			storeInstruction = true;
 			break;
 		case Opcode::invoke_native:
@@ -205,6 +207,7 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 			returnFromFrame = true;
 			break;
 		}
+		dumpStack(frame.get());
 		if (storeInstruction)
 		{
 			frame.get().instructions->get(pc) = instruction;
@@ -261,7 +264,7 @@ void VM::opcodePutfieldC(GC::Root<Frame>& frame, GC::Object<FieldInfo>* field)
 	field->object.value = frame.get().pop();
 }
 
-Instruction VM::opcodeInvokeA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index)
+void VM::opcodeInvokeA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index)
 {
 	ClassFile& classFile = frame.get().getClassFile()->object;
 	ConstantPoolMethodRef methodRef = classFile.constantPool->get(index).c_method;
@@ -271,14 +274,9 @@ Instruction VM::opcodeInvokeA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, 
 	m_gc.makeRoot(classFile.constantPool->get(classNameIndex).c_utf8.bytes, className);
 
 	findClass(thread, frame, className);
-
-	Instruction result;
-	result.opcode = Opcode::invoke_b;
-	result.index = index;
-	return result;
 }
 
-Instruction VM::opcodeInvokeB(GC::Root<Frame>& frame, u16 index)
+void VM::opcodeInvokeB(GC::Root<Frame>& frame, u16 index, Instruction& instruction)
 {
 	ClassFile& classFile = frame.get().getClassFile()->object;
 	ConstantPoolMethodRef methodRef = classFile.constantPool->get(index).c_method;
@@ -298,11 +296,10 @@ Instruction VM::opcodeInvokeB(GC::Root<Frame>& frame, u16 index)
 
 	GC::Object<MethodInfo>* method = targetClass->object.methods->get(methodIndexInTargetClass).method;
 
-	Instruction result;
 	if (method->object.isNative())
 	{
-		result.opcode = Opcode::invoke_native;
-		result.targetNativeMethod = nullptr;
+		instruction.opcode = Opcode::invoke_native;
+		instruction.targetNativeMethod = nullptr;
 
 		GC::Root<char> className;
 		u16 classNameIndex = classFile.constantPool->get(methodRef.classIndex).c_class.nameIndex;
@@ -317,9 +314,9 @@ Instruction VM::opcodeInvokeB(GC::Root<Frame>& frame, u16 index)
 				continue;
 			if (!equals(methodType, nativeMethod.methodType))
 				continue;
-			result.targetNativeMethod = nativeMethod.method;
+			instruction.targetNativeMethod = nativeMethod.method;
 		}
-		if (result.targetNativeMethod == nullptr)
+		if (instruction.targetNativeMethod == nullptr)
 		{
 			Log::criticalf("Unknown native method");
 			Arch::panic();
@@ -327,10 +324,9 @@ Instruction VM::opcodeInvokeB(GC::Root<Frame>& frame, u16 index)
 	}
 	else
 	{
-		result.opcode = Opcode::invoke_special;
-		result.targetMethod = method;
+		instruction.opcode = Opcode::invoke_special;
+		instruction.targetMethod = method;
 	}
-	return result;
 }
 
 void VM::opcodeInvokeSpecial(GC::Root<Thread>& thread, GC::Root<Frame>& frame, GC::Object<MethodInfo>* method)
@@ -365,7 +361,7 @@ void VM::findOpcodeFieldA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 
 	findClass(thread, frame, className);
 }
 
-Instruction VM::findOpcodeFieldB(GC::Root<Frame>& frame, u16 index)
+void VM::findOpcodeFieldB(GC::Root<Frame>& frame, u16 index, Instruction& instruction)
 {
 	ClassFile& classFile = frame.get().getClassFile()->object;
 	ConstantPoolFieldRef fieldRef = classFile.constantPool->get(index).c_field;
@@ -379,7 +375,7 @@ Instruction VM::findOpcodeFieldB(GC::Root<Frame>& frame, u16 index)
 
 	u16 fieldIndex = targetClass->object.findFieldByName(fieldName);
 
-	Instruction instruction;
+//	Instruction instruction;
 //	instruction.opcode = Opcode::getfield_c;
 	instruction.targetField = targetClass->object.fields->get(fieldIndex).field;
 //	switch (instruction.targetField->object.type.type)
@@ -405,7 +401,7 @@ Instruction VM::findOpcodeFieldB(GC::Root<Frame>& frame, u16 index)
 //		Arch::panic();
 //		break;
 //	}
-	return instruction;
+//	return instruction;
 }
 
 u16 VM::findOpcodeJumpTarget(GC::Root<Frame>& frame, u16 target)

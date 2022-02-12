@@ -252,7 +252,7 @@ namespace Java
 //		void increment(Frame& frame);
 		u16 findOpcodeJumpTarget(GC::Root<Frame>& frame, u16 target);
 		void findOpcodeFieldA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index);
-		Instruction findOpcodeFieldB(GC::Root<Frame>& frame, u16 index);
+		void findOpcodeFieldB(GC::Root<Frame>& frame, u16 index, Instruction& instruction);
 		void opcodeIconst(GC::Root<Frame>& frame, i32 value);
 		void opcodeAload(GC::Root<Frame>& frame, u16 index);
 		void opcodeIload(GC::Root<Frame>& frame, u16 index);
@@ -266,8 +266,8 @@ namespace Java
 //		Instruction opcodePutfieldB(GC::Root<Frame>& frame, u16 index);
 		void opcodePutfieldC(GC::Root<Frame>& frame, GC::Object<FieldInfo>* field);
 
-		Instruction opcodeInvokeA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index);
-		Instruction opcodeInvokeB(GC::Root<Frame>& frame, u16 index);
+		void opcodeInvokeA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index);
+		void opcodeInvokeB(GC::Root<Frame>& frame, u16 index, Instruction& instruction);
 		void opcodeInvokeSpecial(GC::Root<Thread>& thread, GC::Root<Frame>& frame, GC::Object<MethodInfo>* method);
 		void opcodeReturnValue(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
 		void opcodeReturn(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
