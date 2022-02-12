@@ -8,7 +8,7 @@
 using namespace Java;
 
 const char* s_object = "raviolios/java/lang/Object";
-bool g_aggresiveGarbageCollection = false;
+bool g_aggressiveGarbageCollection = false;
 
 static const char* s_validClasses[] = {
 		"Test1",
@@ -47,8 +47,6 @@ ClassError CUT::loadClass(GC::Root<Java::ClassFile>& classfile, GC::Root<Java::T
 {
 	GC::Root<char> classNameRoot;
 	vm.allocateString(classNameRoot, className.c_str());
-	(void) classfile;
-	//return ClassError::GOOD;
 	return vm.getClass(classfile, thread, classNameRoot);
 }
 

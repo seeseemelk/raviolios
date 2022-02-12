@@ -8,6 +8,8 @@
 #include "arch.hpp"
 #include "log.hpp"
 
+#define VALIDATE(obj) do { if (obj != nullptr) obj->validate(); } while (0);
+
 namespace GC
 {
 	class Context;
@@ -227,7 +229,7 @@ namespace GC
 			if (object == nullptr)
 			{
 				Log::critical("Null-pointer derefence");
-//				Arch::panic();
+				Arch::panic();
 			}
 			return *asPtr();
 		}

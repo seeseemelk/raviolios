@@ -67,7 +67,7 @@ static void runJavaTestMethod(const char* className, const char* methodName)
 		ThreadState state = cut.vm.step(thread);
 		if (state == ThreadState::STOPPED)
 			break;
-		if (g_aggresiveGarbageCollection)
+		if (g_aggressiveGarbageCollection)
 			cut.vm.gc().collect();
 		steps++;
 	}
@@ -80,15 +80,15 @@ static void runJavaTestMethod(const char* className, const char* methodName)
 
 static void runJavaTest(const char* className, const char* methodName)
 {
-//	Log::info("Normal run");
-//	g_aggresiveGarbageCollection = false;
-//	runJavaTestMethod(className, methodName);
-
-	Log::info("Aggresive GC run");
-	g_aggresiveGarbageCollection = true;
+	g_aggressiveGarbageCollection = false;
 	runJavaTestMethod(className, methodName);
+}
 
-	g_aggresiveGarbageCollection = false;
+static void runJavaTestAggressiveGC(const char* className, const char* methodName)
+{
+	g_aggressiveGarbageCollection = true;
+	runJavaTestMethod(className, methodName);
+	g_aggressiveGarbageCollection = false;
 }
 
 #define JAVA_TEST(className, methodName) \
@@ -96,6 +96,11 @@ static void runJavaTest(const char* className, const char* methodName)
 	{ \
 		s_expectFail = false; \
 		runJavaTest(className, methodName); \
+	} \
+	TEST("Java " className " " methodName " (aggressive GC)") \
+	{ \
+		s_expectFail = false; \
+		runJavaTestAggressiveGC(className, methodName); \
 	}
 
 #define JAVA_FAIL(className, methodName) \
@@ -103,20 +108,25 @@ static void runJavaTest(const char* className, const char* methodName)
 	{ \
 		s_expectFail = true; \
 		runJavaTest(className, methodName); \
+	} \
+	TEST("Java " className " " methodName " (aggressive GC)") \
+	{ \
+		s_expectFail = true; \
+		runJavaTestAggressiveGC(className, methodName); \
 	}
 
-//JAVA_TEST("tests/Assertions", "succeeds");
-//JAVA_FAIL("tests/Assertions", "fails");
-//JAVA_TEST("tests/Assertions", "equalsSucceedsWhenSame");
-//JAVA_FAIL("tests/Assertions", "equalsFailsWhenDifferent");
-//JAVA_TEST("tests/StaticProperty", "propertyStartsAsZero");
+JAVA_TEST("tests/Assertions", "succeeds");
+JAVA_FAIL("tests/Assertions", "fails");
+JAVA_TEST("tests/Assertions", "equalsSucceedsWhenSame");
+JAVA_FAIL("tests/Assertions", "equalsFailsWhenDifferent");
+JAVA_TEST("tests/StaticProperty", "propertyStartsAsZero");
 
 JAVA_TEST("tests/StaticProperty", "propertyCanBeChanged");
 
-//JAVA_TEST("tests/StaticProperty", "propertiesHaveDefaultValues");
-//JAVA_TEST("tests/Constants", "canUseLargeIntegers");
-//JAVA_TEST("tests/Variables", "canSaveVariables");
-//JAVA_TEST("tests/Arithmetic", "canAddNumbers");
-//JAVA_TEST("tests/Arithmetic", "canIncrementNumbers");
+JAVA_TEST("tests/StaticProperty", "propertiesHaveDefaultValues");
+JAVA_TEST("tests/Constants", "canUseLargeIntegers");
+JAVA_TEST("tests/Variables", "canSaveVariables");
+JAVA_TEST("tests/Arithmetic", "canAddNumbers");
+JAVA_TEST("tests/Arithmetic", "canIncrementNumbers");
 
-//JAVA_TEST("tests/Objects", "canReadObjectProperty");
+JAVA_TEST("tests/Objects", "canReadObjectProperty");

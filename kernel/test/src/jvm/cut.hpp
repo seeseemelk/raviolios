@@ -17,7 +17,7 @@
  * This can be used to try and diagnose memory issues. Should be set to `false`
  * after a test.
  */
-extern bool g_aggresiveGarbageCollection;
+extern bool g_aggressiveGarbageCollection;
 
 class CUT
 {

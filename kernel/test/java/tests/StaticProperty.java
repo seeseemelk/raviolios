@@ -18,9 +18,9 @@ public class StaticProperty
 		Asserts.assertEquals(0, propInt);
 	}
 
-	//private static int propNonZero = 5;
-	//public static void propertiesHaveDefaultValues()
-	//{
-	//	Asserts.assertEquals(5, propNonZero);
-	//}
+	private static int propNonZero = 5;
+	public static void propertiesHaveDefaultValues()
+	{
+		Asserts.assertEquals(5, propNonZero);
+	}
 }

@@ -17,25 +17,14 @@ static ClassError loadClass(void* arg, VM& vm, GC::Root<Java::Thread>& thread, G
 	ClassList& list = classLoader.classList(vm);
 	for (size_t i = 0; i < list.size; i++)
 	{
-		Log::trace("A");
 		GC::Object<ClassFile>* classFile = list.entries->get(i).classFile;
-		Log::trace("B");
 		GC::Array<char>* entryName = list.entries->get(i).name;
-		Log::trace("C1");
-		bool a = classFile != nullptr;
-		Log::trace("C2");
-		bool b = equals(name, entryName);
-		Log::trace("C3");
-		if (a && b)
+		if (classFile != nullptr && equals(name, entryName))
 		{
-			Log::trace("D");
-			classFile->validate();
-			Log::trace("E");
+			VALIDATE(classFile);
 			vm.gc().makeRoot(classFile, root);
-			Log::trace("F");
 			return ClassError::GOOD;
 		}
-		Log::trace("G");
 	}
 	ClassError error = classLoader.m_parentVtable->loadClass(classLoader.m_parent, vm, thread, root, name);
 	if (error != ClassError::GOOD)
@@ -44,7 +33,7 @@ static ClassError loadClass(void* arg, VM& vm, GC::Root<Java::Thread>& thread, G
 	ClassListEntry entry;
 	name.store(&entry.name);
 	root.store(&entry.classFile);
-	entry.classFile->validate();
+	VALIDATE(entry.classFile);
 	ClassList::add(vm.gc(), classLoader.m_classList, entry);
 	return ClassError::GOOD;
 }
@@ -108,11 +97,13 @@ void ClassListEntry::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 	ClassListEntry* infos = object->as<ClassListEntry>();
 	for (size_t i = 0; i < count; i++)
 	{
-		if (infos[i].classFile != nullptr) infos[i].classFile->validate();
-		visitor.visit(&infos[i].name);
-		if (infos[i].classFile != nullptr) infos[i].classFile->validate();
+		VALIDATE(infos[i].classFile);
+		if (&infos[i].classFile == nullptr)
+			visitor.visitWeak(&infos[i].name);
+		else
+			visitor.visit(&infos[i].name);
+		VALIDATE(infos[i].classFile);
 		visitor.visitWeak(&infos[i].classFile);
-		//infos->classFile->validate();
 	}
 }
 
