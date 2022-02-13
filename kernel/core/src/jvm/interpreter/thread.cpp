@@ -120,9 +120,17 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 		Instruction instruction = frame.get().instructions->get(pc);
 		bool storeInstruction = false;
 		bool returnFromFrame = false;
-		Log::infof("Executing opcode %d (index: %d)", instruction.opcode, pc);
+		Log::infof("Executing opcode %d (%s) (index: %d)", instruction.opcode, toString(instruction.opcode), pc);
 		switch (instruction.opcode)
 		{
+		case Opcode::panic:
+			Log::critical("Reached panic instruction");
+			Arch::panic();
+			break;
+		case Opcode::load_constant:
+			opcodeLoadConstant(frame, instruction);
+			storeInstruction = true;
+			break;
 		case Opcode::iconst:
 			opcodeIconst(frame, instruction.constantInteger);
 			pc++;
@@ -151,6 +159,37 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 		case Opcode::if_icmpne_b:
 			pc = opcodeIfIcmpneB(frame, instruction.index, pc);
 			break;
+
+		case Opcode::getstatic_a:
+			findOpcodeFieldA(thread, frame, instruction.index);
+			instruction.opcode = Opcode::getstatic_b;
+			storeInstruction = true;
+			break;
+		case Opcode::getstatic_b:
+			findOpcodeFieldB(frame, instruction.index, instruction);
+			instruction.opcode = Opcode::getstatic_c;
+			storeInstruction = true;
+			break;
+		case Opcode::getstatic_c:
+			opcodeGetstaticC(frame, instruction.targetField);
+			pc++;
+			break;
+
+		case Opcode::putstatic_a:
+			findOpcodeFieldA(thread, frame, instruction.index);
+			instruction.opcode = Opcode::putstatic_b;
+			storeInstruction = true;
+			break;
+		case Opcode::putstatic_b:
+			findOpcodeFieldB(frame, instruction.index, instruction);
+			instruction.opcode = Opcode::putstatic_c;
+			storeInstruction = true;
+			break;
+		case Opcode::putstatic_c:
+			opcodePutstaticC(frame, instruction.targetField);
+			pc++;
+			break;
+
 		case Opcode::getfield_a:
 			findOpcodeFieldA(thread, frame, instruction.index);
 			instruction.opcode = Opcode::getfield_b;
@@ -162,9 +201,11 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 			storeInstruction = true;
 			break;
 		case Opcode::getfield_c:
-			opcodeGetfieldC(frame, instruction.targetField);
+//			opcodeGetfieldC(frame, instruction.targetField);
+			Arch::panic();
 			pc++;
 			break;
+
 		case Opcode::putfield_a:
 			findOpcodeFieldA(thread, frame, instruction.index);
 			instruction.opcode = Opcode::putfield_b;
@@ -179,6 +220,7 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 			opcodePutfieldC(frame, instruction.targetField);
 			pc++;
 			break;
+
 		case Opcode::invoke_a:
 			opcodeInvokeA(thread, frame, instruction.index);
 			instruction.opcode = Opcode::invoke_b;
@@ -217,11 +259,28 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 			if (thread.get().top == nullptr)
 				return ThreadState::STOPPED;
 			m_gc.makeRoot(thread.get().top, frame);
+			pc = frame.get().pc;
 		}
 	}
 	while (!m_interrupted);
 	frame.get().pc = pc;
 	return ThreadState::RUNNING;
+}
+
+void VM::opcodeLoadConstant(GC::Root<Frame>& frame, Instruction& instruction)
+{
+	ConstantPoolInfo& constant = frame.get().methodInfo->object.classFile->object.constantPool->get(instruction.index);
+	switch (constant.tag)
+	{
+	case ConstantPoolTag::CONSTANT_integer:
+		instruction.opcode = Opcode::iconst;
+		instruction.constantInteger = constant.c_integer.integer;
+		break;
+	default:
+		Log::critical("Unsupported or invalid constant pool type");
+		Arch::panic();
+		break;
+	}
 }
 
 void VM::opcodeIconst(GC::Root<Frame>& frame, i32 value)
@@ -250,13 +309,19 @@ u16 VM::opcodeIfIcmpneB(GC::Root<Frame>& frame, u16 target, u16 pc)
 	if (a.integer != b.integer)
 		return target;
 	else
-		return pc;
+		return pc + 1;
 }
 
-void VM::opcodeGetfieldC(GC::Root<Frame>& frame, GC::Object<FieldInfo>* field)
+void VM::opcodeGetstaticC(GC::Root<Frame>& frame, GC::Object<FieldInfo>* field)
 {
 	Operand& operand = field->object.value;
 	frame.get().push(operand);
+}
+
+void VM::opcodePutstaticC(GC::Root<Frame>& frame, GC::Object<FieldInfo>* field)
+{
+	Operand operand = frame.get().pop();
+	field->object.value = operand;
 }
 
 void VM::opcodePutfieldC(GC::Root<Frame>& frame, GC::Object<FieldInfo>* field)

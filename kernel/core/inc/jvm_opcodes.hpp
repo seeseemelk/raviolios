@@ -13,7 +13,6 @@ namespace Java
 {
 //	enum class Opcode : u8
 //	{
-//		ldc = 0x12,
 //		istore_0 = 0x3B,
 //		istore_1 = 0x3C,
 //		istore_2 = 0x3D,
@@ -33,13 +32,13 @@ namespace Java
 ////		if_icmpgt = 0xA3,
 ////		if_icmple = 0xA4,
 //		ireturn = 0xAC,
-//		getstatic = 0xB2,
-//		putstatic = 0xB3,
 //		new_ = 0xBB,
 //	};
 
 	enum class Opcode : u16
 	{
+		panic,
+		load_constant,
 		iconst,
 		aload,
 		iload,
@@ -47,6 +46,12 @@ namespace Java
 		goto_b,
 		if_icmpne_a,
 		if_icmpne_b,
+		getstatic_a,
+		getstatic_b,
+		getstatic_c,
+		putstatic_a,
+		putstatic_b,
+		putstatic_c,
 		getfield_a,
 		getfield_b,
 		getfield_c,
@@ -60,6 +65,8 @@ namespace Java
 		return_value,
 		return_,
 	};
+
+	const char* toString(Opcode opcode);
 }
 
 #endif

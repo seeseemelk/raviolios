@@ -253,6 +253,7 @@ namespace Java
 		u16 findOpcodeJumpTarget(GC::Root<Frame>& frame, u16 target);
 		void findOpcodeFieldA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index);
 		void findOpcodeFieldB(GC::Root<Frame>& frame, u16 index, Instruction& instruction);
+		void opcodeLoadConstant(GC::Root<Frame>& frame, Instruction& instruction);
 		void opcodeIconst(GC::Root<Frame>& frame, i32 value);
 		void opcodeAload(GC::Root<Frame>& frame, u16 index);
 		void opcodeIload(GC::Root<Frame>& frame, u16 index);
@@ -260,6 +261,8 @@ namespace Java
 
 //		Instruction opcodeFindFieldA;
 //		Instruction opcodeGetfieldB(GC::Root<Frame>& frame, u16 index);
+		void opcodeGetstaticC(GC::Root<Frame>& frame, GC::Object<FieldInfo>* field);
+		void opcodePutstaticC(GC::Root<Frame>& frame, GC::Object<FieldInfo>* field);
 		void opcodeGetfieldC(GC::Root<Frame>& frame, GC::Object<FieldInfo>* field);
 
 //		Instruction opcodePutfieldA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index);

@@ -5,6 +5,7 @@ import raviolios.Asserts;
 public class StaticProperty
 {
 	private static int propInt = 0;
+
 	public static void propertyStartsAsZero()
 	{
 		Asserts.assertEquals(0, propInt);

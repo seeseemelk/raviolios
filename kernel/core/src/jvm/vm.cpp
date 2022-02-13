@@ -143,23 +143,27 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, GC::Root<Thread>& thr
 		m_gc.allocate(fieldInfoMeta, fieldInfoRoot);
 		fieldInfoRoot.store(&fieldRefRoot[i].field);
 
-		fieldInfoRoot[i].accessFlags = loader.readU16();
+		fieldInfoRoot.get().accessFlags = loader.readU16();
 		u16 nameIndex = loader.readU16() - 1;
-		fieldInfoRoot[i].nameIndex = nameIndex;
+		fieldInfoRoot.get().nameIndex = nameIndex;
 		u16 descriptorIndex = loader.readU16() - 1;
-		fieldInfoRoot[i].descriptorIndex = descriptorIndex;
-		fieldInfoRoot[i].attributesCount = loader.readU16();
+		fieldInfoRoot.get().descriptorIndex = descriptorIndex;
+		fieldInfoRoot.get().attributesCount = loader.readU16();
 
-		fieldInfoRoot[i].name = classfile.get().constantPool->get(nameIndex).c_utf8.bytes;
+		fieldInfoRoot.get().name = classfile.get().constantPool->get(nameIndex).c_utf8.bytes;
 
 		GC::Root<char> descriptor;
 		m_gc.makeRoot(constantPoolRoot[descriptorIndex].c_utf8.bytes, descriptor);
-		fieldInfoRoot[i].type = TypeDescriptor::parse(descriptor);
+		fieldInfoRoot.get().type = TypeDescriptor::parse(descriptor);
 
 		GC::Root<AttributeInfo> attributeInfo;
-		loadAttributes(classfile, attributeInfo, loader, fieldInfoRoot[i].attributesCount);
-		attributeInfo.store(&fieldInfoRoot[i].attributes);
+		loadAttributes(classfile, attributeInfo, loader, fieldInfoRoot.get().attributesCount);
+		attributeInfo.store(&fieldInfoRoot.get().attributes);
+
+		fieldInfoRoot.object->validate();
+		attributeInfo.object->validate();
 	}
+	fieldRefRoot.object->validate();
 
 	// Load methods
 	classfile.get().methodCount = loader.readU16();
@@ -181,6 +185,11 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, GC::Root<Thread>& thr
 		u16 attributesCount = loader.readU16();
 		methodInfo.get().attributesCount = attributesCount;
 		classfile.store(&methodInfo.get().classFile);
+
+		GC::Root<char> methodType;
+		m_gc.makeRoot(classfile.get().constantPool->get(methodInfo.get().descriptorIndex).c_utf8.bytes, methodType);
+		TypeDescriptor type = TypeDescriptor::parse(methodType);
+		methodInfo.get().type = type;
 
 		GC::Root<AttributeInfo> attributeInfo;
 		loadAttributes(classfile, attributeInfo, loader, attributesCount);
@@ -337,33 +346,34 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 			break;
 		case 0x10: /* bipush */
 			instruction.opcode = Opcode::iconst;
-			instruction.constantInteger = static_cast<i8>(loader.readU8());
+			instruction.constantInteger = loader.readI8();
 			i += 1;
 			break;
 		case 0x11: /* sipush */
 			instruction.opcode = Opcode::iconst;
-			instruction.constantInteger = static_cast<i16>(loader.readU16());
+			instruction.constantInteger = loader.readI16();
 			i += 2;
+			break;
+		case 0x12: /* ldc */
+			instruction.opcode = Opcode::load_constant;
+			instruction.index = loader.readU8() - 1;
+			i += 1;
 			break;
 		case 0x1A: /* iload_0 */
 			instruction.opcode = Opcode::iload;
 			instruction.index = 0;
-			i += 2;
 			break;
 		case 0x1B: /* iload_1 */
 			instruction.opcode = Opcode::iload;
 			instruction.index = 1;
-			i += 2;
 			break;
 		case 0x1C: /* iload_2 */
 			instruction.opcode = Opcode::iload;
 			instruction.index = 2;
-			i += 2;
 			break;
 		case 0x1D: /* iload_3 */
 			instruction.opcode = Opcode::iload;
 			instruction.index = 3;
-			i += 2;
 			break;
 		case 0x2A: /* aload_0 */
 			instruction.opcode = Opcode::aload;
@@ -383,12 +393,12 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 			break;
 		case 0xA0: /* if_icmpne */
 			instruction.opcode = Opcode::if_icmpne_a;
-			instruction.index = loader.readU16();
+			instruction.index = loader.readI16() + instruction.offset;
 			i += 2;
 			break;
 		case 0xA7: /* goto */
 			instruction.opcode = Opcode::goto_a;
-			instruction.index = loader.readU16();
+			instruction.index = loader.readI16() + instruction.offset;
 			i += 2;
 			break;
 		case 0xAC: /* ireturn */
@@ -396,6 +406,16 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 			break;
 		case 0xB1: /* return */
 			instruction.opcode = Opcode::return_;
+			break;
+		case 0xB2: /* getstatic */
+			instruction.opcode = Opcode::getstatic_a;
+			instruction.index = loader.readU16() - 1;
+			i += 2;
+			break;
+		case 0xB3: /* putstatic */
+			instruction.opcode = Opcode::putstatic_a;
+			instruction.index = loader.readU16() - 1;
+			i += 2;
 			break;
 		case 0xB4: /* getfield */
 			instruction.opcode = Opcode::getfield_a;

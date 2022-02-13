@@ -60,6 +60,9 @@ static void runJavaTestMethod(const char* className, const char* methodName)
 
 	cut.vm.invokeMethod(thread, classfile, methodName);
 
+	if (g_aggressiveGarbageCollection)
+		cut.vm.gc().collect();
+
 	s_assertsCalled = 0;
 	size_t steps = 0;
 	while (steps < 1000)
@@ -118,13 +121,12 @@ static void runJavaTestAggressiveGC(const char* className, const char* methodNam
 JAVA_TEST("tests/Assertions", "succeeds");
 JAVA_FAIL("tests/Assertions", "fails");
 JAVA_TEST("tests/Assertions", "equalsSucceedsWhenSame");
-//JAVA_FAIL("tests/Assertions", "equalsFailsWhenDifferent");
-//JAVA_TEST("tests/StaticProperty", "propertyStartsAsZero");
-//
-//JAVA_TEST("tests/StaticProperty", "propertyCanBeChanged");
-//
-//JAVA_TEST("tests/StaticProperty", "propertiesHaveDefaultValues");
-//JAVA_TEST("tests/Constants", "canUseLargeIntegers");
+JAVA_FAIL("tests/Assertions", "equalsFailsWhenDifferent");
+JAVA_TEST("tests/StaticProperty", "propertyStartsAsZero");
+JAVA_TEST("tests/StaticProperty", "propertyCanBeChanged");
+JAVA_TEST("tests/StaticProperty", "propertiesHaveDefaultValues");
+JAVA_TEST("tests/Constants", "canUseLargeIntegers");
+
 //JAVA_TEST("tests/Variables", "canSaveVariables");
 //JAVA_TEST("tests/Arithmetic", "canAddNumbers");
 //JAVA_TEST("tests/Arithmetic", "canIncrementNumbers");

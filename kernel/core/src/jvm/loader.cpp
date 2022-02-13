@@ -60,6 +60,21 @@ u32 Loader::readU32()
 	return value;
 }
 
+i8 Loader::readI8()
+{
+	return static_cast<i8>(readU8());
+}
+
+i16 Loader::readI16()
+{
+	return static_cast<i16>(readU16());
+}
+
+i32 Loader::readI32()
+{
+	return static_cast<i32>(readU32());
+}
+
 void Loader::readBuf(u8* buf, size_t length)
 {
 	for (size_t i = 0; i < length; i++)

@@ -24,6 +24,10 @@ namespace Java
 		u16 readU16();
 		u32 readU32();
 
+		i8 readI8();
+		i16 readI16();
+		i32 readI32();
+
 		void readBuf(u8* buf, size_t length);
 		void readBuf(char* buf, size_t length);
 
