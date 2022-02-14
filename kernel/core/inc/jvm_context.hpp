@@ -181,6 +181,8 @@ namespace Java
 		[[nodiscard]]
 		ClassError defineClass(GC::Root<ClassFile>& classfile, GC::Root<Thread>& thread, const u8* data, size_t length);
 
+		void allocateObject(GC::Root<ClassFile>& classfile, GC::Root<JavaObject>& object);
+
 	private:
 		/// The native class loader.
 		const NativeClassLoader* m_classLoaderVtable;
@@ -250,15 +252,24 @@ namespace Java
 //		void swap(Frame& frame);
 //		void addIntegers(Frame& frame);
 //		void increment(Frame& frame);
+		enum class FieldOpcodeType { GET, PUT };
+
 		u16 findOpcodeJumpTarget(GC::Root<Frame>& frame, u16 target);
 		void findOpcodeFieldA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index);
 		void findOpcodeFieldB(GC::Root<Frame>& frame, u16 index, Instruction& instruction);
+		Opcode nextFieldOpcode(Instruction& instruction, FieldOpcodeType opcodeType);
+
+		void opcodeDup(GC::Root<Frame>& frame);
+		void opcodeSwap(GC::Root<Frame>& frame);
 		void opcodeLoadConstant(GC::Root<Frame>& frame, Instruction& instruction);
 		void opcodeIconst(GC::Root<Frame>& frame, i32 value);
 		void opcodeLoad(GC::Root<Frame>& frame, u16 index);
 		void opcodeStore(GC::Root<Frame>& frame, u16 index);
 		void opcodeIadd(GC::Root<Frame>& frame);
 		void opcodeIinc(GC::Root<Frame>& frame, u8 variable, i32 amount);
+		Instruction opcodeNewA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index);
+		Instruction opcodeNewB(GC::Root<Frame>& frame);
+		void opcodeNewC(GC::Root<Frame>& frame, GC::Object<ClassFile>* classFile);
 		u16 opcodeIfIcmpneB(GC::Root<Frame>& frame, u16 target, u16 pc);
 
 //		Instruction opcodeFindFieldA;

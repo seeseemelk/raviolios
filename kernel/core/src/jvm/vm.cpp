@@ -46,6 +46,14 @@ void VM::allocateString(GC::Root<char>& root, const char* str)
 		root[i] = str[i];
 }
 
+void VM::allocateObject(GC::Root<ClassFile>& classFile, GC::Root<JavaObject>& object)
+{
+	GC::Allocator<JavaObject> allocator(JavaObject::describer);
+	allocator.size = classFile.get().objectSize;
+	m_gc.allocate(allocator, object);
+	classFile.store(&object.get().class_);
+}
+
 ClassError VM::getClass(GC::Root<ClassFile>& classfile, GC::Root<Thread>& thread, const GC::Root<char>& name)
 {
 	return m_classLoaderVtable->loadClass(m_classLoader, *this, thread, classfile, name);
@@ -283,11 +291,6 @@ void VM::loadCodeAttribute(GC::Root<ClassFile>& classfile, GC::Root<CodeAttribut
 	GC::Root<Instruction> codeRoot;
 	m_gc.allocate(codeAllocator, codeRoot);
 	parseOpcodes(codeRoot, loader, codeLength);
-//	for (size_t i = 0; i < codeLength; i++)
-//	{
-//		codeRoot[i].opcode = static_cast<Instruction>(loader.readU8());
-//	}
-//	codeRoot.store(&root.get().code);
 	codeRoot.store(&root.get().instructions);
 
 	u16 exceptionLength = loader.readU16();
@@ -407,6 +410,28 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 			instruction.opcode = Opcode::store;
 			instruction.index = 3;
 			break;
+		case 0x4B: /* astore_0 */
+			instruction.opcode = Opcode::store;
+			instruction.index = 0;
+			break;
+		case 0x4C: /* astore_1 */
+			instruction.opcode = Opcode::store;
+			instruction.index = 1;
+			break;
+		case 0x4D: /* astore_2 */
+			instruction.opcode = Opcode::store;
+			instruction.index = 2;
+			break;
+		case 0x4E: /* astore_3 */
+			instruction.opcode = Opcode::store;
+			instruction.index = 3;
+			break;
+		case 0x59: /* dup */
+			instruction.opcode = Opcode::dup;
+			break;
+		case 0x5F: /* swap */
+			instruction.opcode = Opcode::swap;
+			break;
 		case 0x60: /* iadd */
 			instruction.opcode = Opcode::iadd;
 			break;
@@ -455,6 +480,11 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 		case 0xB7: /* invokespecial */
 		case 0xB8: /* invokestatic */
 			instruction.opcode = Opcode::invoke_a;
+			instruction.index = loader.readU16() - 1;
+			i += 2;
+			break;
+		case 0xBB: /* new */
+			instruction.opcode = Opcode::new_a;
 			instruction.index = loader.readU16() - 1;
 			i += 2;
 			break;

@@ -127,6 +127,14 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 			Log::critical("Reached panic instruction");
 			Arch::panic();
 			break;
+		case Opcode::dup:
+			opcodeDup(frame);
+			pc++;
+			break;
+		case Opcode::swap:
+			opcodeSwap(frame);
+			pc++;
+			break;
 		case Opcode::load_constant:
 			opcodeLoadConstant(frame, instruction);
 			storeInstruction = true;
@@ -149,6 +157,18 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 			break;
 		case Opcode::iinc:
 			opcodeIinc(frame, instruction.varIncrement.variable, instruction.varIncrement.constant);
+			pc++;
+			break;
+		case Opcode::new_a:
+			instruction = opcodeNewA(thread, frame, instruction.index);
+			storeInstruction = true;
+			break;
+		case Opcode::new_b:
+			instruction = opcodeNewB(frame);
+			storeInstruction = true;
+			break;
+		case Opcode::new_c:
+			opcodeNewC(frame, instruction.targetClass);
 			pc++;
 			break;
 		case Opcode::goto_a:
@@ -205,7 +225,7 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 			break;
 		case Opcode::getfield_b:
 			findOpcodeFieldB(frame, instruction.index, instruction);
-			instruction.opcode = Opcode::getfield_c;
+			instruction.opcode = nextFieldOpcode(instruction, FieldOpcodeType::GET);
 			storeInstruction = true;
 			break;
 		case Opcode::getfield_c:
@@ -221,7 +241,7 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 			break;
 		case Opcode::putfield_b:
 			findOpcodeFieldB(frame, instruction.index, instruction);
-			instruction.opcode = Opcode::putfield_c;
+			instruction.opcode = nextFieldOpcode(instruction, FieldOpcodeType::PUT);
 			storeInstruction = true;
 			break;
 		case Opcode::putfield_c:
@@ -275,6 +295,21 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 	return ThreadState::RUNNING;
 }
 
+void VM::opcodeDup(GC::Root<Frame>& frame)
+{
+	Operand value = frame.get().pop();
+	frame.get().push(value);
+	frame.get().push(value);
+}
+
+void VM::opcodeSwap(GC::Root<Frame>& frame)
+{
+	Operand a = frame.get().pop();
+	Operand b = frame.get().pop();
+	frame.get().push(a);
+	frame.get().push(b);
+}
+
 void VM::opcodeLoadConstant(GC::Root<Frame>& frame, Instruction& instruction)
 {
 	ConstantPoolInfo& constant = frame.get().methodInfo->object.classFile->object.constantPool->get(instruction.index);
@@ -322,6 +357,46 @@ void VM::opcodeIadd(GC::Root<Frame>& frame)
 void VM::opcodeIinc(GC::Root<Frame>& frame, u8 variable, i32 amount)
 {
 	frame.get().locals->get(variable).integer += amount;
+}
+
+Instruction VM::opcodeNewA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index)
+{
+	GC::Array<ConstantPoolInfo>* pool = frame.get().methodInfo->object.classFile->object.constantPool;
+	i16 nameIndex = pool->get(index).c_class.nameIndex;
+
+	GC::Root<char> name;
+	m_gc.makeRoot(pool->get(nameIndex).c_utf8.bytes, name);
+
+	findClass(thread, frame, name);
+
+	Instruction result;
+	result.opcode = Opcode::new_b;
+	return result;
+}
+
+Instruction VM::opcodeNewB(GC::Root<Frame>& frame)
+{
+	Operand operand = frame.get().pop();
+
+	Instruction result;
+	result.opcode = Opcode::new_c;
+	result.targetClass = operand.classFile;
+	return result;
+}
+
+void VM::opcodeNewC(GC::Root<Frame>& frame, GC::Object<ClassFile>* classFile)
+{
+	GC::Root<ClassFile> root;
+	m_gc.makeRoot(classFile, root);
+
+	GC::Root<JavaObject> object;
+	allocateObject(root, object);
+
+	Operand result;
+	result.isObject = true;
+	object.store(&result.object);
+
+	frame.get().push(result);
 }
 
 u16 VM::opcodeIfIcmpneB(GC::Root<Frame>& frame, u16 target, u16 pc)
@@ -489,6 +564,30 @@ void VM::findOpcodeFieldB(GC::Root<Frame>& frame, u16 index, Instruction& instru
 //		break;
 //	}
 //	return instruction;
+}
+
+Opcode VM::nextFieldOpcode(Instruction& instruction, FieldOpcodeType opcodeType)
+{
+	switch (instruction.targetField->object.type.type)
+	{
+	case Type::BOOLEAN:
+	case Type::BYTE:
+	case Type::CHAR:
+		return opcodeType == FieldOpcodeType::GET ? Opcode::getfield_byte : Opcode::putfield_byte;
+	case Type::SHORT:
+		return opcodeType == FieldOpcodeType::GET ? Opcode::getfield_short : Opcode::putfield_short;
+	case Type::INTEGER:
+	case Type::FLOAT:
+		return opcodeType == FieldOpcodeType::GET ? Opcode::getfield_int : Opcode::putfield_int;
+	case Type::REFERENCE:
+		return opcodeType == FieldOpcodeType::GET ? Opcode::getfield_object : Opcode::getfield_object;
+	case Type::VOID:
+	case Type::LONG:
+	case Type::DOUBLE:
+		Arch::panic();
+		break;
+	}
+	return Opcode::panic;
 }
 
 u16 VM::findOpcodeJumpTarget(GC::Root<Frame>& frame, u16 target)

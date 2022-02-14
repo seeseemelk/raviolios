@@ -73,6 +73,7 @@ namespace Java
 			u16 index;
 			i32 constantInteger;
 			VarIncrement varIncrement;
+			GC::Object<ClassFile>* targetClass;
 			GC::Object<MethodInfo>* targetMethod;
 			GC::Object<FieldInfo>* targetField;
 			void (*targetNativeMethod)(VM& vm, GC::Root<Thread>& thread);
