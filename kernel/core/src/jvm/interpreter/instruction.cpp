@@ -10,6 +10,9 @@ void Instruction::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 	{
 		switch (instructions[i].opcode)
 		{
+		case Opcode::new_c:
+			visitor.visit(&instructions[i].targetClass);
+			break;
 		case Opcode::invoke_special:
 			visitor.visit(&instructions[i].targetMethod);
 			break;

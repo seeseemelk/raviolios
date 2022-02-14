@@ -276,10 +276,11 @@ namespace Java
 //		Instruction opcodeGetfieldB(GC::Root<Frame>& frame, u16 index);
 		void opcodeGetstaticC(GC::Root<Frame>& frame, GC::Object<FieldInfo>* field);
 		void opcodePutstaticC(GC::Root<Frame>& frame, GC::Object<FieldInfo>* field);
-		void opcodeGetfieldC(GC::Root<Frame>& frame, GC::Object<FieldInfo>* field);
+//		void opcodeGetfieldByte(GC::Root<Frame>& frame, GC::Object<FieldInfo>* field);
 
 //		Instruction opcodePutfieldA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index);
 //		Instruction opcodePutfieldB(GC::Root<Frame>& frame, u16 index);
+		void opcodeGetfieldC(GC::Root<Frame>& frame, GC::Object<FieldInfo>* field);
 		void opcodePutfieldC(GC::Root<Frame>& frame, GC::Object<FieldInfo>* field);
 
 		void opcodeInvokeA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index);

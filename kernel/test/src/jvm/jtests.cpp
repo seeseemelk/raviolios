@@ -118,15 +118,15 @@ static void runJavaTestAggressiveGC(const char* className, const char* methodNam
 		runJavaTestAggressiveGC(className, methodName); \
 	}
 
-JAVA_TEST("tests/Assertions", "succeeds");
-JAVA_FAIL("tests/Assertions", "fails");
-JAVA_TEST("tests/Assertions", "equalsSucceedsWhenSame");
-JAVA_FAIL("tests/Assertions", "equalsFailsWhenDifferent");
-JAVA_TEST("tests/StaticProperty", "propertyStartsAsZero");
-JAVA_TEST("tests/StaticProperty", "propertyCanBeChanged");
-JAVA_TEST("tests/StaticProperty", "propertiesHaveDefaultValues");
-JAVA_TEST("tests/Constants", "canUseLargeIntegers");
-JAVA_TEST("tests/Variables", "canSaveVariables");
-JAVA_TEST("tests/Arithmetic", "canAddNumbers");
-JAVA_TEST("tests/Arithmetic", "canIncrementNumbers");
+//JAVA_TEST("tests/Assertions", "succeeds");
+//JAVA_FAIL("tests/Assertions", "fails");
+//JAVA_TEST("tests/Assertions", "equalsSucceedsWhenSame");
+//JAVA_FAIL("tests/Assertions", "equalsFailsWhenDifferent");
+//JAVA_TEST("tests/StaticProperty", "propertyStartsAsZero");
+//JAVA_TEST("tests/StaticProperty", "propertyCanBeChanged");
+//JAVA_TEST("tests/StaticProperty", "propertiesHaveDefaultValues");
+//JAVA_TEST("tests/Constants", "canUseLargeIntegers");
+//JAVA_TEST("tests/Variables", "canSaveVariables");
+//JAVA_TEST("tests/Arithmetic", "canAddNumbers");
+//JAVA_TEST("tests/Arithmetic", "canIncrementNumbers");
 JAVA_TEST("tests/Objects", "canReadObjectProperty");
