@@ -255,8 +255,10 @@ namespace Java
 		void findOpcodeFieldB(GC::Root<Frame>& frame, u16 index, Instruction& instruction);
 		void opcodeLoadConstant(GC::Root<Frame>& frame, Instruction& instruction);
 		void opcodeIconst(GC::Root<Frame>& frame, i32 value);
-		void opcodeAload(GC::Root<Frame>& frame, u16 index);
-		void opcodeIload(GC::Root<Frame>& frame, u16 index);
+		void opcodeLoad(GC::Root<Frame>& frame, u16 index);
+		void opcodeStore(GC::Root<Frame>& frame, u16 index);
+		void opcodeIadd(GC::Root<Frame>& frame);
+		void opcodeIinc(GC::Root<Frame>& frame, u8 variable, i32 amount);
 		u16 opcodeIfIcmpneB(GC::Root<Frame>& frame, u16 target, u16 pc);
 
 //		Instruction opcodeFindFieldA;

@@ -56,6 +56,12 @@ namespace Java
 		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
 	};
 
+	struct VarIncrement
+	{
+		u8 variable;
+		i8 constant;
+	};
+
 	struct Instruction
 	{
 		Opcode opcode;
@@ -66,6 +72,7 @@ namespace Java
 		{
 			u16 index;
 			i32 constantInteger;
+			VarIncrement varIncrement;
 			GC::Object<MethodInfo>* targetMethod;
 			GC::Object<FieldInfo>* targetField;
 			void (*targetNativeMethod)(VM& vm, GC::Root<Thread>& thread);

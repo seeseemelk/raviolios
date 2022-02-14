@@ -98,7 +98,7 @@ void ClassListEntry::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 	for (size_t i = 0; i < count; i++)
 	{
 		VALIDATE(infos[i].classFile);
-		if (&infos[i].classFile == nullptr)
+		if (infos[i].classFile == nullptr)
 			visitor.visitWeak(&infos[i].name);
 		else
 			visitor.visit(&infos[i].name);

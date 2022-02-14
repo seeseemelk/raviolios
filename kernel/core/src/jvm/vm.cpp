@@ -360,36 +360,61 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 			i += 1;
 			break;
 		case 0x1A: /* iload_0 */
-			instruction.opcode = Opcode::iload;
+			instruction.opcode = Opcode::load;
 			instruction.index = 0;
 			break;
 		case 0x1B: /* iload_1 */
-			instruction.opcode = Opcode::iload;
+			instruction.opcode = Opcode::load;
 			instruction.index = 1;
 			break;
 		case 0x1C: /* iload_2 */
-			instruction.opcode = Opcode::iload;
+			instruction.opcode = Opcode::load;
 			instruction.index = 2;
 			break;
 		case 0x1D: /* iload_3 */
-			instruction.opcode = Opcode::iload;
+			instruction.opcode = Opcode::load;
 			instruction.index = 3;
 			break;
 		case 0x2A: /* aload_0 */
-			instruction.opcode = Opcode::aload;
+			instruction.opcode = Opcode::load;
 			instruction.index = 0;
 			break;
 		case 0x2B: /* aload_1 */
-			instruction.opcode = Opcode::aload;
+			instruction.opcode = Opcode::load;
 			instruction.index = 1;
 			break;
 		case 0x2C: /* aload_2 */
-			instruction.opcode = Opcode::aload;
+			instruction.opcode = Opcode::load;
 			instruction.index = 2;
 			break;
 		case 0x2D: /* aload_3 */
-			instruction.opcode = Opcode::aload;
+			instruction.opcode = Opcode::load;
 			instruction.index = 3;
+			break;
+		case 0x3B: /* istore_0 */
+			instruction.opcode = Opcode::store;
+			instruction.index = 0;
+			break;
+		case 0x3C: /* istore_1 */
+			instruction.opcode = Opcode::store;
+			instruction.index = 1;
+			break;
+		case 0x3D: /* istore_2 */
+			instruction.opcode = Opcode::store;
+			instruction.index = 2;
+			break;
+		case 0x3E: /* istore_3 */
+			instruction.opcode = Opcode::store;
+			instruction.index = 3;
+			break;
+		case 0x60: /* iadd */
+			instruction.opcode = Opcode::iadd;
+			break;
+		case 0x84: /* iinc */
+			instruction.opcode = Opcode::iinc;
+			instruction.varIncrement.variable = loader.readU8();
+			instruction.varIncrement.constant = loader.readI8();
+			i += 2;
 			break;
 		case 0xA0: /* if_icmpne */
 			instruction.opcode = Opcode::if_icmpne_a;

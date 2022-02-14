@@ -135,12 +135,20 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 			opcodeIconst(frame, instruction.constantInteger);
 			pc++;
 			break;
-		case Opcode::aload:
-			opcodeAload(frame, instruction.index);
+		case Opcode::load:
+			opcodeLoad(frame, instruction.index);
 			pc++;
 			break;
-		case Opcode::iload:
-			opcodeIload(frame, instruction.index);
+		case Opcode::store:
+			opcodeStore(frame, instruction.index);
+			pc++;
+			break;
+		case Opcode::iadd:
+			opcodeIadd(frame);
+			pc++;
+			break;
+		case Opcode::iinc:
+			opcodeIinc(frame, instruction.varIncrement.variable, instruction.varIncrement.constant);
 			pc++;
 			break;
 		case Opcode::goto_a:
@@ -290,16 +298,30 @@ void VM::opcodeIconst(GC::Root<Frame>& frame, i32 value)
 	frame.get().push(operand);
 }
 
-void VM::opcodeAload(GC::Root<Frame>& frame, u16 index)
+void VM::opcodeLoad(GC::Root<Frame>& frame, u16 index)
 {
 	Operand operand = frame.get().locals->get(index);
 	frame.get().push(operand);
 }
 
-void VM::opcodeIload(GC::Root<Frame>& frame, u16 index)
+void VM::opcodeStore(GC::Root<Frame>& frame, u16 index)
 {
-	Operand operand = frame.get().locals->get(index);
-	frame.get().push(operand);
+	Operand operand = frame.get().pop();
+	frame.get().locals->get(index) = operand;
+}
+
+void VM::opcodeIadd(GC::Root<Frame>& frame)
+{
+	Operand a = frame.get().pop();
+	Operand b = frame.get().pop();
+	Operand c;
+	c.integer = a.integer + b.integer;
+	frame.get().push(c);
+}
+
+void VM::opcodeIinc(GC::Root<Frame>& frame, u8 variable, i32 amount)
+{
+	frame.get().locals->get(variable).integer += amount;
 }
 
 u16 VM::opcodeIfIcmpneB(GC::Root<Frame>& frame, u16 target, u16 pc)

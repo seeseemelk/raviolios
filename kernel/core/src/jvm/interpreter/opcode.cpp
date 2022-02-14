@@ -9,8 +9,10 @@ const char* Java::toString(Opcode opcode)
 	case Opcode::panic: return "panic";
 	case Opcode::load_constant: return "load_constant";
 	case Opcode::iconst: return "iconst";
-	case Opcode::aload: return "aload";
-	case Opcode::iload: return "iload";
+	case Opcode::load: return "load";
+	case Opcode::store: return "store";
+	case Opcode::iadd: return "iadd";
+	case Opcode::iinc: return "iinc";
 	case Opcode::goto_a: return "goto_a";
 	case Opcode::goto_b: return "goto_b";
 	case Opcode::if_icmpne_a: return "if_icmpne_a";
