@@ -232,6 +232,7 @@ void Context::sweepMove()
 {
 	Meta* object = firstObject();
 	size_t count = m_objects;
+	size_t removed = 0;
 	size_t offset = 0;
 	u8* memEnd = m_memCurrent;
 	while (count > 0)
@@ -244,7 +245,7 @@ void Context::sweepMove()
 			size_t size = sizeof(Meta) + object->size;
 			offset += size;
 			m_memCurrent -= size;
-			m_objects--;
+			removed++;
 		}
 		else
 		{
@@ -268,6 +269,8 @@ void Context::sweepMove()
 		count--;
 		object = next;
 	}
-	u8 value = 0;
+	m_objects -= removed;
+	u8 value = 0xAA;
 	memorySet(m_memCurrent, value, static_cast<size_t>(memEnd - m_memCurrent));
+	Log::infof("Removed %d objects", removed);
 }

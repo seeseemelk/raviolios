@@ -49,7 +49,7 @@ void VM::allocateString(GC::Root<char>& root, const char* str)
 void VM::allocateObject(GC::Root<ClassFile>& classFile, GC::Root<JavaObject>& object)
 {
 	GC::Allocator<JavaObject> allocator(JavaObject::describer);
-	allocator.size = classFile.get().objectSize;
+	allocator.size = classFile.get().objectSize + sizeof(void*);
 	m_gc.allocate(allocator, object);
 	classFile.store(&object.get().class_);
 }
@@ -233,7 +233,7 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, GC::Root<Thread>& thr
 	}
 	else
 	{
-		classfile.get().objectSize = sizeof(void*);
+		classfile.get().objectSize = 0;
 	}
 
 	// Calculate size of object and alignment of fields.
