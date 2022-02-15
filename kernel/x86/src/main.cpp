@@ -85,30 +85,27 @@ extern "C" void arch_main(multiboot_info_t* mbt)
 	GC::Root<char> startupClassName;
 	s_vm.allocateString(startupClassName, "raviolios/Startup");
 
-//	Log::info("Loading startup class");
-//	GC::Root<Java::ClassFile> startupClass;
-//	Java::ClassError error = s_vm.getClass(startupClass, startupClassName);
-//	if (error != Java::ClassError::GOOD)
-//	{
-//		Log::criticalf("Failed to load raviolios/Startup: %s", Java::toString(error));
-//		Arch::panic();
-//	}
-//	Log::info("Startup class loaded");
-//
-//	GC::Root<Java::Thread> thread;
-//	Java::ThreadCreateResult result = s_vm.createThread(thread, startupClass, "main");
-//	if (result != Java::ThreadCreateResult::CREATED)
-//	{
-//		Log::criticalf("Could not create thread: %s", Java::toString(result));
-//		Arch::panic();
-//	}
-//	Log::info("Thread created");
-//
-//	while (s_vm.step(thread) == Java::ThreadState::RUNNING)
-//	{
-//		Log::info("Stepping");
-//	}
-//	Log::critical("Thread stopped");
+	GC::Root<Java::Thread> thread;
+	s_vm.createThread(thread);
+	Log::info("Thread created");
+
+	Log::info("Loading startup class");
+	GC::Root<Java::ClassFile> startupClass;
+	Java::ClassError error = s_vm.getClass(startupClass, thread, startupClassName);
+	if (error != Java::ClassError::GOOD)
+	{
+		Log::criticalf("Failed to load raviolios/Startup: %s", Java::toString(error));
+		Arch::panic();
+	}
+	Log::info("Startup class loaded");
+
+	s_vm.invokeMethod(thread, startupClass, "main");
+
+	while (s_vm.step(thread) == Java::ThreadState::RUNNING)
+	{
+		Log::info("Stepping");
+	}
+	Log::critical("Thread stopped");
 
 	Log::critical("Reached end of arch_main");
 	Arch::panic();

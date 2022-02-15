@@ -9,51 +9,44 @@
 #define BREAK_ERROR (1<<2)
 #define STATUS_CHANGE (1<<3)
 
-static IO::Port reg_data;
-static IO::Port reg_ie;
-static IO::Port reg_fifo;
-static IO::Port reg_line_ctrl;
-static IO::Port reg_modem_ctrl;
-static IO::Port reg_line_status;
+#define REG_DATA (SERIAL_BASE)
+#define REG_IE (SERIAL_BASE + 1)
+#define REG_FIFO (SERIAL_BASE + 2)
+#define REG_LINE_CTRL (SERIAL_BASE + 3)
+#define REG_MODEM_CTRL (SERIAL_BASE + 4)
+#define REG_LINE_STATUS (SERIAL_BASE + 5)
 
 void Arch::init_serial()
 {
-	reg_data.set_port(SERIAL_BASE);
-	reg_ie.set_port(SERIAL_BASE + 1);
-	reg_fifo.set_port(SERIAL_BASE + 2);
-	reg_line_ctrl.set_port(SERIAL_BASE + 3);
-	reg_modem_ctrl.set_port(SERIAL_BASE + 4);
-	reg_line_status.set_port(SERIAL_BASE + 5);
-
 	// Disable interrupts
-	reg_ie.outb(0x00);
+	IO::outb(REG_IE, 0x00);
 
 	// Enable DLAB
-	reg_line_ctrl.outb(0x80);
+	IO::outb(REG_LINE_CTRL, 0x80);
 
 	// Set baudrate to 38400
-	reg_data.outb(0x03);
-	reg_ie.outb(0x00);
+	IO::outb(REG_DATA, 0x03);
+	IO::outb(REG_IE, 0x00);
 
 	// Set 8 bits, no parity, one stop bit
-	reg_line_ctrl.outb(0x03);
+	IO::outb(REG_LINE_CTRL, 0x03);
 
 	// Enable FIFO and clear
-	reg_fifo.outb(0xC7);
+	IO::outb(REG_FIFO, 0xC7);
 
 	// IRQs enabled, RTS/DSR set
-	reg_modem_ctrl.outb(0x0B);
+	IO::outb(REG_MODEM_CTRL, 0x0B);
 }
 
 static int is_transmit_empty()
 {
-	return reg_line_status.inb() & 0x20;
+	return IO::inb(REG_LINE_STATUS) & 0x20;
 }
 
 static void put(const char c)
 {
 	while (!is_transmit_empty());
-	reg_data.outb(c);
+	IO::outb(REG_DATA, c);
 }
 
 void Arch::log(char chr)

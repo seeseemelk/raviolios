@@ -6,7 +6,10 @@ public final class Startup
 
 	public static void main()
 	{
-		int screen = Arch.mapMemory(0xB8000, 4096);
+		TextDisplay display = new TextDisplay();
+		display.putAt('T', 0);
+
+		/*int screen = Arch.mapMemory(0xB8000, 4096);
 		int offset = 0;
 		byte color = 0x06;
 		Arch.poke(screen++, (byte) 'T'); Arch.poke(screen++, color);
@@ -34,6 +37,6 @@ public final class Startup
 		Arch.trace('j');
 		Arch.trace('a');
 		Arch.trace('v');
-		Arch.trace('a');
+		Arch.trace('a');*/
 	}
 }
