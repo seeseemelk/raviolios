@@ -2,6 +2,7 @@
 
 #include "arch.hpp"
 #include "defs.hpp"
+#include "gc.hpp"
 
 extern "C" {
 #include <stdarg.h>
@@ -46,6 +47,19 @@ static void printHex(u32 number, size_t byteLength)
 	}
 }
 
+static void logArrayString(GC::Array<char>* str)
+{
+	for (size_t i = 0; i < str->count(); i++)
+		Arch::log(str->get(i));
+}
+
+static void logRootString(GC::Root<char>* str)
+{
+	GC::Root<char>& string = *str;
+	for (size_t i = 0; i < string.count(); i++)
+		Arch::log(string[i]);
+}
+
 static void printFormatted(const char* fmt, va_list args)
 {
 	bool escaped = false;
@@ -68,6 +82,12 @@ static void printFormatted(const char* fmt, va_list args)
 				break;
 			case 's':
 				Arch::log(va_arg(args, char*));
+				break;
+			case 'S':
+				logRootString(va_arg(args, GC::Root<char>*));
+				break;
+			case 'A':
+				logArrayString(va_arg(args, GC::Array<char>*));
 				break;
 			case '%':
 				Arch::log('%');

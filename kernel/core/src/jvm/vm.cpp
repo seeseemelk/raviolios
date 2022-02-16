@@ -128,6 +128,7 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, GC::Root<Thread>& thr
 	GC::Root<char> className;
 	u16 classNameIndex = classfile.get().constantPool->get(thisClass).c_class.nameIndex;
 	m_gc.makeRoot(classfile.get().constantPool->get(classNameIndex).c_utf8.bytes, className);
+	Log::infof("Loading class %S", &className);
 
 	// Load interfaces
 	classfile.get().interfacesCount = loader.readU16();
@@ -247,6 +248,60 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, GC::Root<Thread>& thr
 		}
 	}
 
+	// Generate vtable
+	u16 parentVtableSize = 0;
+	if (classfile.get().superClassObj != nullptr)
+		parentVtableSize = classfile.get().superClassObj->object.vtableLength;
+	u16 numNewVirtualMethods = 0;
+	for (size_t i = 0; i < classfile.get().methodCount; i++)
+	{
+		MethodInfo& method = classfile.get().methods->get(i).method->object;
+		if (!method.isVirtual())
+			continue;
+		if (classfile.get().superClassObj == nullptr)
+		{
+			numNewVirtualMethods++;
+			continue;
+		}
+
+		GC::Root<char> methodName;
+		GC::Root<char> methodType;
+		m_gc.makeRoot(classfile.get().constantPool->get(method.nameIndex).c_utf8.bytes, methodName);
+		m_gc.makeRoot(classfile.get().constantPool->get(method.descriptorIndex).c_utf8.bytes, methodType);
+
+		GC::Object<MethodInfo>* baseMethod = classfile.get().superClassObj->object.findMethodByNameAndTypeRecurse(methodName, methodType);
+		if (baseMethod == nullptr)
+		{
+			method.vtableIndex = parentVtableSize + numNewVirtualMethods;
+			numNewVirtualMethods++;
+		}
+		else
+		{
+			method.vtableIndex = baseMethod->object.vtableIndex;
+		}
+	}
+
+	u16 vtableSize = parentVtableSize + numNewVirtualMethods;
+	classfile.get().vtableLength = vtableSize;
+	GC::Root<MethodRef> vtableRoot;
+	GC::Allocator<MethodRef> vtableAllocator(vtableSize, MethodRef::describer);
+	m_gc.allocate(vtableAllocator, vtableRoot);
+	vtableRoot.store(&classfile.get().vtable);
+	// Copy parent vtable
+	for (size_t i = 0; i < parentVtableSize; i++)
+	{
+		vtableRoot[i] = classfile.get().superClassObj->object.vtable->get(i);
+	}
+	// Fill in new entries
+	for (size_t i = 0; i < classfile.get().methodCount; i++)
+	{
+		MethodRef& ref = classfile.get().methods->get(i);
+		if (ref.method->object.isVirtual())
+		{
+			vtableRoot[ref.method->object.vtableIndex] = ref;
+		}
+	}
+
 	return ClassError::GOOD;
 }
 
@@ -272,7 +327,7 @@ void VM::loadAttributes(GC::Root<ClassFile>& classfile, GC::Root<AttributeInfo>&
 		}
 		else
 		{
-			Log::warning("Unknown attribute, skipping");
+			Log::warningf("Unknown attribute %A, skipping", name);
 			loader.advance(attributeLength);
 		}
 	}
@@ -441,6 +496,10 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 			instruction.varIncrement.constant = loader.readI8();
 			i += 2;
 			break;
+		case 0x91: /* i2b */
+			instruction.opcode = Opcode::i2b;
+			i += 2;
+			break;
 		case 0xA0: /* if_icmpne */
 			instruction.opcode = Opcode::if_icmpne_a;
 			instruction.index = loader.readI16() + instruction.offset;
@@ -474,6 +533,11 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 			break;
 		case 0xB5: /* putfield */
 			instruction.opcode = Opcode::putfield_a;
+			instruction.index = loader.readU16() - 1;
+			i += 2;
+			break;
+		case 0xB6: /* invokevirtual */
+			instruction.opcode = Opcode::invokevirtual_a;
 			instruction.index = loader.readU16() - 1;
 			i += 2;
 			break;

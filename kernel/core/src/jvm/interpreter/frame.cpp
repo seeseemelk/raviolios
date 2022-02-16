@@ -29,6 +29,11 @@ Operand Frame::pop()
 	return stack->get(stackIndex);
 }
 
+Operand& Frame::peek(u16 offset)
+{
+	return stack->get(stackIndex - offset - 1);
+}
+
 void Frame::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 {
 	Frame* frame = object->as<Frame>();

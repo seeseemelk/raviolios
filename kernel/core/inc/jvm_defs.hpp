@@ -215,6 +215,7 @@ namespace Java
 		u16 nameIndex;
 		u16 descriptorIndex;
 		u16 attributesCount;
+		u16 vtableIndex;
 
 		/**
 		 * Gets an attribute of a specific type.
@@ -239,6 +240,8 @@ namespace Java
 		 * @return `true` if the method is native, `false` if it is a normal method.
 		 */
 		bool isNative();
+
+		bool isVirtual();
 
 		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
 	};
@@ -274,6 +277,11 @@ namespace Java
 		/// The number of bytes that need to be allocated for an instance of the class.
 		size_t objectSize;
 
+		/// The number of vtable entries.
+		u16 vtableLength;
+
+		GC::Array<MethodRef>* vtable;
+
 		/**
 		 * Finds a method by its name and type.
 		 *
@@ -284,6 +292,7 @@ namespace Java
 		 * `-1` if the method was not found.
 		 */
 		u16 findMethodByNameAndType(GC::Root<char>& name, GC::Root<char>& type) const;
+		GC::Object<MethodInfo>* findMethodByNameAndTypeRecurse(GC::Root<char>& name, GC::Root<char>& type) const;
 
 		/**
 		 * Finds a method by its name.

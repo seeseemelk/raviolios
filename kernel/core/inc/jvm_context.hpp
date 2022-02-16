@@ -267,6 +267,7 @@ namespace Java
 		void opcodeStore(GC::Root<Frame>& frame, u16 index);
 		void opcodeIadd(GC::Root<Frame>& frame);
 		void opcodeIinc(GC::Root<Frame>& frame, u8 variable, i32 amount);
+		void opcodeI2B(GC::Root<Frame>& frame);
 		Instruction opcodeNewA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index);
 		Instruction opcodeNewB(GC::Root<Frame>& frame);
 		void opcodeNewC(GC::Root<Frame>& frame, GC::Object<ClassFile>* classFile);
@@ -286,6 +287,9 @@ namespace Java
 		void opcodeInvokeA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index);
 		void opcodeInvokeB(GC::Root<Frame>& frame, u16 index, Instruction& instruction);
 		void opcodeInvokeSpecial(GC::Root<Thread>& thread, GC::Root<Frame>& frame, GC::Object<MethodInfo>* method);
+		void opcodeInvokevirtualA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index);
+		void opcodeInvokevirtualB(GC::Root<Frame>& frame, Instruction& instruction);
+		void opcodeInvokevirtualC(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index, u16 objectOffset);
 		void opcodeReturnValue(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
 		void opcodeReturn(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
 		void invokeStatic(GC::Root<Thread>& thread);

@@ -14,6 +14,7 @@ void ClassFile::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 	visitor.visit(&classfile->fields);
 	visitor.visit(&classfile->methods);
 	visitor.visit(&classfile->attributes);
+	visitor.visit(&classfile->vtable);
 }
 
 u16 ClassFile::findMethodByNameAndType(GC::Root<char>& name, GC::Root<char>& type) const
@@ -29,7 +30,17 @@ u16 ClassFile::findMethodByNameAndType(GC::Root<char>& name, GC::Root<char>& typ
 		if (equals(name, methodName.bytes) && equals(type, methodType.bytes))
 			return i;
 	}
-	return -1;
+	return U16_MAX;
+}
+
+GC::Object<MethodInfo>* ClassFile::findMethodByNameAndTypeRecurse(GC::Root<char>& name, GC::Root<char>& type) const
+{
+	u16 method = findMethodByNameAndType(name, type);
+	if (method != U16_MAX)
+		return methods->get(method).method;
+	if (superClassObj == nullptr)
+		return nullptr;
+	return superClassObj->object.findMethodByNameAndTypeRecurse(name, type);
 }
 
 u16 ClassFile::findMethodByName(const char* name) const
@@ -159,6 +170,11 @@ bool MethodInfo::isStatic()
 bool MethodInfo::isNative()
 {
 	return (accessFlags & ACC_NATIVE) != 0;
+}
+
+bool MethodInfo::isVirtual()
+{
+	return !isStatic() && !isNative();
 }
 
 void MethodInfo::describer(GC::Meta* object, GC::MetaVisitor& visitor)

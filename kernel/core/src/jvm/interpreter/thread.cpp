@@ -166,6 +166,10 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 			opcodeIinc(frame, instruction.varIncrement.variable, instruction.varIncrement.constant);
 			pc++;
 			break;
+		case Opcode::i2b:
+			opcodeI2B(frame);
+			pc++;
+			break;
 		case Opcode::new_a:
 			instruction = opcodeNewA(thread, frame, instruction.index);
 			storeInstruction = true;
@@ -274,6 +278,22 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 			m_gc.makeRoot(thread.get().top, frame);
 			pc = frame.get().pc;
 			break;
+		case Opcode::invokevirtual_a:
+			opcodeInvokevirtualA(thread, frame, instruction.index);
+			instruction.opcode = Opcode::invokevirtual_b;
+			storeInstruction = true;
+			break;
+		case Opcode::invokevirtual_b:
+			opcodeInvokevirtualB(frame, instruction);
+			instruction.opcode = Opcode::invokevirtual_c;
+			storeInstruction = true;
+			break;
+		case Opcode::invokevirtual_c:
+			opcodeInvokevirtualC(thread, frame, instruction.virtualArg.vtableIndex, instruction.virtualArg.stackOffset);
+			frame.get().pc = pc + 1;
+			m_gc.makeRoot(thread.get().top, frame);
+			pc = frame.get().pc;
+			break;
 		case Opcode::return_value:
 			opcodeReturnValue(thread, frame);
 			returnFromFrame = true;
@@ -358,6 +378,13 @@ void VM::opcodeIadd(GC::Root<Frame>& frame)
 	Operand c;
 	c.integer = a.integer + b.integer;
 	frame.get().push(c);
+}
+
+void VM::opcodeI2B(GC::Root<Frame>& frame)
+{
+	Operand operand = frame.get().pop();
+	operand.integer = static_cast<i8>(operand.integer);
+	frame.get().push(operand);
 }
 
 void VM::opcodeIinc(GC::Root<Frame>& frame, u8 variable, i32 amount)
@@ -561,6 +588,49 @@ void VM::opcodeInvokeSpecial(GC::Root<Thread>& thread, GC::Root<Frame>& frame, G
 	GC::Root<MethodInfo> targetMethod;
 	m_gc.makeRoot(method, targetMethod);
 	invokeMethod(thread, targetMethod, frame.get().inInterrupt);
+}
+
+void VM::opcodeInvokevirtualA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index)
+{
+	ClassFile& classfile = frame.get().getClassFile()->object;
+	ConstantPoolMethodRef constantMethodRef = classfile.constantPool->get(index).c_method;
+	ConstantPoolClass constantClass = classfile.constantPool->get(constantMethodRef.classIndex).c_class;
+	GC::Root<char> className;
+	m_gc.makeRoot(classfile.constantPool->get(constantClass.nameIndex).c_utf8.bytes, className);
+	findClass(thread, frame, className);
+}
+
+void VM::opcodeInvokevirtualB(GC::Root<Frame>& frame, Instruction& instruction)
+{
+	ClassFile& classfile = frame.get().getClassFile()->object;
+	ConstantPoolMethodRef methodRef = classfile.constantPool->get(instruction.index).c_method;
+
+	GC::Root<char> methodName;
+	u16 methodNameIndex = classfile.constantPool->get(methodRef.nameAndTypeIndex).c_nameAndType.nameIndex;
+	m_gc.makeRoot(classfile.constantPool->get(methodNameIndex).c_utf8.bytes, methodName);
+
+	GC::Root<char> methodType;
+	u16 methodTypeIndex = classfile.constantPool->get(methodRef.nameAndTypeIndex).c_nameAndType.descriptorIndex;
+	m_gc.makeRoot(classfile.constantPool->get(methodTypeIndex).c_utf8.bytes, methodType);
+
+	Operand operand = frame.get().pop();
+	GC::Object<ClassFile>* targetClass = operand.classFile;
+
+	u16 methodIndexInTargetClass = targetClass->object.findMethodByNameAndType(methodName, methodType);
+	MethodInfo& method = targetClass->object.methods->get(methodIndexInTargetClass).method->object;
+	u16 vtableIndex = method.vtableIndex;
+
+	instruction.virtualArg.vtableIndex = vtableIndex;
+	instruction.virtualArg.stackOffset = method.type.arguments;
+}
+
+void VM::opcodeInvokevirtualC(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index, u16 objectOffset)
+{
+	Operand operand = frame.get().peek(objectOffset);
+	GC::Object<MethodInfo>* methodPtr = operand.object->object.class_->object.vtable->get(index).method;
+	GC::Root<MethodInfo> method;
+	m_gc.makeRoot(methodPtr, method);
+	invokeMethod(thread, method, frame.get().inInterrupt);
 }
 
 void VM::opcodeReturnValue(GC::Root<Thread>& thread, GC::Root<Frame>& frame)

@@ -11,17 +11,6 @@
 
 namespace Java
 {
-//	enum class Opcode : u8
-//	{
-////		ddiv = 0x6F,
-////		if_icmpeq = 0x9f,
-//		if_icmplt = 0xA1,
-////		if_icmpge = 0xA2,
-////		if_icmpgt = 0xA3,
-////		if_icmple = 0xA4,
-//		ireturn = 0xAC,
-//	};
-
 	enum class Opcode : u16
 	{
 		panic,
@@ -33,6 +22,7 @@ namespace Java
 		store,
 		iadd,
 		iinc,
+		i2b,
 		new_a,
 		new_b,
 		new_c,
@@ -56,6 +46,9 @@ namespace Java
 		invoke_b,
 		invoke_native,
 		invoke_special,
+		invokevirtual_a,
+		invokevirtual_b,
+		invokevirtual_c,
 		return_value,
 		return_,
 	};

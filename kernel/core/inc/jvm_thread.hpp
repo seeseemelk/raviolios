@@ -46,6 +46,15 @@ namespace Java
 		 */
 		Operand pop();
 
+		/**
+		 * Peeks at an item at a certain offset from the top of the stack.
+		 *
+		 * @param offset The offset from the top of the stack.
+		 *
+		 * @return The item at that location.
+		 */
+		Operand& peek(u16 offset);
+
 		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
 	};
 
@@ -62,6 +71,12 @@ namespace Java
 		i8 constant;
 	};
 
+	struct InstructionVirtualArg
+	{
+		u16 vtableIndex;
+		u16 stackOffset;
+	};
+
 	struct Instruction
 	{
 		Opcode opcode;
@@ -71,6 +86,7 @@ namespace Java
 		union
 		{
 			u16 index;
+			InstructionVirtualArg virtualArg;
 			i32 constantInteger;
 			VarIncrement varIncrement;
 			GC::Object<ClassFile>* targetClass;

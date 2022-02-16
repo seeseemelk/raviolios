@@ -15,6 +15,7 @@ const char* Java::toString(Opcode opcode)
 	case Opcode::store: return "store";
 	case Opcode::iadd: return "iadd";
 	case Opcode::iinc: return "iinc";
+	case Opcode::i2b: return "i2b";
 	case Opcode::new_a: return "new_a";
 	case Opcode::new_b: return "new_b";
 	case Opcode::new_c: return "new_c";
@@ -38,6 +39,9 @@ const char* Java::toString(Opcode opcode)
 	case Opcode::invoke_b: return "invoke_b";
 	case Opcode::invoke_native: return "invoke_native";
 	case Opcode::invoke_special: return "invoke_special";
+	case Opcode::invokevirtual_a: return "invokevirtual_a";
+	case Opcode::invokevirtual_b: return "invokevirtual_b";
+	case Opcode::invokevirtual_c: return "invokevirtual_c";
 	case Opcode::return_value: return "return_value";
 	case Opcode::return_: return "return";
 	}
