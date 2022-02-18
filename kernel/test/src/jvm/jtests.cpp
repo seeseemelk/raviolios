@@ -132,3 +132,4 @@ JAVA_TEST("tests/Arithmetic", "canIncrementNumbers");
 JAVA_TEST("tests/Arithmetic", "canMultiply");
 JAVA_TEST("tests/Objects", "canReadObjectProperty");
 JAVA_TEST("tests/Virtual", "testCanCallVirtualMethod");
+JAVA_TEST("tests/Arrays", "canGetArrayLength");
