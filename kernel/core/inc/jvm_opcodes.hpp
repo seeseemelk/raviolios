@@ -21,6 +21,7 @@ namespace Java
 		load,
 		store,
 		iadd,
+		imul,
 		iinc,
 		i2b,
 		new_a,

@@ -14,6 +14,7 @@ const char* Java::toString(Opcode opcode)
 	case Opcode::load: return "load";
 	case Opcode::store: return "store";
 	case Opcode::iadd: return "iadd";
+	case Opcode::imul: return "imul";
 	case Opcode::iinc: return "iinc";
 	case Opcode::i2b: return "i2b";
 	case Opcode::new_a: return "new_a";

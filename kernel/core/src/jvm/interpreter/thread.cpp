@@ -162,6 +162,10 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 			opcodeIadd(frame);
 			pc++;
 			break;
+		case Opcode::imul:
+			opcodeImul(frame);
+			pc++;
+			break;
 		case Opcode::iinc:
 			opcodeIinc(frame, instruction.varIncrement.variable, instruction.varIncrement.constant);
 			pc++;
@@ -377,6 +381,15 @@ void VM::opcodeIadd(GC::Root<Frame>& frame)
 	Operand b = frame.get().pop();
 	Operand c;
 	c.integer = a.integer + b.integer;
+	frame.get().push(c);
+}
+
+void VM::opcodeImul(GC::Root<Frame>& frame)
+{
+	Operand a = frame.get().pop();
+	Operand b = frame.get().pop();
+	Operand c;
+	c.integer = a.integer * b.integer;
 	frame.get().push(c);
 }
 

@@ -7,36 +7,25 @@ public final class Startup
 	public static void main()
 	{
 		TextDisplay display = new TextDisplay();
-		display.putAt('T', 0);
-
-		/*int screen = Arch.mapMemory(0xB8000, 4096);
-		int offset = 0;
-		byte color = 0x06;
-		Arch.poke(screen++, (byte) 'T'); Arch.poke(screen++, color);
-		Arch.poke(screen++, (byte) 'h'); Arch.poke(screen++, color);
-		Arch.poke(screen++, (byte) 'i'); Arch.poke(screen++, color);
-		Arch.poke(screen++, (byte) 's'); Arch.poke(screen++, color);
-		Arch.poke(screen++, (byte) ' '); Arch.poke(screen++, color);
-
-		Arch.poke(screen++, (byte) 'i'); Arch.poke(screen++, color);
-		Arch.poke(screen++, (byte) 's'); Arch.poke(screen++, color);
-		Arch.poke(screen++, (byte) ' '); Arch.poke(screen++, color);
-
-		Arch.poke(screen++, (byte) 'J'); Arch.poke(screen++, color);
-		Arch.poke(screen++, (byte) 'a'); Arch.poke(screen++, color);
-		Arch.poke(screen++, (byte) 'v'); Arch.poke(screen++, color);
-		Arch.poke(screen++, (byte) 'a'); Arch.poke(screen++, color);
-		Arch.poke(screen++, (byte) '!'); Arch.poke(screen++, color);
-		Arch.poke(screen++, (byte) ' '); Arch.poke(screen++, color);
-		Arch.poke(screen++, (byte) ' '); Arch.poke(screen++, color);
-		Arch.poke(screen++, (byte) ' '); Arch.poke(screen++, color);
-		Arch.poke(screen++, (byte) ' '); Arch.poke(screen++, color);
-		Arch.poke(screen++, (byte) ' '); Arch.poke(screen++, color);
-		Arch.poke(screen++, (byte) ' '); Arch.poke(screen++, color);
-
-		Arch.trace('j');
-		Arch.trace('a');
-		Arch.trace('v');
-		Arch.trace('a');*/
+		int x = 0;
+		display.putAt('B', x++);
+		display.putAt('o', x++);
+		display.putAt('o', x++);
+		display.putAt('t', x++);
+		display.putAt('e', x++);
+		display.putAt('d', x++);
+		display.putAt(' ', x++);
+		display.putAt('f', x++);
+		display.putAt('r', x++);
+		display.putAt('o', x++);
+		display.putAt('m', x++);
+		display.putAt(' ', x++);
+		display.putAt('J', x++);
+		display.putAt('a', x++);
+		display.putAt('v', x++);
+		display.putAt('a', x++);
+		display.putAt(' ', x++);
+		display.putAt(' ', x++);
+		display.putAt(' ', x++);
 	}
 }

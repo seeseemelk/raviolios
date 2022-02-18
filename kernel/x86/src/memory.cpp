@@ -22,7 +22,7 @@ struct MetaTable
 static Paging::PageTable s_metaTable;
 static MetaTable& s_tables = *reinterpret_cast<MetaTable*>(0xFF800000);
 
-u8* Memory::g_heap = reinterpret_cast<u8*>(KB(4));
+u8* Memory::g_heap = reinterpret_cast<u8*>(MB(4));
 size_t Memory::g_heapSize = 0;
 
 /**

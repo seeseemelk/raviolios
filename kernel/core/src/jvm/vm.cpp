@@ -200,6 +200,8 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, GC::Root<Thread>& thr
 		TypeDescriptor type = TypeDescriptor::parse(methodType);
 		methodInfo.get().type = type;
 
+		Log::infof("Loading method %A", classfile.get().constantPool->get(methodInfo.get().nameIndex).c_utf8.bytes);
+
 		GC::Root<AttributeInfo> attributeInfo;
 		loadAttributes(classfile, attributeInfo, loader, attributesCount);
 		attributeInfo.store(&methodInfo.get().attributes);
@@ -490,6 +492,9 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 		case 0x60: /* iadd */
 			instruction.opcode = Opcode::iadd;
 			break;
+		case 0x68: /* imul */
+			instruction.opcode = Opcode::imul;
+			break;
 		case 0x84: /* iinc */
 			instruction.opcode = Opcode::iinc;
 			instruction.varIncrement.variable = loader.readU8();
@@ -498,7 +503,6 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 			break;
 		case 0x91: /* i2b */
 			instruction.opcode = Opcode::i2b;
-			i += 2;
 			break;
 		case 0xA0: /* if_icmpne */
 			instruction.opcode = Opcode::if_icmpne_a;

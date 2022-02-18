@@ -18,4 +18,12 @@ public class Arithmetic
 		value++;
 		assertEquals(4, value);
 	}
+
+	public static void canMultiply()
+	{
+		int a = 2;
+		int b = 3;
+		assertEquals(6, a * b);
+	}
+
 }

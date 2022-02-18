@@ -10,9 +10,11 @@ public class TextDisplay
 		screen = Arch.mapMemory(0xB8000, 4096);
 	}
 
+	private void noOp() {}
+
 	public void putAt(char c, int x)
 	{
-		Arch.poke(x, (byte) c);
-		Arch.poke(x + 1, color);
+		Arch.poke(screen + x * 2, (byte) c);
+		Arch.poke(screen + x * 2 + 1, color);
 	}
 }

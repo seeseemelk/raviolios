@@ -230,28 +230,6 @@ namespace Java
 
 		void createFrame(GC::Root<Frame>& frame, GC::Root<MethodInfo>& method);
 
-//		void returnFromMethod(GC::Root<Thread>& thread);
-
-		/**
-		 * Pops a frame and pushed the item on the top of the current stack to
-		 * the new stack.
-		 *
-		 * @param thread The thread to pop.
-		 */
-//		void returnInteger(GC::Root<Thread>& thread);
-
-//		void pushIntegerFromVariable(Frame& frame, i32 number);
-//		void pushReferenceFromVariable(Frame& frame, i32 number);
-//		void storeIntegerToVariable(Frame& frame, i32 number);
-//		void storeReferenceToVariable(Frame& frame, i32 number);
-//		void pushInteger(Frame& frame, i32 number);
-//		void pushShort(Frame& frame);
-//		void pushByte(Frame& frame);
-//		void pushConstant(Frame& frame);
-//		void dup(Frame& frame);
-//		void swap(Frame& frame);
-//		void addIntegers(Frame& frame);
-//		void increment(Frame& frame);
 		enum class FieldOpcodeType { GET, PUT };
 
 		u16 findOpcodeJumpTarget(GC::Root<Frame>& frame, u16 target);
@@ -266,6 +244,7 @@ namespace Java
 		void opcodeLoad(GC::Root<Frame>& frame, u16 index);
 		void opcodeStore(GC::Root<Frame>& frame, u16 index);
 		void opcodeIadd(GC::Root<Frame>& frame);
+		void opcodeImul(GC::Root<Frame>& frame);
 		void opcodeIinc(GC::Root<Frame>& frame, u8 variable, i32 amount);
 		void opcodeI2B(GC::Root<Frame>& frame);
 		Instruction opcodeNewA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index);

@@ -74,7 +74,7 @@ public class IcbPacker implements AutoCloseable
 	private void writeU32(int num) throws IOException
 	{
 		writeU16(num);
-		writeU16(num >> 16);
+		writeU16(num >> 16); //uwu
 	}
 
 	private void writeU16(int num) throws IOException
