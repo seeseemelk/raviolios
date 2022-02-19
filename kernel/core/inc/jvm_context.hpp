@@ -250,6 +250,8 @@ namespace Java
 		Instruction opcodeNewA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index);
 		Instruction opcodeNewB(GC::Root<Frame>& frame);
 		void opcodeNewC(GC::Root<Frame>& frame, GC::Object<ClassFile>* classFile);
+		void opcodeNewArray(GC::Root<Frame>& frame, ArrayType index);
+		void opcodeArrayLength(GC::Root<Frame>& frame);
 		u16 opcodeIfIcmpneB(GC::Root<Frame>& frame, u16 target, u16 pc);
 
 //		Instruction opcodeFindFieldA;

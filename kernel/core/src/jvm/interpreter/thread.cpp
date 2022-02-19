@@ -186,6 +186,14 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 			opcodeNewC(frame, instruction.targetClass);
 			pc++;
 			break;
+		case Opcode::newarray:
+			opcodeNewArray(frame, static_cast<ArrayType>(instruction.index));
+			pc++;
+			break;
+		case Opcode::arraylength:
+			opcodeArrayLength(frame);
+			pc++;
+			break;
 		case Opcode::goto_a:
 			instruction.opcode = Opcode::goto_b;
 			instruction.index = findOpcodeJumpTarget(frame, instruction.index);
@@ -442,6 +450,60 @@ void VM::opcodeNewC(GC::Root<Frame>& frame, GC::Object<ClassFile>* classFile)
 	result.isObject = true;
 	object.store(&result.object);
 
+	frame.get().push(result);
+}
+
+void VM::opcodeNewArray(GC::Root<Frame>& frame, ArrayType arrayType)
+{
+	GC::Allocator<JavaArray> arrayAllocator(JavaArray::describer);
+
+	size_t bytesPerValue;
+	switch (arrayType)
+	{
+	case ArrayType::BOOLEAN:
+	case ArrayType::BYTE:
+	case ArrayType::CHAR:
+		bytesPerValue = 1;
+		break;
+	case ArrayType::SHORT:
+		bytesPerValue = 2;
+		break;
+	case ArrayType::INT:
+	case ArrayType::FLOAT:
+		bytesPerValue = 4;
+		break;
+	case ArrayType::LONG:
+	case ArrayType::DOUBLE:
+	case ArrayType::REFERENCE:
+		Log::critical("Unsupported array type");
+		Arch::panic();
+		break;
+	default:
+		Log::critical("Invalid array type");
+		Arch::panic();
+		break;
+	}
+
+	i32 length = frame.get().pop().integer;
+
+	arrayAllocator.size = length * bytesPerValue;
+	GC::Root<JavaArray> array;
+	m_gc.allocate(arrayAllocator, array);
+
+	array.get().type = arrayType;
+	array.get().length = length;
+
+	Operand operand;
+	operand.isObject = true;
+	array.store(&operand.array);
+	frame.get().push(operand);
+}
+
+void VM::opcodeArrayLength(GC::Root<Frame>& frame)
+{
+	Operand operand = frame.get().pop();
+	Operand result;
+	result.integer = operand.array->object.length;
 	frame.get().push(result);
 }
 
@@ -871,48 +933,6 @@ void VM::invokeMethod(GC::Root<Thread>& thread, const GC::Root<ClassFile>& class
 	u16 methodIndexInTargetClass = classfile.get().findMethodByName(name);
 	invokeMethod(thread, classfile, methodIndexInTargetClass, false);
 }
-
-//struct JavaObject
-//{
-//	GC::Object<ClassFile>* class_;
-//
-//	static void describer(GC::Meta* object, GC::MetaVisitor& visitor)
-//	{
-//		JavaObject* obj = object->as<JavaObject>();
-//		visitor.visit(&obj->class_);
-//	}
-//};
-//
-//void VM::newObject(GC::Root<Thread>& thread, GC::Root<Frame>& frame)
-//{
-//	u16 classIndex = frame.get().getU16FromCode(frame.get().pc) - 1;
-//	frame.get().pc += 2;
-//
-//	u16 classNameIndex = frame.get().getClassFile()->object.constantPool->get(classIndex).c_class.nameIndex;
-//
-//	GC::Root<char> className;
-//	m_gc.makeRoot(frame.get().getClassFile()->object.constantPool->get(classNameIndex).c_utf8.bytes, className);
-//
-//	GC::Root<ClassFile> targetClass;
-//	ClassError error = getClass(targetClass, thread, className);
-//	if (error != ClassError::GOOD)
-//	{
-//		Log::criticalf("Failed to instantiate object: %s", toString(error));
-//		Arch::panic();
-//	}
-//
-//	GC::Allocator<JavaObject> objectAllocator(targetClass.get().objectSize, &JavaObject::describer);
-//	GC::Root<JavaObject> object;
-//
-//	m_gc.allocate(objectAllocator, object);
-//	targetClass.store(&object.get().class_);
-//
-//	Operand operand;
-//	object.store(&operand.object);
-//	operand.isObject = true;
-//	frame.get().push(operand);
-//}
-
 
 
 

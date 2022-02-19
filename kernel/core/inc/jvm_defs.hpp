@@ -128,6 +128,32 @@ namespace Java
 		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
 	};
 
+	enum ArrayType
+	{
+		REFERENCE = 3,
+		BOOLEAN = 4,
+		CHAR = 5,
+		FLOAT = 6,
+		DOUBLE = 7,
+		BYTE = 8,
+		SHORT = 9,
+		INT = 10,
+		LONG = 11
+	};
+
+	struct JavaArray
+	{
+		size_t length;
+		ArrayType type;
+
+		template<typename T>
+		T& elementAt(size_t index);
+
+		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
+	private:
+		u8* firstValue();
+	};
+
 	struct Operand
 	{
 		union
@@ -135,6 +161,7 @@ namespace Java
 			i32 integer;
 			GC::Object<JavaObject>* object;
 			GC::Object<ClassFile>* classFile;
+			GC::Object<JavaArray>* array;
 		};
 		bool isObject = false;
 

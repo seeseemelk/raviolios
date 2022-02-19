@@ -20,6 +20,8 @@ const char* Java::toString(Opcode opcode)
 	case Opcode::new_a: return "new_a";
 	case Opcode::new_b: return "new_b";
 	case Opcode::new_c: return "new_c";
+	case Opcode::newarray: return "newarray";
+	case Opcode::arraylength: return "arraylength";
 	case Opcode::goto_a: return "goto_a";
 	case Opcode::goto_b: return "goto_b";
 	case Opcode::if_icmpne_a: return "if_icmpne_a";

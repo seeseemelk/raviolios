@@ -556,9 +556,18 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 			instruction.index = loader.readU16() - 1;
 			i += 2;
 			break;
+		case 0xBC: /* newarray */
+			instruction.opcode = Opcode::newarray;
+			instruction.index = loader.readU8();
+			i += 1;
+			break;
+		case 0xBE: /* arraylength */
+			instruction.opcode = Opcode::arraylength;
+			break;
 		default:
 			Log::criticalf("Unknown opcode: %b", opcode);
 			Arch::panic();
+			break;
 		}
 		instructions.asPtr()[instructionIndex++] = instruction;
 	}

@@ -27,6 +27,8 @@ namespace Java
 		new_a,
 		new_b,
 		new_c,
+		newarray,
+		arraylength,
 		goto_a,
 		goto_b,
 		if_icmpne_a,
