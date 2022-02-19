@@ -243,6 +243,8 @@ namespace Java
 		void opcodeIconst(GC::Root<Frame>& frame, i32 value);
 		void opcodeLoad(GC::Root<Frame>& frame, u16 index);
 		void opcodeStore(GC::Root<Frame>& frame, u16 index);
+		void opcodeArrayLoadChar(GC::Root<Frame>& frame);
+		void opcodeArrayStoreChar(GC::Root<Frame>& frame);
 		void opcodeIadd(GC::Root<Frame>& frame);
 		void opcodeImul(GC::Root<Frame>& frame);
 		void opcodeIinc(GC::Root<Frame>& frame, u8 variable, i32 amount);

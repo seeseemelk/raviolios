@@ -451,6 +451,9 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 			instruction.opcode = Opcode::load;
 			instruction.index = 3;
 			break;
+		case 0x34: /* caload */
+			instruction.opcode = Opcode::array_load_char;
+			break;
 		case 0x3B: /* istore_0 */
 			instruction.opcode = Opcode::store;
 			instruction.index = 0;
@@ -482,6 +485,9 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 		case 0x4E: /* astore_3 */
 			instruction.opcode = Opcode::store;
 			instruction.index = 3;
+			break;
+		case 0x55: /* castore */
+			instruction.opcode = Opcode::array_store_char;
 			break;
 		case 0x59: /* dup */
 			instruction.opcode = Opcode::dup;

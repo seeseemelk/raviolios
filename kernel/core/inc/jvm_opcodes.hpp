@@ -20,6 +20,8 @@ namespace Java
 		iconst,
 		load,
 		store,
+		array_load_char,
+		array_store_char,
 		iadd,
 		imul,
 		iinc,

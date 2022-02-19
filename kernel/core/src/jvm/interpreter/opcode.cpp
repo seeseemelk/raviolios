@@ -13,6 +13,8 @@ const char* Java::toString(Opcode opcode)
 	case Opcode::iconst: return "iconst";
 	case Opcode::load: return "load";
 	case Opcode::store: return "store";
+	case Opcode::array_load_char: return "array_load_char";
+	case Opcode::array_store_char: return "array_store_char";
 	case Opcode::iadd: return "iadd";
 	case Opcode::imul: return "imul";
 	case Opcode::iinc: return "iinc";

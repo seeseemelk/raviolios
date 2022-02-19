@@ -158,6 +158,14 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 			opcodeStore(frame, instruction.index);
 			pc++;
 			break;
+		case Opcode::array_load_char:
+			opcodeArrayLoadChar(frame);
+			pc++;
+			break;
+		case Opcode::array_store_char:
+			opcodeArrayStoreChar(frame);
+			pc++;
+			break;
 		case Opcode::iadd:
 			opcodeIadd(frame);
 			pc++;
@@ -383,6 +391,36 @@ void VM::opcodeStore(GC::Root<Frame>& frame, u16 index)
 	frame.get().locals->get(index) = operand;
 }
 
+void VM::opcodeArrayLoadChar(GC::Root<Frame>& frame)
+{
+	u32 index = frame.get().pop().integer;
+	Operand array = frame.get().pop();
+
+	if (index < 0 || index >= array.array->object.length)
+	{
+		Log::criticalf("Index %d is out of bounds for length %d", index, array.array->object.length);
+		Arch::panic();
+	}
+	char value = array.array->object.elementAt<char>(index);
+	Operand result;
+	result.integer = value;
+	frame.get().push(result);
+}
+
+void VM::opcodeArrayStoreChar(GC::Root<Frame>& frame)
+{
+	Operand value = frame.get().pop();
+	u32 index = frame.get().pop().integer;
+	Operand array = frame.get().pop();
+
+	if (index < 0 || index >= array.array->object.length)
+	{
+		Log::criticalf("Index %d is out of bounds for length %d", index, array.array->object.length);
+		Arch::panic();
+	}
+	array.array->object.elementAt<char>(index) = static_cast<char>(value.integer);
+}
+
 void VM::opcodeIadd(GC::Root<Frame>& frame)
 {
 	Operand a = frame.get().pop();
@@ -486,7 +524,7 @@ void VM::opcodeNewArray(GC::Root<Frame>& frame, ArrayType arrayType)
 
 	i32 length = frame.get().pop().integer;
 
-	arrayAllocator.size = length * bytesPerValue;
+	arrayAllocator.size = sizeof(JavaArray) + length * bytesPerValue;
 	GC::Root<JavaArray> array;
 	m_gc.allocate(arrayAllocator, array);
 
