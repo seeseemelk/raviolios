@@ -1,5 +1,0 @@
-rootProject.name = 'raviolios'
-
-include ':kernel:core'
-include ':kernel:test'
-include ':kernel:x86'
