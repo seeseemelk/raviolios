@@ -26,6 +26,6 @@ task("testCpp", Exec::class) {
     description = "Runs C/C++ test binary"
 }
 
-tasks.check.configure {
+tasks.check {
     dependsOn("testCpp")
 }

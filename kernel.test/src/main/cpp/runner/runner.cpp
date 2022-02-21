@@ -27,7 +27,7 @@ static Test::Handle* s_next_test = nullptr;
  * @param addr Address to convert.
  * @return The line number of the address.
  */
-static std::string addr2line(void* addr)
+/*static std::string addr2line(void* addr)
 {
 	std::string result;
 	auto pid = getpid();
@@ -46,11 +46,11 @@ static std::string addr2line(void* addr)
 
 	result.pop_back();
 	return result;
-}
+}*/
 
 void Test::fail(const char* message)
 {
-	fputs("Stacktrace:\n", stderr);
+	/*fputs("Stacktrace:\n", stderr);
 
 	void* buffer[10];
 	size_t size = backtrace(buffer, 10);
@@ -62,7 +62,7 @@ void Test::fail(const char* message)
 		snprintf(toLog, sizeof(toLog), "    %s", line.c_str());
 		fprintf(stderr, "%s\n", toLog);
 	}
-	free(trace);
+	free(trace);*/
 
 	fprintf(stderr, "[" ANSI_RED "FAIL" ANSI_RESET "] %s\n", message);
 	s_test_failed = true;

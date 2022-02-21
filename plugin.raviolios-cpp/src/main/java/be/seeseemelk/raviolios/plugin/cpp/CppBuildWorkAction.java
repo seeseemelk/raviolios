@@ -31,7 +31,7 @@ public abstract class CppBuildWorkAction implements WorkAction<CppBuildWorkParam
 		try
 		{
 			String fullCommand = String.join(" ", command);
-			System.out.format("Executing %s%n", fullCommand);
+			//System.out.format("Executing %s%n", fullCommand);
 
 			ProcessBuilder builder = new ProcessBuilder(command);
 			Process process = builder.start();
