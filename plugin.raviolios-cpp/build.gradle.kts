@@ -1,5 +1,6 @@
 plugins {
     `java-gradle-plugin`
+    id("io.freefair.lombok") version "6.4.1"
 }
 
 repositories {

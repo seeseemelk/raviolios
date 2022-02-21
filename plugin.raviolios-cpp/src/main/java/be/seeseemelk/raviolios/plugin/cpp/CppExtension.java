@@ -1,33 +1,38 @@
 package be.seeseemelk.raviolios.plugin.cpp;
 
-import org.gradle.api.Project;
+import lombok.Getter;
+import lombok.Setter;
+import org.gradle.api.file.RegularFileProperty;
+import org.gradle.api.file.SourceDirectorySet;
+import org.gradle.api.model.ObjectFactory;
+import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
+import org.gradle.api.provider.SetProperty;
 
+import javax.inject.Inject;
 import java.util.HashSet;
 import java.util.Set;
 
 public abstract class CppExtension
 {
-	public abstract Property<Project> getDependencies();
+	public abstract ListProperty<String> getCommonFlags();
+	public abstract ListProperty<String> getCppFlags();
+	public abstract ListProperty<String> getLdFlags();
+	public abstract ListProperty<String> getAsFlags();
 
-	/*
-	public Set<String> getDependencies()
+	public abstract RegularFileProperty getLinkerScript();
+
+	@Getter
+	private SetProperty<String> dependencies;
+
+	@Inject
+	public CppExtension(ObjectFactory objectFactory)
 	{
-		return dependencies;
+		dependencies = objectFactory.setProperty(String.class);
 	}
 
-	public void setDependencies(Set<String> dependencies)
+	public void dependency(String name)
 	{
-		this.dependencies = dependencies;
-	}*/
-
-//	public void dependency(Project dependency)
-//	{
-//		getDependencies().get().add(dependency);
-//	}
-
-	//	public void dependency(String dep)
-//	{
-//		getDependencies().add(dep);
-//	}
+		dependencies.add(name);
+	}
 }

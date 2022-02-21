@@ -1,4 +1,4 @@
-rootProject.name = "x86"
+rootProject.name = "kernel.x86"
 
 pluginManagement {
     includeBuild("../plugin.raviolios-cpp")
