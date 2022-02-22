@@ -8,17 +8,14 @@ import org.gradle.api.Project;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * A simple unit test for the 'be.seeseemelk.raviolios.plugin.cpp.greeting' plugin.
- */
 class CppBuildPluginTest
 {
-    @Test void pluginRegistersATask() {
-        // Create a test project and apply the plugin
+    @Test
+    void pluginRegistersATask()
+    {
         Project project = ProjectBuilder.builder().build();
-        project.getPlugins().apply("be.seeseemelk.raviolios.plugin.cpp.greeting");
+        project.getPlugins().apply("be.seeseemelk.raviolios.cpp");
 
-        // Verify the result
-        assertNotNull(project.getTasks().findByName("greeting"));
+        assertNotNull(project.getTasks().findByName("compileCpp"));
     }
 }

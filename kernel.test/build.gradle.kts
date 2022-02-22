@@ -1,9 +1,14 @@
 plugins {
     id("be.seeseemelk.raviolios.cpp")
+    id("be.seeseemelk.raviolios.java")
     `java-library`
 }
 
-group = "kernel"
+group = "raviolios"
+
+dependencies {
+    implementation("raviolios:kernel.core")
+}
 
 cpp {
     dependency("kernel.core")

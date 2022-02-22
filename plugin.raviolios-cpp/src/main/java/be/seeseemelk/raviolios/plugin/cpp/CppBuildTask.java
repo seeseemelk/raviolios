@@ -1,29 +1,38 @@
 package be.seeseemelk.raviolios.plugin.cpp;
 
+import be.seeseemelk.raviolios.plugin.cpp.makefile.MakefileDependencies;
+import be.seeseemelk.raviolios.plugin.cpp.makefile.MakefileParser;
+import be.seeseemelk.raviolios.plugin.cpp.makefile.RebuildTracker;
 import lombok.Getter;
-import lombok.Setter;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileCollection;
-import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.InputFiles;
-import org.gradle.api.tasks.OutputDirectory;
-import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.logging.Logger;
+import org.gradle.api.tasks.*;
+import org.gradle.work.FileChange;
+import org.gradle.work.Incremental;
+import org.gradle.work.InputChanges;
 import org.gradle.workers.WorkQueue;
 import org.gradle.workers.WorkerExecutor;
 
 import javax.inject.Inject;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+@CacheableTask
 public abstract class CppBuildTask extends DefaultTask
 {
 	@InputFiles
+	@Incremental
+	@PathSensitive(PathSensitivity.ABSOLUTE)
+	@IgnoreEmptyDirectories
 	public abstract ConfigurableFileCollection getIncludes();
 
 	public void addIncludes(FileCollection collection)
@@ -32,6 +41,9 @@ public abstract class CppBuildTask extends DefaultTask
 	}
 
 	@InputFiles
+	@Incremental
+	@PathSensitive(PathSensitivity.ABSOLUTE)
+	@IgnoreEmptyDirectories
 	public abstract ConfigurableFileCollection getCppSources();
 
 	public void addCppSources(FileCollection collection)
@@ -70,13 +82,41 @@ public abstract class CppBuildTask extends DefaultTask
 	public abstract WorkerExecutor getWorkExecutor();
 
 	@TaskAction
-	public void build()
+	public void build(InputChanges changes)
 	{
+		MakefileDependencies dependencies = parseMakefiles();
+		RebuildTracker tracker = new RebuildTracker(dependencies);
+
+		for (FileChange change : changes.getFileChanges(getIncludes()))
+			tracker.markAsChanged(change.getFile().getAbsolutePath());
+		for (FileChange change : changes.getFileChanges(getCppSources()))
+			tracker.markAsChanged(change.getFile().getAbsolutePath());
+
 		WorkQueue queue = getWorkExecutor().noIsolation();
 		List<File> objects = new ArrayList<>();
-		buildCpp(queue, objects);
+		buildCpp(queue, objects, tracker);
 		queue.await();
 		link(objects);
+	}
+
+	private MakefileDependencies parseMakefiles()
+	{
+		try
+		{
+			MakefileParser parser = new MakefileParser();
+			FileCollection dependencies = getOutputDirectory().getAsFileTree().filter(file -> file.getName().endsWith(
+				".d"));
+			for (File dependency : dependencies)
+			{
+				getLogger().debug("Parsing " + dependency);
+				parser.parse(Files.newBufferedReader(dependency.toPath()));
+			}
+			return parser.getDependencies();
+		}
+		catch (IOException exception)
+		{
+			throw new RuntimeException("Could not parse makefile", exception);
+		}
 	}
 
 	private Set<File> getIncludeDirectories()
@@ -87,7 +127,11 @@ public abstract class CppBuildTask extends DefaultTask
 		return dirs;
 	}
 
-	private void buildCpp(WorkQueue queue, List<File> objects)
+	private void buildCpp(
+		WorkQueue queue,
+		List<File> objects,
+		RebuildTracker tracker
+	)
 	{
 		List<String> command = new ArrayList<>();
 		command.add("clang++");
@@ -99,6 +143,9 @@ public abstract class CppBuildTask extends DefaultTask
 			command.add("-I" + includeDirectory.getAbsolutePath());
 		command.add("-c");
 
+		command.add("-MP");
+		command.add("-MD");
+
 		for (File source : getCppSources().getFiles())
 		{
 			String projectName = getProjectNameOf(source);
@@ -109,17 +156,21 @@ public abstract class CppBuildTask extends DefaultTask
 			File object = new File(outputDirectory, source.getName() + ".o");
 			objects.add(object);
 
-			queue.submit(CppBuildWorkAction.class, parameters -> {
-				parameters.getCommand().value(command);
-				parameters.getOutput().fileValue(object);
-				parameters.getSource().fileValue(source);
-			});
+			if (tracker.needsRebuild(source.getAbsolutePath()))
+			{
+				queue.submit(CppBuildWorkAction.class, parameters ->
+				{
+					parameters.getCommand().value(command);
+					parameters.getOutput().fileValue(object);
+					parameters.getSource().fileValue(source);
+				});
+			}
 		}
 	}
 
 	private String getPathRelativeToSourceRoot(File source)
 	{
-		Path sourcePath = source.toPath();
+		Path sourcePath = source.toPath().getParent();
 		for (File sourceRoot : sourceRoots)
 		{
 			Path rootPath = sourceRoot.toPath();
@@ -158,6 +209,7 @@ public abstract class CppBuildTask extends DefaultTask
 			command.add(object.getAbsolutePath());
 		}
 
+		getLogger().debug("Executing " + String.join(" ", command));
 		CppBuildWorkAction.runCommand(command);
 	}
 }

@@ -3,9 +3,13 @@ plugins {
 }
 
 tasks.check {
-    dependsOn(gradle.includedBuild("kernel.test").task(":check"))
+    gradle.includedBuilds.forEach {
+        dependsOn(it.task(":check"))
+    }
 }
 
 tasks.clean {
-    dependsOn(gradle.includedBuild("kernel.test").task(":clean"))
+    gradle.includedBuilds.forEach {
+        dependsOn(it.task(":clean"))
+    }
 }

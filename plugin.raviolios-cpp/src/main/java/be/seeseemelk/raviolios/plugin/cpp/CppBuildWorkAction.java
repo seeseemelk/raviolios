@@ -30,8 +30,6 @@ public abstract class CppBuildWorkAction implements WorkAction<CppBuildWorkParam
 	{
 		try
 		{
-			String fullCommand = String.join(" ", command);
-			//System.out.format("Executing %s%n", fullCommand);
 
 			ProcessBuilder builder = new ProcessBuilder(command);
 			Process process = builder.start();
@@ -39,6 +37,7 @@ public abstract class CppBuildWorkAction implements WorkAction<CppBuildWorkParam
 			if (result != 0)
 			{
 				String error = new String(process.getErrorStream().readAllBytes());
+				String fullCommand = String.join(" ", command);
 				throw new RuntimeException(
 					"Compile filed with result code: " + result + System.lineSeparator() +
 					"Command was: " + fullCommand + System.lineSeparator() +
