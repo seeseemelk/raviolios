@@ -34,19 +34,29 @@ public class CppBuildPlugin implements Plugin<Project>
 				IncludedBuild build = project.getGradle().includedBuild(dependency);
 				File include = new File(build.getProjectDir(), "src/main/include");
 				File cpp = new File(build.getProjectDir(), "src/main/cpp");
+				File assembler = new File(build.getProjectDir(), "src/main/asm");
 				task.addIncludes(project.fileTree(include));
 				task.addCppSources(project.fileTree(cpp));
+				task.addAssemblerSources(project.fileTree(assembler));
 				task.getProjects().add(dependency);
 				task.getSourceRoots().add(cpp);
+				task.getSourceRoots().add(assembler);
 			}
 			task.addIncludes(project.fileTree("src/main/include"));
 			task.addCppSources(project.fileTree("src/main/cpp"));
+			task.addAssemblerSources(project.fileTree("src/main/asm"));
+			if (extensions.getLinkerScript().isPresent())
+			{
+				File linkerScript = new File(project.file("src/main/linker"), extensions.getLinkerScript().get());
+				task.getLinkerScript().fileValue(linkerScript);
+			}
 			task.getCommonFlags().addAll(extensions.getCommonFlags().get());
 			task.getCppFlags().addAll(extensions.getCppFlags().get());
 			task.getLdFlags().addAll(extensions.getLdFlags().get());
 			task.getAsFlags().addAll(extensions.getAsFlags().get());
 			task.getProjects().add(project.getName());
 			task.getSourceRoots().add(project.file("src/main/cpp"));
+			task.getSourceRoots().add(project.file("src/main/asm"));
 		});
 
 	}

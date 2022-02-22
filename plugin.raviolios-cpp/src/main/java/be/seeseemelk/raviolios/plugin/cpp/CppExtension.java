@@ -1,17 +1,12 @@
 package be.seeseemelk.raviolios.plugin.cpp;
 
 import lombok.Getter;
-import lombok.Setter;
-import org.gradle.api.file.RegularFileProperty;
-import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.provider.SetProperty;
 
 import javax.inject.Inject;
-import java.util.HashSet;
-import java.util.Set;
 
 public abstract class CppExtension
 {
@@ -20,7 +15,7 @@ public abstract class CppExtension
 	public abstract ListProperty<String> getLdFlags();
 	public abstract ListProperty<String> getAsFlags();
 
-	public abstract RegularFileProperty getLinkerScript();
+	public abstract Property<String> getLinkerScript();
 
 	@Getter
 	private SetProperty<String> dependencies;

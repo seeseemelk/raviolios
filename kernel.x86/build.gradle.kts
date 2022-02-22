@@ -1,11 +1,13 @@
 plugins {
     id("be.seeseemelk.raviolios.cpp")
+    id("be.seeseemelk.raviolios.java")
 }
 
 group = "kernel"
 
 cpp {
     dependency("kernel.core")
+    linkerScript.set("kernel.ld")
     commonFlags.addAll(
             "--target=i386-elf",
             "-march=i386",
@@ -26,4 +28,12 @@ cpp {
             "-nostdlib",
             "-lgcc"
     )
+}
+
+tasks.register<Exec>("emulate") {
+    group = "application"
+    description = "Runs the kernel under Qemu"
+    //dependsOn(buildIso)
+    workingDir(rootDir)
+    commandLine("qemu-system-i386", "-cdrom", "isoFile", "-m", "16M", "-gdb", "tcp::1234", "-serial", "stdio")
 }

@@ -8,7 +8,7 @@ import org.gradle.api.DefaultTask;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileCollection;
-import org.gradle.api.logging.Logger;
+import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.tasks.*;
 import org.gradle.work.FileChange;
 import org.gradle.work.Incremental;
@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 
 @CacheableTask
 public abstract class CppBuildTask extends DefaultTask
@@ -50,6 +51,22 @@ public abstract class CppBuildTask extends DefaultTask
 	{
 		getCppSources().setFrom(getCppSources().plus(collection));
 	}
+
+	@InputFiles
+	@Incremental
+	@PathSensitive(PathSensitivity.ABSOLUTE)
+	@IgnoreEmptyDirectories
+	public abstract ConfigurableFileCollection getAssemblerSources();
+
+	public void addAssemblerSources(FileCollection collection)
+	{
+		getAssemblerSources().setFrom(getAssemblerSources().plus(collection));
+	}
+
+	@InputFile
+	@Optional
+	@PathSensitive(PathSensitivity.ABSOLUTE)
+	public abstract RegularFileProperty getLinkerScript();
 
 	@Getter
 	@Input
@@ -91,10 +108,13 @@ public abstract class CppBuildTask extends DefaultTask
 			tracker.markAsChanged(change.getFile().getAbsolutePath());
 		for (FileChange change : changes.getFileChanges(getCppSources()))
 			tracker.markAsChanged(change.getFile().getAbsolutePath());
+		for (FileChange change : changes.getFileChanges(getAssemblerSources()))
+			tracker.markAsChanged(change.getFile().getAbsolutePath());
 
 		WorkQueue queue = getWorkExecutor().noIsolation();
 		List<File> objects = new ArrayList<>();
 		buildCpp(queue, objects, tracker);
+		buildAssembler(queue, objects, tracker);
 		queue.await();
 		link(objects);
 	}
@@ -127,11 +147,7 @@ public abstract class CppBuildTask extends DefaultTask
 		return dirs;
 	}
 
-	private void buildCpp(
-		WorkQueue queue,
-		List<File> objects,
-		RebuildTracker tracker
-	)
+	private void buildCpp(WorkQueue queue, List<File> objects, RebuildTracker tracker)
 	{
 		List<String> command = new ArrayList<>();
 		command.add("clang++");
@@ -141,12 +157,32 @@ public abstract class CppBuildTask extends DefaultTask
 
 		for (File includeDirectory : getIncludeDirectories())
 			command.add("-I" + includeDirectory.getAbsolutePath());
+		runBuild(command, queue, objects, tracker, getCppSources());
+	}
+
+	private void buildAssembler(WorkQueue queue, List<File> objects, RebuildTracker tracker)
+	{
+		List<String> command = new ArrayList<>();
+		command.add("clang");
+		command.addAll(getCommonFlags());
+		command.addAll(getAsFlags());
+		runBuild(command, queue, objects, tracker, getAssemblerSources());
+	}
+
+	private void runBuild(
+		List<String> command,
+		WorkQueue queue,
+		List<File> objects,
+		RebuildTracker tracker,
+		ConfigurableFileCollection sources
+	)
+	{
 		command.add("-c");
 
 		command.add("-MP");
 		command.add("-MD");
 
-		for (File source : getCppSources().getFiles())
+		for (File source : sources.getFiles())
 		{
 			String projectName = getProjectNameOf(source);
 			String sourceRoot = getPathRelativeToSourceRoot(source);
@@ -198,6 +234,12 @@ public abstract class CppBuildTask extends DefaultTask
 
 		command.addAll(getCommonFlags());
 		command.addAll(getLdFlags());
+
+		if (getLinkerScript().isPresent())
+		{
+			command.add("-T");
+			command.add(getLinkerScript().getAsFile().get().getAbsolutePath());
+		}
 
 		File outputDirectory = getOutputDirectory().getAsFile().get();
 		File outputObject = new File(outputDirectory, "output.elf");
