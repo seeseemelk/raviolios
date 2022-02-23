@@ -30,7 +30,6 @@ public class IcbPacker implements AutoCloseable
 
 	public void addFile(Path classFile) throws IOException
 	{
-		System.out.format("Adding %s%n", classFile);
 		byte[] content = Files.readAllBytes(classFile);
 
 		// Write tag
