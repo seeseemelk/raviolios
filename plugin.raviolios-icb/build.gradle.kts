@@ -1,4 +1,5 @@
 plugins {
+    id("be.seeseemelk.raviolios.java")
     `java-gradle-plugin`
 }
 
