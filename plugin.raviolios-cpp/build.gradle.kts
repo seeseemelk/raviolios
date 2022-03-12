@@ -8,6 +8,9 @@ repositories {
 }
 
 dependencies {
+    implementation("com.github.docker-java:docker-java-core:3.2.13")
+    implementation("com.github.docker-java:docker-java-transport-httpclient5:3.2.13")
+
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.1")
 }
 

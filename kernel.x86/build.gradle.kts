@@ -8,6 +8,7 @@ group = "kernel"
 
 dependencies {
     implementation("raviolios:kernel.core")
+    implementation("raviolios:kit.core")
 }
 
 cpp {
@@ -30,8 +31,7 @@ cpp {
             "--std=c++17"
     )
     ldFlags.addAll(
-            "-nostdlib",
-            "-lgcc"
+            "-nostdlib"
     )
 }
 

@@ -7,3 +7,4 @@ pluginManagement {
 }
 
 includeBuild("../kernel.core")
+includeBuild("../kit.core")
