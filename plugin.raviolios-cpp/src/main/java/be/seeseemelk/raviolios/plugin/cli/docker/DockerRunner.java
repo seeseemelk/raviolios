@@ -1,7 +1,11 @@
 package be.seeseemelk.raviolios.plugin.cli.docker;
 
+import be.seeseemelk.raviolios.plugin.cli.Arguments;
 import be.seeseemelk.raviolios.plugin.cli.CommandRunner;
 import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.model.Bind;
+import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
@@ -12,7 +16,8 @@ import java.time.Duration;
 
 public class DockerRunner implements CommandRunner
 {
-	private DockerClient client;
+	private final DockerClient client;
+	private String containerId = null;
 
 	public DockerRunner()
 	{
@@ -31,11 +36,37 @@ public class DockerRunner implements CommandRunner
 
 	public void start()
 	{
-		client.execCreateCmd("").
+		CreateContainerResponse response = client.createContainerCmd("seeseemelk/raviolios-build-light")
+				.withHostConfig(HostConfig.newHostConfig()
+						.withBinds(Bind.parse("/home/seeseemelk/dev/raviolios:/project")))
+				.exec();
+		containerId = response.getId();
+		client.startContainerCmd(containerId).exec();
+		//client.execCreateCmd("").
 	}
 
-	public void run()
+	@Override
+	public void close() throws Exception
 	{
-		client.startContainerCmd("");
+		try
+		{
+			client.stopContainerCmd(containerId).exec();
+		}
+		finally
+		{
+			client.removeContainerCmd(containerId).exec();
+		}
+	}
+
+	@Override
+	public void run(Arguments command)
+	{
+		//client.startContainerCmd("");
+	}
+
+	@Override
+	public void await()
+	{
+
 	}
 }

@@ -1,4 +1,4 @@
-FROM gradle:7.4-jdk11-alpine
+FROM alpine:latest
 
 RUN apk add --no-cache \
 	clang \

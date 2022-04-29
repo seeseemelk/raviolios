@@ -1,11 +1,9 @@
-package be.seeseemelk.raviolios.plugin.cpp;
+package be.seeseemelk.raviolios.plugin.cli.local;
 
-import org.codehaus.groovy.util.StringUtil;
 import org.gradle.workers.WorkAction;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 public abstract class CppBuildWorkAction implements WorkAction<CppBuildWorkParameters>
@@ -13,6 +11,7 @@ public abstract class CppBuildWorkAction implements WorkAction<CppBuildWorkParam
 	@Override
 	public void execute()
 	{
+		/*
 		File source = getParameters().getSource().getAsFile().get();
 		File destination = getParameters().getOutput().getAsFile().get();
 
@@ -24,13 +23,17 @@ public abstract class CppBuildWorkAction implements WorkAction<CppBuildWorkParam
 		command.add(source.getAbsolutePath());
 
 		runCommand(command);
+		*/
+		List<String> command = getParameters().getCommand().get();
+		File destination = getParameters().getOutput().getAsFile().get();
+		destination.getParentFile().mkdirs();
+		runCommand(command);
 	}
 
 	public static void runCommand(List<String> command)
 	{
 		try
 		{
-
 			ProcessBuilder builder = new ProcessBuilder(command);
 			Process process = builder.start();
 			int result = process.waitFor();

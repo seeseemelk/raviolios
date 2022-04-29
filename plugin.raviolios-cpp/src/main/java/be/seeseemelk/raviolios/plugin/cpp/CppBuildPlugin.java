@@ -3,10 +3,8 @@
  */
 package be.seeseemelk.raviolios.plugin.cpp;
 
-import org.gradle.api.Action;
-import org.gradle.api.Project;
 import org.gradle.api.Plugin;
-import org.gradle.api.Task;
+import org.gradle.api.Project;
 import org.gradle.api.initialization.IncludedBuild;
 
 import java.io.File;
@@ -54,6 +52,7 @@ public class CppBuildPlugin implements Plugin<Project>
 			task.getCppFlags().addAll(extensions.getCppFlags().get());
 			task.getLdFlags().addAll(extensions.getLdFlags().get());
 			task.getAsFlags().addAll(extensions.getAsFlags().get());
+			task.getUseDocker().set(extensions.getUseDocker().getOrElse(true));
 			task.getProjects().add(project.getName());
 			task.getSourceRoots().add(project.file("src/main/cpp"));
 			task.getSourceRoots().add(project.file("src/main/asm"));

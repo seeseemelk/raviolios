@@ -1,5 +1,9 @@
 package be.seeseemelk.raviolios.plugin.cpp;
 
+import be.seeseemelk.raviolios.plugin.cli.Arguments;
+import be.seeseemelk.raviolios.plugin.cli.CommandRunner;
+import be.seeseemelk.raviolios.plugin.cli.docker.DockerRunner;
+import be.seeseemelk.raviolios.plugin.cli.local.LocalRunner;
 import be.seeseemelk.raviolios.plugin.cpp.makefile.MakefileDependencies;
 import be.seeseemelk.raviolios.plugin.cpp.makefile.MakefileParser;
 import be.seeseemelk.raviolios.plugin.cpp.makefile.RebuildTracker;
@@ -9,6 +13,7 @@ import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.RegularFileProperty;
+import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.*;
 import org.gradle.work.FileChange;
 import org.gradle.work.Incremental;
@@ -25,7 +30,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Predicate;
 
 @CacheableTask
 public abstract class CppBuildTask extends DefaultTask
@@ -92,6 +96,9 @@ public abstract class CppBuildTask extends DefaultTask
 	@Input
 	private final List<File> sourceRoots = new ArrayList<>();
 
+	@Input
+	public abstract Property<Boolean> getUseDocker();
+
 	@OutputDirectory
 	public abstract DirectoryProperty getOutputDirectory();
 
@@ -111,12 +118,40 @@ public abstract class CppBuildTask extends DefaultTask
 		for (FileChange change : changes.getFileChanges(getAssemblerSources()))
 			tracker.markAsChanged(change.getFile().getAbsolutePath());
 
-		WorkQueue queue = getWorkExecutor().noIsolation();
-		List<File> objects = new ArrayList<>();
-		buildCpp(queue, objects, tracker);
-		buildAssembler(queue, objects, tracker);
-		queue.await();
-		link(objects);
+		try (CommandRunner runner = createRunner())
+		{
+			WorkQueue queue = getWorkExecutor().noIsolation();
+			List<File> objects = new ArrayList<>();
+			buildCpp(runner, queue, objects, tracker);
+			buildAssembler(runner, queue, objects, tracker);
+			runner.await();
+			link(runner, objects);
+		}
+		catch (Exception exception)
+		{
+			throw new CppBuildException("Couldn't not build native object", exception);
+		}
+	}
+
+	private CommandRunner createRunner()
+	{
+		if (getUseDocker().get())
+			return createDockerRunner();
+		else
+			return createLocalRunner();
+	}
+
+	private CommandRunner createDockerRunner()
+	{
+		DockerRunner runner = new DockerRunner();
+		runner.start();
+		return runner;
+	}
+
+	private CommandRunner createLocalRunner()
+	{
+		LocalRunner runner = new LocalRunner(getWorkExecutor());
+		return runner;
 	}
 
 	private MakefileDependencies parseMakefiles()
@@ -124,8 +159,9 @@ public abstract class CppBuildTask extends DefaultTask
 		try
 		{
 			MakefileParser parser = new MakefileParser();
-			FileCollection dependencies = getOutputDirectory().getAsFileTree().filter(file -> file.getName().endsWith(
-				".d"));
+			FileCollection dependencies = getOutputDirectory()
+				.getAsFileTree()
+				.filter(file -> file.getName().endsWith(".d"));
 			for (File dependency : dependencies)
 			{
 				getLogger().debug("Parsing " + dependency);
@@ -147,9 +183,14 @@ public abstract class CppBuildTask extends DefaultTask
 		return dirs;
 	}
 
-	private void buildCpp(WorkQueue queue, List<File> objects, RebuildTracker tracker)
+	private void buildCpp(
+		CommandRunner runner,
+		WorkQueue queue,
+		List<File> objects,
+		RebuildTracker tracker
+	)
 	{
-		List<String> command = new ArrayList<>();
+		Arguments command = new Arguments();
 		command.add("clang++");
 
 		command.addAll(getCommonFlags());
@@ -157,33 +198,37 @@ public abstract class CppBuildTask extends DefaultTask
 
 		for (File includeDirectory : getIncludeDirectories())
 			command.add("-I" + includeDirectory.getAbsolutePath());
-		runBuild(command, queue, objects, tracker, getCppSources());
+		runBuild(runner, command, queue, objects, tracker, getCppSources());
 	}
 
-	private void buildAssembler(WorkQueue queue, List<File> objects, RebuildTracker tracker)
+	private void buildAssembler(
+		CommandRunner runner,
+		WorkQueue queue,
+		List<File> objects,
+		RebuildTracker tracker
+	)
 	{
-		List<String> command = new ArrayList<>();
+		Arguments command = new Arguments();
 		command.add("clang");
 		command.addAll(getCommonFlags());
 		command.addAll(getAsFlags());
-		runBuild(command, queue, objects, tracker, getAssemblerSources());
+		runBuild(runner, command, queue, objects, tracker, getAssemblerSources());
 	}
 
 	private void runBuild(
-		List<String> command,
+		CommandRunner runner,
+		Arguments baseCommand,
 		WorkQueue queue,
 		List<File> objects,
 		RebuildTracker tracker,
 		ConfigurableFileCollection sources
 	)
 	{
-		command.add("-c");
-
-		command.add("-MP");
-		command.add("-MD");
+		baseCommand.add("-c").add("-MP").add("-MD");
 
 		for (File source : sources.getFiles())
 		{
+			Arguments command = new Arguments(baseCommand);
 			String projectName = getProjectNameOf(source);
 			String sourceRoot = getPathRelativeToSourceRoot(source);
 
@@ -194,12 +239,14 @@ public abstract class CppBuildTask extends DefaultTask
 
 			if (tracker.needsRebuild(source.getAbsolutePath()))
 			{
-				queue.submit(CppBuildWorkAction.class, parameters ->
-				{
-					parameters.getCommand().value(command);
-					parameters.getOutput().fileValue(object);
-					parameters.getSource().fileValue(source);
-				});
+				command.add("-o").addOutput(object).addSource(source);
+				runner.run(command);
+//				queue.submit(CppBuildWorkAction.class, parameters ->
+//				{
+//					parameters.getCommand().value(command);
+//					parameters.getOutput().fileValue(object);
+//					parameters.getSource().fileValue(source);
+//				});
 			}
 		}
 	}
@@ -227,9 +274,9 @@ public abstract class CppBuildTask extends DefaultTask
 		throw new RuntimeException("Could not find project corresponding to " + path);
 	}
 
-	private void link(List<File> objects)
+	private void link(CommandRunner runner, List<File> objects)
 	{
-		List<String> command = new ArrayList<>();
+		Arguments command = new Arguments();
 		command.add("clang++");
 
 		command.addAll(getCommonFlags());
@@ -244,14 +291,14 @@ public abstract class CppBuildTask extends DefaultTask
 		File outputDirectory = getOutputDirectory().getAsFile().get();
 		File outputObject = new File(outputDirectory, "output.elf");
 		command.add("-o");
-		command.add(outputObject.getAbsolutePath());
+		command.addOutput(outputObject);
 
 		for (File object : objects)
 		{
-			command.add(object.getAbsolutePath());
+			command.addSource(object);
 		}
 
-		getLogger().debug("Executing " + String.join(" ", command));
-		CppBuildWorkAction.runCommand(command);
+		getLogger().debug("Executing " + command);
+		runner.run(command);
 	}
 }

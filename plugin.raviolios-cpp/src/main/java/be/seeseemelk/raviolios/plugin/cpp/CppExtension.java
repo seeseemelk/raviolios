@@ -16,6 +16,7 @@ public abstract class CppExtension
 	public abstract ListProperty<String> getAsFlags();
 
 	public abstract Property<String> getLinkerScript();
+	public abstract Property<Boolean> getUseDocker();
 
 	@Getter
 	private SetProperty<String> dependencies;

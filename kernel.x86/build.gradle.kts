@@ -12,6 +12,7 @@ dependencies {
 }
 
 cpp {
+	useDocker.set(false)
     dependency("kernel.core")
     linkerScript.set("kernel.ld")
     commonFlags.addAll(
