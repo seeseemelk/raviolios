@@ -13,6 +13,7 @@ namespace Java
 {
 	struct ClassFile;
 	struct Instruction;
+	struct JavaObject;
 
 	struct ConstantPoolUtf8
 	{
@@ -48,6 +49,12 @@ namespace Java
 		u16 descriptorIndex;
 	};
 
+	struct ConstantPoolString
+	{
+		GC::Object<JavaObject>* string;
+		u16 stringIndex;
+	};
+
 	struct ConstantPoolInfo
 	{
 		u8 tag;
@@ -59,7 +66,7 @@ namespace Java
 			// ConstantPoolLong c_long; /* Tag: 5 */
 			// ConstantPoolDouble c_double; /* Tag: 6 */
 			ConstantPoolClass c_class; /* Tag: 7 */
-			// ConstantPoolString c_string; /* Tag: 8 */
+			ConstantPoolString c_string; /* Tag: 8 */
 			ConstantPoolFieldRef c_field; /* Tag: 9 */
 			ConstantPoolMethodRef c_method; /* Tag: 10 */
 			// ConstantPoolInterfaceMethodRef c_interfaceMethod; /* Tag: 11 */

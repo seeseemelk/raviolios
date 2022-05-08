@@ -15,6 +15,18 @@ char& JavaArray::elementAt<char>(size_t index)
 }
 
 template<>
+i8& JavaArray::elementAt<i8>(size_t index)
+{
+	return *reinterpret_cast<i8*>(firstValue() + index);
+}
+
+template<>
+i16& JavaArray::elementAt<i16>(size_t index)
+{
+	return *reinterpret_cast<i16*>(firstValue() + index * sizeof(i16));
+}
+
+template<>
 GC::Meta*& JavaArray::elementAt<GC::Meta*>(size_t index)
 {
 	return *reinterpret_cast<GC::Meta**>(firstValue() + index * sizeof(GC::Meta**));

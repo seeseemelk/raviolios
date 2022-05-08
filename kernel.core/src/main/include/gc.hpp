@@ -234,7 +234,7 @@ namespace GC
 			return *asPtr();
 		}
 
-		bool isSet()
+		bool isSet() const
 		{
 			return object != nullptr;
 		}

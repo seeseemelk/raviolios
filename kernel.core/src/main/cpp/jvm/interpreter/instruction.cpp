@@ -22,6 +22,9 @@ void Instruction::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 		case Opcode::putfield_c:
 			visitor.visit(&instructions[i].targetField);
 			break;
+		case Opcode::load_string:
+			visitor.visit(&instructions[i].targetObject);
+			break;
 		default:
 			break;
 		}

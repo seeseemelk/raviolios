@@ -33,6 +33,6 @@ bool loadTestClass(Buffer& buf, std::string file)
 	std::string path = "build/classes/java/main/" + file + ".class";
 	if (loadFile(buf, path))
 		return true;
-	std::string corePath = "../kernel.core/build/classes/java/main/" + file + ".class";
+	std::string corePath = "../kit.java/build/classes/java/main/" + file + ".class";
 	return loadFile(buf, corePath);
 }

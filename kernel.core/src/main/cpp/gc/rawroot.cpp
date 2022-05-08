@@ -27,11 +27,6 @@ void RawRoot::set(Meta* object, RawRoot* previous, RawRoot* next)
 		next->previous = this;
 }
 
-void RawRoot::set(const RawRoot& root)
-{
-	set(root.object, root.next, root.previous);
-}
-
 void RawRoot::clear()
 {
 	if (next != nullptr)

@@ -86,12 +86,18 @@ namespace Java
 		union
 		{
 			u16 index;
+			struct
+			{
+				u16 utf8Index;
+				u16 stringIndex;
+			} protoString;
 			InstructionVirtualArg virtualArg;
 			i32 constantInteger;
 			VarIncrement varIncrement;
 			GC::Object<ClassFile>* targetClass;
 			GC::Object<MethodInfo>* targetMethod;
 			GC::Object<FieldInfo>* targetField;
+			GC::Object<JavaObject>* targetObject;
 			void (*targetNativeMethod)(VM& vm, GC::Root<Thread>& thread);
 		};
 	};

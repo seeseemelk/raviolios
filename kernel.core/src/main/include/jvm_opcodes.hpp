@@ -17,15 +17,38 @@ namespace Java
 		dup,
 		swap,
 		load_constant,
+
+		/**
+		 * Pushes the string object that is stored by the instruction onto the
+		 * stack.
+		 */
+		load_string,
+
+		/**
+		 * Creates a new instance of the type `string`, and push it onto the
+		 * stack twice.
+		 * It then calls `String.fromUtf8` with the UTF-8 string as a byte
+		 * array.
+		 */
+		create_string_a,
+
+		/**
+		 * Takes the string instance that is on the stack, and stores it into
+		 * the constant pool.
+		 * Then, it becomes the `load_string` instruction.
+		 */
+		create_string_b,
 		iconst,
 		load,
 		store,
+		array_load_byte,
 		array_load_char,
 		array_store_char,
 		iadd,
 		imul,
 		iinc,
 		i2b,
+		i2c,
 		new_a,
 		new_b,
 		new_c,
@@ -35,6 +58,10 @@ namespace Java
 		goto_b,
 		if_icmpne_a,
 		if_icmpne_b,
+		if_icmpge_a,
+		if_icmpge_b,
+		if_acmpne_a,
+		if_acmpne_b,
 		getstatic_a,
 		getstatic_b,
 		getstatic_c,

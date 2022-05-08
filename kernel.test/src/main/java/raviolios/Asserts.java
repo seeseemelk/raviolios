@@ -14,4 +14,12 @@ public final class Asserts
 		else
 			fail();
 	}
+
+	public static void assertSame(Object expected, Object actual)
+	{
+		if (expected == actual)
+			success();
+		else
+			fail();
+	}
 }

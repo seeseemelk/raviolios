@@ -54,6 +54,21 @@ void VM::allocateObject(GC::Root<ClassFile>& classFile, GC::Root<JavaObject>& ob
 	classFile.store(&object.get().class_);
 }
 
+void VM::getStringClass(GC::Root<Thread>& thread, GC::Root<ClassFile>& stringClass)
+{
+	if (!m_stringClass.isSet())
+	{
+		GC::Root<char> className;
+		allocateString(className, "java/lang/String");
+		ClassError error = getClass(m_stringClass, thread, className);
+		if (error != ClassError::GOOD)
+		{
+			Log::criticalf("Could not load java.lang.String: %s", toString(error));
+		}
+	}
+	m_gc.makeRoot(m_stringClass, stringClass);
+}
+
 ClassError VM::getClass(GC::Root<ClassFile>& classfile, GC::Root<Thread>& thread, const GC::Root<char>& name)
 {
 	return m_classLoaderVtable->loadClass(m_classLoader, *this, thread, classfile, name);
@@ -111,8 +126,11 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, GC::Root<Thread>& thr
 			info->c_nameAndType.nameIndex = loader.readU16() - 1;
 			info->c_nameAndType.descriptorIndex = loader.readU16() - 1;
 			break;
+		case CONSTANT_string:
+			info->c_string.stringIndex = loader.readU16() - 1;
+			break;
 		default:
-//			printf("Unknown tag: %d at index %d (of %d)\n", info->tag, (int)i, (int)classfile.get().constantPoolCount);
+			Log::criticalf("Unknown constant pool item of type %d at index %d", info->tag, i);
 			Log::info("Unknown tag");
 			return ClassError::BAD_CONSTANT;
 		}
@@ -451,8 +469,16 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 			instruction.opcode = Opcode::load;
 			instruction.index = 3;
 			break;
+		case 0x33: /* baload */
+			instruction.opcode = Opcode::array_load_byte;
+			break;
 		case 0x34: /* caload */
 			instruction.opcode = Opcode::array_load_char;
+			break;
+		case 0x36: /* istore */
+			instruction.opcode = Opcode::store;
+			instruction.index = loader.readU8() - 1;
+			i += 1;
 			break;
 		case 0x3B: /* istore_0 */
 			instruction.opcode = Opcode::store;
@@ -510,8 +536,22 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 		case 0x91: /* i2b */
 			instruction.opcode = Opcode::i2b;
 			break;
+		case 0x92: /* i2c */
+			instruction.opcode = Opcode::i2c;
+			break;
 		case 0xA0: /* if_icmpne */
 			instruction.opcode = Opcode::if_icmpne_a;
+			instruction.index = loader.readI16() + instruction.offset;
+			i += 2;
+			break;
+		case 0xA2: /* if_icmge */
+			instruction.opcode = Opcode::if_icmpge_a;
+			instruction.index = loader.readI16() + instruction.offset;
+			i += 2;
+			break;
+			break;
+		case 0xA6: /* if_acmpne */
+			instruction.opcode = Opcode::if_acmpne_a;
 			instruction.index = loader.readI16() + instruction.offset;
 			i += 2;
 			break;
@@ -521,6 +561,9 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 			i += 2;
 			break;
 		case 0xAC: /* ireturn */
+			instruction.opcode = Opcode::return_value;
+			break;
+		case 0xB0: /* areturn */
 			instruction.opcode = Opcode::return_value;
 			break;
 		case 0xB1: /* return */

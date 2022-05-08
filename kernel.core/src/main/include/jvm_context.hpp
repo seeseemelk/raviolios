@@ -200,6 +200,9 @@ namespace Java
 		/// Set to true to interrupt.
 		bool m_interrupted = false;
 
+		/// A pointer to the string class.
+		GC::Root<ClassFile> m_stringClass;
+
 		ThreadState runUntilInterrupted(GC::Root<Thread>& thread);
 
 		/**
@@ -215,6 +218,10 @@ namespace Java
 		 * @param length The length of the array.
 		 */
 		void allocateArray(GC::Root<char>& root, size_t length);
+
+		void allocateJavaArray(GC::Root<JavaArray>& root, ArrayType type, size_t length);
+
+		void getStringClass(GC::Root<Thread>& thread, GC::Root<ClassFile>& classFile);
 
 		/**
 		 * Loads a list of attributes.
@@ -240,21 +247,28 @@ namespace Java
 		void opcodeDup(GC::Root<Frame>& frame);
 		void opcodeSwap(GC::Root<Frame>& frame);
 		void opcodeLoadConstant(GC::Root<Frame>& frame, Instruction& instruction);
+		void opcodeLoadString(GC::Root<Frame>& frame, Instruction& instruction);
+		void opcodeCreateStringA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, Instruction& instruction);
+		void opcodeCreateStringB(GC::Root<Frame>& frame, Instruction& instruction);
 		void opcodeIconst(GC::Root<Frame>& frame, i32 value);
 		void opcodeLoad(GC::Root<Frame>& frame, u16 index);
 		void opcodeStore(GC::Root<Frame>& frame, u16 index);
+		void opcodeArrayLoadByte(GC::Root<Frame>& frame);
 		void opcodeArrayLoadChar(GC::Root<Frame>& frame);
 		void opcodeArrayStoreChar(GC::Root<Frame>& frame);
 		void opcodeIadd(GC::Root<Frame>& frame);
 		void opcodeImul(GC::Root<Frame>& frame);
 		void opcodeIinc(GC::Root<Frame>& frame, u8 variable, i32 amount);
 		void opcodeI2B(GC::Root<Frame>& frame);
+		void opcodeI2C(GC::Root<Frame>& frame);
 		Instruction opcodeNewA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index);
 		Instruction opcodeNewB(GC::Root<Frame>& frame);
 		void opcodeNewC(GC::Root<Frame>& frame, GC::Object<ClassFile>* classFile);
 		void opcodeNewArray(GC::Root<Frame>& frame, ArrayType index);
 		void opcodeArrayLength(GC::Root<Frame>& frame);
 		u16 opcodeIfIcmpneB(GC::Root<Frame>& frame, u16 target, u16 pc);
+		u16 opcodeIfIcmpgeB(GC::Root<Frame>& frame, u16 target, u16 pc);
+		u16 opcodeIfAcmpneB(GC::Root<Frame>& frame, u16 target, u16 pc);
 
 //		Instruction opcodeFindFieldA;
 //		Instruction opcodeGetfieldB(GC::Root<Frame>& frame, u16 index);

@@ -70,8 +70,8 @@ size_t TypeDescriptor::size()
 		return 0;
 	case Type::BOOLEAN:
 	case Type::BYTE:
-	case Type::CHAR:
 		return 1;
+	case Type::CHAR:
 	case Type::SHORT:
 		return 2;
 	case Type::INTEGER:

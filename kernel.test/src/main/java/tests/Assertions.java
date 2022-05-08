@@ -4,16 +4,6 @@ import raviolios.Asserts;
 
 public class Assertions
 {
-	/*private static void indirection1()
-	{
-		Asserts.success();
-	}
-
-	private static void indirection2()
-	{
-		indirection1();
-	}*/
-
 	public static void succeeds()
 	{
 		Asserts.success();

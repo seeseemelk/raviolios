@@ -10,12 +10,20 @@
 #include <string>
 #include <unistd.h>
 
+struct TestCase
+{
+	const char* name;
+	TestCase* next;
+};
+
 static bool s_in_test = false;
 static bool s_test_failed = false;
 static int s_success = 0;
 static int s_fails = 0;
 static bool s_quiet = false;
 static Test::Handle* s_next_test = nullptr;
+static TestCase* s_failedTests = nullptr;
+static const char* s_currentTestName;
 
 #define ANSI_RED "\x1B[91m"
 #define ANSI_GREEN "\x1B[92m"
@@ -50,19 +58,13 @@ static Test::Handle* s_next_test = nullptr;
 
 void Test::fail(const char* message)
 {
-	/*fputs("Stacktrace:\n", stderr);
-
-	void* buffer[10];
-	size_t size = backtrace(buffer, 10);
-	char** trace = backtrace_symbols(buffer, size);
-	for (size_t i = 1; i < size; i++)
+	if (s_failedTests == nullptr || s_failedTests->name != s_currentTestName)
 	{
-		std::string line = addr2line(buffer[i]);
-		char toLog[512];
-		snprintf(toLog, sizeof(toLog), "    %s", line.c_str());
-		fprintf(stderr, "%s\n", toLog);
+		TestCase* testCase = new TestCase();
+		testCase->name = s_currentTestName;
+		testCase->next = s_failedTests;
+		s_failedTests = testCase;
 	}
-	free(trace);*/
 
 	fprintf(stderr, "[" ANSI_RED "FAIL" ANSI_RESET "] %s\n", message);
 	s_test_failed = true;
@@ -114,6 +116,15 @@ int Runner::printTestResults()
 	}
 	else
 	{
+		puts("");
+		puts("Failed tests:");
+		while (s_failedTests != nullptr)
+		{
+			printf(" - %s\n", s_failedTests->name);
+			TestCase* nextTest = s_failedTests->next;
+			delete s_failedTests;
+			s_failedTests = nextTest;
+		}
 		return 1;
 	}
 }
@@ -133,6 +144,7 @@ void Test::Handle::run()
 	{
 		puts("");
 	}
+	s_currentTestName = m_name;
 	fprintf(stdout, "[" ANSI_BLUE "TEST" ANSI_RESET "] %s...\n", m_name);
 	m_function();
 }

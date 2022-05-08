@@ -42,7 +42,6 @@ public class DockerRunner implements CommandRunner
 				.exec();
 		containerId = response.getId();
 		client.startContainerCmd(containerId).exec();
-		//client.execCreateCmd("").
 	}
 
 	@Override

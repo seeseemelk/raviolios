@@ -8,6 +8,7 @@ group = "raviolios"
 
 dependencies {
     implementation("raviolios:kernel.core")
+    implementation("raviolios:kit.java")
 }
 
 cpp {

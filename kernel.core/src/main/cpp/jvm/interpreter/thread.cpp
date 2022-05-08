@@ -79,7 +79,7 @@ void VM::createFrame(GC::Root<Frame>& frame, GC::Root<MethodInfo>& method)
 {
 	CodeAttribute& attribute = method.get().getAttributeOfType(AttributeType::code)->code->object;
 	u16 localSize = attribute.maxLocals;
-	u16 stackSize = attribute.maxStack + 1;
+	u16 stackSize = attribute.maxStack + 3;
 
 	GC::Allocator<Frame> frameAllocator(Frame::describer);
 	m_gc.allocate(frameAllocator, frame);
@@ -146,6 +146,18 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 			opcodeLoadConstant(frame, instruction);
 			storeInstruction = true;
 			break;
+		case Opcode::load_string:
+			opcodeLoadString(frame, instruction);
+			pc++;
+			break;
+		case Opcode::create_string_a:
+			opcodeCreateStringA(thread, frame, instruction);
+			storeInstruction = true;
+			break;
+		case Opcode::create_string_b:
+			opcodeCreateStringB(frame, instruction);
+			storeInstruction = true;
+			break;
 		case Opcode::iconst:
 			opcodeIconst(frame, instruction.constantInteger);
 			pc++;
@@ -156,6 +168,10 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 			break;
 		case Opcode::store:
 			opcodeStore(frame, instruction.index);
+			pc++;
+			break;
+		case Opcode::array_load_byte:
+			opcodeArrayLoadByte(frame);
 			pc++;
 			break;
 		case Opcode::array_load_char:
@@ -180,6 +196,10 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 			break;
 		case Opcode::i2b:
 			opcodeI2B(frame);
+			pc++;
+			break;
+		case Opcode::i2c:
+			opcodeI2C(frame);
 			pc++;
 			break;
 		case Opcode::new_a:
@@ -218,7 +238,22 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 		case Opcode::if_icmpne_b:
 			pc = opcodeIfIcmpneB(frame, instruction.index, pc);
 			break;
-
+		case Opcode::if_icmpge_a:
+			instruction.opcode = Opcode::if_icmpge_b;
+			instruction.index = findOpcodeJumpTarget(frame, instruction.index);
+			storeInstruction = true;
+			break;
+		case Opcode::if_icmpge_b:
+			pc = opcodeIfIcmpgeB(frame, instruction.index, pc);
+			break;
+		case Opcode::if_acmpne_a:
+			instruction.opcode = Opcode::if_acmpne_b;
+			instruction.index = findOpcodeJumpTarget(frame, instruction.index);
+			storeInstruction = true;
+			break;
+		case Opcode::if_acmpne_b:
+			pc = opcodeIfIcmpneB(frame, instruction.index, pc);
+			break;
 		case Opcode::getstatic_a:
 			findOpcodeFieldA(thread, frame, instruction.index);
 			instruction.opcode = Opcode::getstatic_b;
@@ -365,11 +400,84 @@ void VM::opcodeLoadConstant(GC::Root<Frame>& frame, Instruction& instruction)
 		instruction.opcode = Opcode::iconst;
 		instruction.constantInteger = constant.c_integer.integer;
 		break;
+	case ConstantPoolTag::CONSTANT_string:
+		 if (constant.c_string.string != nullptr)
+		 {
+			 instruction.opcode = Opcode::load_string;
+			 instruction.targetObject = constant.c_string.string;
+		 }
+		 else
+		 {
+			 instruction.opcode = Opcode::create_string_a;
+			 instruction.protoString.stringIndex = instruction.index;
+			 instruction.protoString.utf8Index = constant.c_string.stringIndex;
+		 }
+		 break;
 	default:
 		Log::critical("Unsupported or invalid constant pool type");
 		Arch::panic();
 		break;
 	}
+}
+
+void VM::opcodeLoadString(GC::Root<Frame>& frame, Instruction& instruction)
+{
+	Operand operand;
+	operand.object = instruction.targetObject;
+	operand.isObject = true;
+	frame.get().push(operand);
+}
+
+void VM::opcodeCreateStringA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, Instruction& instruction)
+{
+	GC::Root<ClassFile> stringClass;
+	getStringClass(thread, stringClass);
+
+	GC::Root<JavaObject> stringObject;
+	allocateObject(stringClass, stringObject);
+
+	Operand objectOperand;
+	stringObject.store(&objectOperand.object);
+	objectOperand.isObject = true;
+	frame.get().push(objectOperand); // Reference that will be used by create_string_b
+	frame.get().push(objectOperand); // Reference that will be used by String.new(byte[]);
+
+	ClassFile* classFile = &frame.get().getClassFile()->object;
+	ConstantPoolUtf8 cpUtf8 = classFile->constantPool->get(instruction.protoString.utf8Index).c_utf8;
+	size_t length = cpUtf8.length;
+	GC::Root<char> utf8Array;
+	m_gc.makeRoot(cpUtf8.bytes, utf8Array);
+
+	GC::Root<JavaArray> array;
+	allocateJavaArray(array, ArrayType::BYTE, length);
+	for (size_t i = 0; i < length; i++)
+		array.get().elementAt<char>(i) = utf8Array[i];
+
+	instruction.opcode = Opcode::create_string_b;
+	instruction.index = instruction.protoString.stringIndex;
+
+	Operand arrayOperand;
+	array.store(&arrayOperand.array);
+	arrayOperand.isObject = true;
+	frame.get().push(arrayOperand);
+
+	GC::Root<MethodInfo> targetMethod;
+	u16 method = stringClass.get().findMethodByName("fromUtf8");
+	m_gc.makeRoot(stringClass.get().methods->get(method).method, targetMethod);
+	invokeMethod(thread, targetMethod, true);
+
+//	Operand arrayOperand;
+//	array.store(&arrayOperand.array);
+//	arrayOperand.isObject = true;
+//	thread.get().top->object.locals->get(0) = arrayOperand;
+}
+
+void VM::opcodeCreateStringB(GC::Root<Frame>& frame, Instruction& instruction)
+{
+	Operand stringObject = frame.get().pop();
+
+	instruction.opcode = Opcode::load_string;
+	instruction.targetObject = stringObject.object;
 }
 
 void VM::opcodeIconst(GC::Root<Frame>& frame, i32 value)
@@ -391,6 +499,22 @@ void VM::opcodeStore(GC::Root<Frame>& frame, u16 index)
 	frame.get().locals->get(index) = operand;
 }
 
+void VM::opcodeArrayLoadByte(GC::Root<Frame>& frame)
+{
+	u32 index = frame.get().pop().integer;
+	Operand array = frame.get().pop();
+
+	if (index < 0 || index >= array.array->object.length)
+	{
+		Log::criticalf("Index %d is out of bounds for length %d", index, array.array->object.length);
+		Arch::panic();
+	}
+	i8 value = array.array->object.elementAt<i8>(index);
+	Operand result;
+	result.integer = value;
+	frame.get().push(result);
+}
+
 void VM::opcodeArrayLoadChar(GC::Root<Frame>& frame)
 {
 	u32 index = frame.get().pop().integer;
@@ -401,7 +525,7 @@ void VM::opcodeArrayLoadChar(GC::Root<Frame>& frame)
 		Log::criticalf("Index %d is out of bounds for length %d", index, array.array->object.length);
 		Arch::panic();
 	}
-	char value = array.array->object.elementAt<char>(index);
+	i16 value = array.array->object.elementAt<i16>(index);
 	Operand result;
 	result.integer = value;
 	frame.get().push(result);
@@ -418,7 +542,7 @@ void VM::opcodeArrayStoreChar(GC::Root<Frame>& frame)
 		Log::criticalf("Index %d is out of bounds for length %d", index, array.array->object.length);
 		Arch::panic();
 	}
-	array.array->object.elementAt<char>(index) = static_cast<char>(value.integer);
+	array.array->object.elementAt<i16>(index) = static_cast<i16>(value.integer);
 }
 
 void VM::opcodeIadd(GC::Root<Frame>& frame)
@@ -442,7 +566,14 @@ void VM::opcodeImul(GC::Root<Frame>& frame)
 void VM::opcodeI2B(GC::Root<Frame>& frame)
 {
 	Operand operand = frame.get().pop();
-	operand.integer = static_cast<i8>(operand.integer);
+	operand.integer = static_cast<u8>(operand.integer);
+	frame.get().push(operand);
+}
+
+void VM::opcodeI2C(GC::Root<Frame>& frame)
+{
+	Operand operand = frame.get().pop();
+	operand.integer = static_cast<u16>(operand.integer);
 	frame.get().push(operand);
 }
 
@@ -493,6 +624,21 @@ void VM::opcodeNewC(GC::Root<Frame>& frame, GC::Object<ClassFile>* classFile)
 
 void VM::opcodeNewArray(GC::Root<Frame>& frame, ArrayType arrayType)
 {
+	i32 length = frame.get().pop().integer;
+	GC::Root<JavaArray> array;
+	allocateJavaArray(array, arrayType, length);
+
+	array.get().type = arrayType;
+	array.get().length = length;
+
+	Operand operand;
+	operand.isObject = true;
+	array.store(&operand.array);
+	frame.get().push(operand);
+}
+
+void VM::allocateJavaArray(GC::Root<JavaArray>& array, ArrayType arrayType, size_t length)
+{
 	GC::Allocator<JavaArray> arrayAllocator(JavaArray::describer);
 
 	size_t bytesPerValue;
@@ -522,19 +668,11 @@ void VM::opcodeNewArray(GC::Root<Frame>& frame, ArrayType arrayType)
 		break;
 	}
 
-	i32 length = frame.get().pop().integer;
-
 	arrayAllocator.size = sizeof(JavaArray) + length * bytesPerValue;
-	GC::Root<JavaArray> array;
 	m_gc.allocate(arrayAllocator, array);
 
 	array.get().type = arrayType;
 	array.get().length = length;
-
-	Operand operand;
-	operand.isObject = true;
-	array.store(&operand.array);
-	frame.get().push(operand);
 }
 
 void VM::opcodeArrayLength(GC::Root<Frame>& frame)
@@ -546,6 +684,26 @@ void VM::opcodeArrayLength(GC::Root<Frame>& frame)
 }
 
 u16 VM::opcodeIfIcmpneB(GC::Root<Frame>& frame, u16 target, u16 pc)
+{
+	Operand a = frame.get().pop();
+	Operand b = frame.get().pop();
+	if (a.integer != b.integer)
+		return target;
+	else
+		return pc + 1;
+}
+
+u16 VM::opcodeIfIcmpgeB(GC::Root<Frame>& frame, u16 target, u16 pc)
+{
+	Operand value2 = frame.get().pop();
+	Operand value1 = frame.get().pop();
+	if (value1.integer >= value2.integer)
+		return target;
+	else
+		return pc + 1;
+}
+
+u16 VM::opcodeIfAcmpneB(GC::Root<Frame>& frame, u16 target, u16 pc)
 {
 	Operand a = frame.get().pop();
 	Operand b = frame.get().pop();
@@ -847,6 +1005,10 @@ void VM::invokeNativeMethod(GC::Root<Thread>& thread, const GC::Root<char>& clas
 	Arch::panic();
 }
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * TODO: Figure out why there are two invokeMethods ??                       *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 void VM::invokeMethod(GC::Root<Thread>& thread, const GC::Root<ClassFile>& targetClass, u16 method, bool isInterrupt)
 {
 	GC::Root<MethodInfo> targetMethod;
@@ -954,14 +1116,14 @@ void VM::invokeMethod(GC::Root<Thread>& thread, GC::Root<MethodInfo>& targetMeth
 				frame.store(&newFrame.get().previous);
 				newFrame.store(&thread.get().top);
 			}
+		}
 
-			size_t arguments = targetMethod.get().type.arguments;
-			if (!targetMethod.get().isStatic())
-				arguments++;
-			for (size_t i = arguments; i > 0; i--)
-			{
-				newFrame.get().locals->get(i - 1) = frame.get().pop();
-			}
+		size_t arguments = targetMethod.get().type.arguments;
+		if (!targetMethod.get().isStatic())
+			arguments++;
+		for (size_t i = arguments; i > 0; i--)
+		{
+			newFrame.get().locals->get(i - 1) = frame.get().pop();
 		}
 	}
 }
