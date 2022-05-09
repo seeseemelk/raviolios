@@ -129,7 +129,7 @@ public abstract class CppBuildTask extends DefaultTask
 		}
 		catch (Exception exception)
 		{
-			throw new CppBuildException("Couldn't not build native object", exception);
+			throw new CppBuildException("Could not build native object", exception);
 		}
 	}
 
