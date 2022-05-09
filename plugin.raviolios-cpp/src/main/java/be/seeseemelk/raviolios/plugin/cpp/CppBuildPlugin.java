@@ -8,6 +8,7 @@ import org.gradle.api.Project;
 import org.gradle.api.initialization.IncludedBuild;
 
 import java.io.File;
+import java.util.Locale;
 
 /**
  * Allows building C/C++ kernel sources.
@@ -52,11 +53,32 @@ public class CppBuildPlugin implements Plugin<Project>
 			task.getCppFlags().addAll(extensions.getCppFlags().get());
 			task.getLdFlags().addAll(extensions.getLdFlags().get());
 			task.getAsFlags().addAll(extensions.getAsFlags().get());
-			task.getUseDocker().set(extensions.getUseDocker().getOrElse(true));
+			task.getUseDocker().set(extensions.getUseDocker().getOrElse(getUseDockerEnv()));
 			task.getProjects().add(project.getName());
 			task.getSourceRoots().add(project.file("src/main/cpp"));
 			task.getSourceRoots().add(project.file("src/main/asm"));
 		});
+	}
 
+	private boolean getUseDockerEnv()
+	{
+		String useDocker = System.getenv("RAVIOLIOS_DOCKER");
+		if (useDocker == null)
+			return false; // Will be set to true once docker works properly.
+		switch (useDocker.toLowerCase(Locale.ROOT))
+		{
+		case "true":
+		case "yes":
+		case "y":
+		case "1":
+			return true;
+		case "false":
+		case "no":
+		case "n":
+		case "0":
+			return false;
+		default:
+			throw new IllegalArgumentException("'USE_DOCKER' has an invalid value");
+		}
 	}
 }
