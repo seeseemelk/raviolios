@@ -440,7 +440,6 @@ void VM::opcodeCreateStringA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, I
 	stringObject.store(&objectOperand.object);
 	objectOperand.isObject = true;
 	frame.get().push(objectOperand); // Reference that will be used by create_string_b
-	frame.get().push(objectOperand); // Reference that will be used by String.new(byte[]);
 
 	ClassFile* classFile = &frame.get().getClassFile()->object;
 	ConstantPoolUtf8 cpUtf8 = classFile->constantPool->get(instruction.protoString.utf8Index).c_utf8;
@@ -465,11 +464,6 @@ void VM::opcodeCreateStringA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, I
 	u16 method = stringClass.get().findMethodByName("fromUtf8");
 	m_gc.makeRoot(stringClass.get().methods->get(method).method, targetMethod);
 	invokeMethod(thread, targetMethod, true);
-
-//	Operand arrayOperand;
-//	array.store(&arrayOperand.array);
-//	arrayOperand.isObject = true;
-//	thread.get().top->object.locals->get(0) = arrayOperand;
 }
 
 void VM::opcodeCreateStringB(GC::Root<Frame>& frame, Instruction& instruction)
@@ -520,12 +514,18 @@ void VM::opcodeArrayLoadChar(GC::Root<Frame>& frame)
 	u32 index = frame.get().pop().integer;
 	Operand array = frame.get().pop();
 
+	if (array.array == nullptr)
+	{
+		Log::criticalf("Array is nullptr");
+		Arch::panic();
+	}
+	array.array->validate();
 	if (index < 0 || index >= array.array->object.length)
 	{
 		Log::criticalf("Index %d is out of bounds for length %d", index, array.array->object.length);
 		Arch::panic();
 	}
-	i16 value = array.array->object.elementAt<i16>(index);
+	jchar value = array.array->object.elementAt<jchar>(index);
 	Operand result;
 	result.integer = value;
 	frame.get().push(result);
@@ -542,7 +542,7 @@ void VM::opcodeArrayStoreChar(GC::Root<Frame>& frame)
 		Log::criticalf("Index %d is out of bounds for length %d", index, array.array->object.length);
 		Arch::panic();
 	}
-	array.array->object.elementAt<i16>(index) = static_cast<i16>(value.integer);
+	array.array->object.elementAt<jchar>(index) = static_cast<jchar>(value.integer);
 }
 
 void VM::opcodeIadd(GC::Root<Frame>& frame)
@@ -646,9 +646,9 @@ void VM::allocateJavaArray(GC::Root<JavaArray>& array, ArrayType arrayType, size
 	{
 	case ArrayType::BOOLEAN:
 	case ArrayType::BYTE:
-	case ArrayType::CHAR:
 		bytesPerValue = 1;
 		break;
+	case ArrayType::CHAR:
 	case ArrayType::SHORT:
 		bytesPerValue = 2;
 		break;
@@ -1005,10 +1005,6 @@ void VM::invokeNativeMethod(GC::Root<Thread>& thread, const GC::Root<char>& clas
 	Arch::panic();
 }
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * TODO: Figure out why there are two invokeMethods ??                       *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
 void VM::invokeMethod(GC::Root<Thread>& thread, const GC::Root<ClassFile>& targetClass, u16 method, bool isInterrupt)
 {
 	GC::Root<MethodInfo> targetMethod;
@@ -1025,54 +1021,13 @@ void VM::invokeMethod(GC::Root<Thread>& thread, const GC::Root<ClassFile>& targe
 	m_gc.makeRoot(targetClass.get().constantPool->get(classNameIndex).c_utf8.bytes, className);
 	m_gc.makeRoot(targetClass.get().constantPool->get(typeIndex).c_utf8.bytes, type);
 
-
 	if (targetMethod.get().isNative())
 	{
 		invokeNativeMethod(thread, className, methodName, type);
 	}
 	else
 	{
-		GC::Root<Frame> frame;
-		m_gc.makeRoot(thread.get().top, frame);
-
-		GC::Root<Frame> newFrame;
-		createFrame(newFrame, targetMethod);
-
-		if (isInterrupt)
-		{
-			newFrame.get().inInterrupt = true;
-			frame.store(&newFrame.get().previous);
-			newFrame.store(&thread.get().top);
-		}
-		else
-		{
-			if (thread.get().top != nullptr && thread.get().top->object.inInterrupt)
-			{
-				GC::Object<Frame>* lastInt = thread.get().top;
-				GC::Object<Frame>* firstNormal = lastInt->object.previous;
-				while (firstNormal != nullptr && firstNormal->object.inInterrupt)
-				{
-					lastInt = firstNormal;
-					firstNormal = firstNormal->object.previous;
-				}
-				frame.get().previous = firstNormal;
-				newFrame.store(&lastInt->object.previous);
-			}
-			else
-			{
-				frame.store(&newFrame.get().previous);
-				newFrame.store(&thread.get().top);
-			}
-
-			TypeDescriptor methodTypeDescriptor = TypeDescriptor::parse(type);
-			size_t arguments = methodTypeDescriptor.arguments;
-			if (!targetMethod.get().isStatic())
-				arguments++;
-			for (size_t i = arguments; i > 0; i--)
-			{
-				newFrame.get().locals->get(i - 1) = frame.get().pop();
-			}
-		}
+		invokeMethod(thread, targetMethod, isInterrupt);
 	}
 }
 
@@ -1081,7 +1036,6 @@ void VM::invokeMethod(GC::Root<Thread>& thread, GC::Root<MethodInfo>& targetMeth
 	if (targetMethod.get().isNative())
 	{
 		Arch::panic();
-		//invokeNativeMethod(thread, className, methodName, type);
 	}
 	else
 	{

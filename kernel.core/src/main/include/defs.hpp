@@ -19,6 +19,12 @@ typedef int16_t i16;
 typedef int32_t i32;
 typedef int64_t i64;
 
+typedef i8 jbyte;
+typedef i16 jchar;
+typedef i16 jshort;
+typedef i32 jint;
+typedef i64 jlong;
+
 #define KB(x) (x * 1024UL)
 #define MB(x) (KB(x) * 1024UL)
 #define GB(x) (MB(x) * 1024UL)

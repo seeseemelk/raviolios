@@ -136,7 +136,7 @@ JAVA_TEST("tests/Virtual", "testCanCallVirtualMethod");
 JAVA_TEST("tests/Arrays", "canGetArrayLength");
 JAVA_TEST("tests/Arrays", "canReadAndWriteCharArrays");
 JAVA_TEST("tests/Methods", "canReturnReference");
-//JAVA_TEST("tests/Strings", "canGetCharacterAtPosition");
+JAVA_TEST("tests/Strings", "canGetCharacterAtPosition");
 
 
 
