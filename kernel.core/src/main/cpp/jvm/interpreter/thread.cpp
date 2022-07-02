@@ -731,28 +731,37 @@ void VM::opcodeGetfieldC(GC::Root<Frame>& frame, GC::Object<FieldInfo>* field)
 	operand.object->validate();
 	void* value = operand.object->object.getFieldAt<void>(field->object.offset);
 	Operand result;
-	switch (field->object.type.type)
+	if (field->object.type.array)
 	{
-	case Type::BOOLEAN:
-	case Type::BYTE:
-	case Type::CHAR:
-		result.integer = *static_cast<i8*>(value);
-		break;
-	case Type::SHORT:
-		result.integer = *static_cast<i16*>(value);
-		break;
-	case Type::INTEGER:
-	case Type::FLOAT:
-		result.integer = *static_cast<i32*>(value);
-		break;
-	case Type::REFERENCE:
-		result.object = *static_cast<GC::Object<JavaObject>**>(value);
-		break;
-	case Type::VOID:
-	case Type::LONG:
-	case Type::DOUBLE:
-		Arch::panic();
-		break;
+		result.isObject = true;
+		result.array = *static_cast<GC::Object<JavaArray>**>(value);
+	}
+	else
+	{
+		switch (field->object.type.type)
+		{
+		case Type::BOOLEAN:
+		case Type::BYTE:
+		case Type::CHAR:
+			result.integer = *static_cast<i8*>(value);
+			break;
+		case Type::SHORT:
+			result.integer = *static_cast<i16*>(value);
+			break;
+		case Type::INTEGER:
+		case Type::FLOAT:
+			result.integer = *static_cast<i32*>(value);
+			break;
+		case Type::REFERENCE:
+			result.isObject = true;
+			result.object = *static_cast<GC::Object<JavaObject>**>(value);
+			break;
+		case Type::VOID:
+		case Type::LONG:
+		case Type::DOUBLE:
+			Arch::panic();
+			break;
+		}
 	}
 	frame.get().push(result);
 }
@@ -764,28 +773,37 @@ void VM::opcodePutfieldC(GC::Root<Frame>& frame, GC::Object<FieldInfo>* field)
 	Operand object = frame.get().pop();
 	object.object->validate();
 	void* target = object.object->object.getFieldAt<void>(field->object.offset);
-	switch (field->object.type.type)
+	if (field->object.type.array)
 	{
-	case Type::BOOLEAN:
-	case Type::BYTE:
-	case Type::CHAR:
-		*static_cast<i8*>(target) = value.integer;
-		break;
-	case Type::SHORT:
-		*static_cast<i16*>(target) = value.integer;
-		break;
-	case Type::INTEGER:
-	case Type::FLOAT:
-		*static_cast<i32*>(target) = value.integer;
-		break;
-	case Type::REFERENCE:
-		*static_cast<GC::Object<JavaObject>**>(target) = value.object;
-		break;
-	case Type::VOID:
-	case Type::LONG:
-	case Type::DOUBLE:
-		Arch::panic();
-		break;
+		value.array->validate();
+		*static_cast<GC::Object<JavaArray>**>(target) = value.array;
+	}
+	else
+	{
+		switch (field->object.type.type)
+		{
+		case Type::BOOLEAN:
+		case Type::BYTE:
+		case Type::CHAR:
+			*static_cast<i8*>(target) = value.integer;
+			break;
+		case Type::SHORT:
+			*static_cast<i16*>(target) = value.integer;
+			break;
+		case Type::INTEGER:
+		case Type::FLOAT:
+			*static_cast<i32*>(target) = value.integer;
+			break;
+		case Type::REFERENCE:
+			value.object->validate();
+			*static_cast<GC::Object<JavaObject>**>(target) = value.object;
+			break;
+		case Type::VOID:
+		case Type::LONG:
+		case Type::DOUBLE:
+			Arch::panic();
+			break;
+		}
 	}
 }
 

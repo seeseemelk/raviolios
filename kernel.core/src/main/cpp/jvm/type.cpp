@@ -64,6 +64,8 @@ static char* parseDescriptor(char* str, TypeDescriptor* descriptor)
 
 size_t TypeDescriptor::size()
 {
+	if (array)
+		return sizeof(void*);
 	switch (type)
 	{
 	case Type::VOID:

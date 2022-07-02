@@ -52,6 +52,11 @@ namespace Java
 		 */
 		size_t size();
 
+		inline bool isReferenceType() const
+		{
+			return array || type == Type::REFERENCE;
+		}
+
 		static TypeDescriptor parse(GC::Root<char>& type);
 		static TypeDescriptor parseParameter(GC::Root<char>& type);
 	};

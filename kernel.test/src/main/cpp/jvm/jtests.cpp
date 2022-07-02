@@ -95,15 +95,15 @@ static void runJavaTestAggressiveGC(const char* className, const char* methodNam
 }
 
 #define JAVA_TEST(className, methodName) \
-	TEST("Java " className " " methodName) \
-	{ \
-		s_expectFail = false; \
-		runJavaTest(className, methodName); \
-	} \
 	TEST("Java " className " " methodName " (aggressive GC)") \
 	{ \
 		s_expectFail = false; \
 		runJavaTestAggressiveGC(className, methodName); \
+	} \
+	TEST("Java " className " " methodName) \
+	{ \
+		s_expectFail = false; \
+		runJavaTest(className, methodName); \
 	}
 
 #define JAVA_FAIL(className, methodName) \
