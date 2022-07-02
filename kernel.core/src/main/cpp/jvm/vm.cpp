@@ -437,6 +437,11 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 			instruction.index = loader.readU8() - 1;
 			i += 1;
 			break;
+		case 0x15: /* iload */
+			instruction.opcode = Opcode::load;
+			instruction.index = loader.readU8();
+			i += 1;
+			break;
 		case 0x1A: /* iload_0 */
 			instruction.opcode = Opcode::load;
 			instruction.index = 0;
@@ -477,7 +482,7 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 			break;
 		case 0x36: /* istore */
 			instruction.opcode = Opcode::store;
-			instruction.index = loader.readU8() - 1;
+			instruction.index = loader.readU8();
 			i += 1;
 			break;
 		case 0x3B: /* istore_0 */

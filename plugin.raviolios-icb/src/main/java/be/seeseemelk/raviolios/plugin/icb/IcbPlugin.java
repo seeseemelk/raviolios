@@ -2,11 +2,10 @@ package be.seeseemelk.raviolios.plugin.icb;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.plugins.JavaPluginExtension;
 
 import java.io.File;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Builds ICB files
@@ -18,26 +17,24 @@ public class IcbPlugin implements Plugin<Project>
 		IcbTask task = project.getTasks().create("icb", IcbTask.class);
 		task.setGroup("build");
 		task.setDescription("Generates an ICB file");
-		task.dependsOn("classes");
+		task.dependsOn("jar");
 
-		Set<File> files = new HashSet<>();
+		project.afterEvaluate(it ->
+		{
+			FileCollection tree = project.files();
 
-		project.getTasks().getByName("classes").doLast(unused -> {
-			project.getConfigurations().getByName("runtimeClasspath").forEach(file -> {
+			for (File file : project.getConfigurations().getByName("runtimeClasspath").getFiles())
+			{
 				if (file.isDirectory())
-				{
-					files.addAll(project.fileTree(file).getFiles());
-				}
+					tree = tree.plus(project.fileTree(file));
 				else
-				{
-					files.addAll(project.zipTree(file).getFiles());
-				}
-			});
+					tree = tree.plus(project.zipTree(file));
+			}
 
-			files.addAll(project.getExtensions().getByType(JavaPluginExtension.class).getSourceSets().getByName("main").getOutput().getFiles());
-			task.getClasses().setFrom(files);
+			tree = tree.plus(project.getExtensions().getByType(JavaPluginExtension.class).getSourceSets().getByName("main").getOutput());
+
+			task.from(tree);
+			task.getOutput().set(new File(project.getBuildDir(), "icb/output.icb"));
 		});
-
-		project.afterEvaluate(it -> task.getOutput().set(new File(project.getBuildDir(), "icb/output.icb")));
 	}
 }

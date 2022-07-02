@@ -36,6 +36,6 @@ public class TextModeTerminalDevice extends AbstractTerminalDevice
 	{
 		int ptr = screen + x + (y * getWidth());
 		Arch.poke(ptr, (byte) character);
-		Arch.poke(ptr, COLOR);
+		Arch.poke(ptr + 1, COLOR);
 	}
 }
