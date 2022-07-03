@@ -79,6 +79,7 @@ AllocResult Context::allocateRaw(Meta& meta, RawRoot& root)
 	createObject(meta, root);
 	root.object->writeValidators();
 	root.object->validate();
+	Log::tracef("Free memory: %d bytes", getFree());
 	return AllocResult::SUCCESS;
 }
 

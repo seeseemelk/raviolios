@@ -86,14 +86,14 @@ void SegmentDescriptor::set_base_limit(u32 address, u32 bytes)
 static void load_kernel_segment_registers()
 {
 	asm(
+			"jmp $0x08,$.jump\n"
+			".jump:"
 			"mov $0x10, %ax\n"
 			"mov %ax, %ds\n"
 			"mov %ax, %es\n"
 			"mov %ax, %gs\n"
 			"mov %ax, %fs\n"
 			"mov %ax, %ss\n"
-			"jmp $0x08,$.jump\n"
-			".jump:"
 	);
 }
 

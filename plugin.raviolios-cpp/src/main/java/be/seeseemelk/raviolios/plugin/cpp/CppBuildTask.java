@@ -18,7 +18,6 @@ import org.gradle.api.tasks.*;
 import org.gradle.work.FileChange;
 import org.gradle.work.Incremental;
 import org.gradle.work.InputChanges;
-import org.gradle.workers.WorkQueue;
 import org.gradle.workers.WorkerExecutor;
 
 import javax.inject.Inject;
@@ -120,10 +119,9 @@ public abstract class CppBuildTask extends DefaultTask
 
 		try (CommandRunner runner = createRunner())
 		{
-			WorkQueue queue = getWorkExecutor().noIsolation();
 			List<File> objects = new ArrayList<>();
-			buildCpp(runner, queue, objects, tracker);
-			buildAssembler(runner, queue, objects, tracker);
+			buildCpp(runner, objects, tracker);
+			buildAssembler(runner, objects, tracker);
 			runner.await();
 			link(runner, objects);
 		}
@@ -183,9 +181,14 @@ public abstract class CppBuildTask extends DefaultTask
 		return dirs;
 	}
 
+	private void addIncludes(Arguments command)
+	{
+		for (File includeDirectory : getIncludeDirectories())
+			command.add("-I" + includeDirectory.getAbsolutePath());
+	}
+
 	private void buildCpp(
 		CommandRunner runner,
-		WorkQueue queue,
 		List<File> objects,
 		RebuildTracker tracker
 	)
@@ -195,15 +198,12 @@ public abstract class CppBuildTask extends DefaultTask
 
 		command.addAll(getCommonFlags());
 		command.addAll(getCppFlags());
-
-		for (File includeDirectory : getIncludeDirectories())
-			command.add("-I" + includeDirectory.getAbsolutePath());
-		runBuild(runner, command, queue, objects, tracker, getCppSources());
+		addIncludes(command);
+		runBuild(runner, command, objects, tracker, getCppSources());
 	}
 
 	private void buildAssembler(
 		CommandRunner runner,
-		WorkQueue queue,
 		List<File> objects,
 		RebuildTracker tracker
 	)
@@ -212,13 +212,13 @@ public abstract class CppBuildTask extends DefaultTask
 		command.add("clang");
 		command.addAll(getCommonFlags());
 		command.addAll(getAsFlags());
-		runBuild(runner, command, queue, objects, tracker, getAssemblerSources());
+		addIncludes(command);
+		runBuild(runner, command, objects, tracker, getAssemblerSources());
 	}
 
 	private void runBuild(
 		CommandRunner runner,
 		Arguments baseCommand,
-		WorkQueue queue,
 		List<File> objects,
 		RebuildTracker tracker,
 		ConfigurableFileCollection sources
@@ -241,12 +241,6 @@ public abstract class CppBuildTask extends DefaultTask
 			{
 				command.add("-o").addOutput(object).addSource(source);
 				runner.run(command);
-//				queue.submit(CppBuildWorkAction.class, parameters ->
-//				{
-//					parameters.getCommand().value(command);
-//					parameters.getOutput().fileValue(object);
-//					parameters.getSource().fileValue(source);
-//				});
 			}
 		}
 	}

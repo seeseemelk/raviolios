@@ -114,6 +114,16 @@ void Log::trace(const char* line)
 	Arch::log("\n");
 }
 
+void Log::tracef(const char* fmt, ...)
+{
+	Arch::log("[TRCA] ");
+	va_list args;
+	va_start(args, fmt);
+	printFormatted(fmt, args);
+	va_end(args);
+	Arch::log("\n");
+}
+
 void Log::info(const char* line)
 {
 	Arch::log("[INFO] ");

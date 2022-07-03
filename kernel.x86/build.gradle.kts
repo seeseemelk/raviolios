@@ -44,7 +44,7 @@ tasks.register<Exec>("emulate") {
     group = "application"
 
     dependsOn("iso")
-    commandLine("qemu-system-i386", "-cdrom", isoFile, "-m", "16M", "-gdb", "tcp::1234", "-serial", "stdio")
+    commandLine("qemu-system-i386", "-cdrom", isoFile, "-m", "3M", "-gdb", "tcp::1234", "-serial", "stdio")
 }
 
 tasks.register<Exec>("debug") {
@@ -52,7 +52,7 @@ tasks.register<Exec>("debug") {
     group = "application"
 
     dependsOn("iso")
-    commandLine("qemu-system-i386", "-cdrom", isoFile, "-m", "16M", "-gdb", "tcp::1234", "-serial", "stdio", "-S")
+    commandLine("qemu-system-i386", "-cdrom", isoFile, "-m", "3M", "-gdb", "tcp::1234", "-serial", "stdio", "-S")
 }
 
 tasks.register<Exec>("iso") {

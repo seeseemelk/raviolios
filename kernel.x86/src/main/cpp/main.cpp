@@ -1,21 +1,25 @@
 #include "arch.hpp"
+#include "cpu.hpp"
 #include "defs.hpp"
 #include "gc.hpp"
 #include "gdt.hpp"
 #include "icb.hpp"
-#include "jvm_context.hpp"
+#include "interrupt.hpp"
 #include "log.hpp"
+#include "main.hpp"
 #include "memory.hpp"
 #include "multiboot.hpp"
 #include "natives.hpp"
 #include "x86.hpp"
+
+using namespace Main;
 
 //[[no_destroy]]
 static ICB::Loader s_loader;
 //[[no_destroy]]
 static Java::CachingClassLoader s_cacheLoader;
 //[[no_destroy]]
-static Java::VM s_vm;
+Java::VM Main::g_vm;
 
 extern "C" void _init(void);
 
@@ -31,7 +35,7 @@ static void initICB()
 	size_t moduleCount = Multiboot::mbt->mods_count;
 	Log::infof("Found %d modules", moduleCount);
 
-	multiboot_module_t* mmod = reinterpret_cast<multiboot_module_t*>(Multiboot::mbt->mods_addr);
+	multiboot_module_t* mmod = Arch::offsetToHigh<multiboot_module_t>(Multiboot::mbt->mods_addr);
 	Multiboot::Module module(mmod);
 
 	Log::infof("Found module at %x with size of %d bytes", module.data, module.length);
@@ -68,30 +72,32 @@ static void initVM()
 {
 	Log::info("Initialising VM");
 	s_cacheLoader.parent(s_loader.vtable, &s_loader);
-	s_vm.gc().init(Memory::g_heap, Memory::g_heapSize);
-	s_vm.init(s_cacheLoader.vtable, &s_cacheLoader, g_nativeMethods, g_nativeMethodsCount);
+	g_vm.gc().init(Memory::g_heap, Memory::g_heapSize);
+	g_vm.init(s_cacheLoader.vtable, &s_cacheLoader, g_nativeMethods, g_nativeMethodsCount);
 }
 
 extern "C" void arch_main(multiboot_info_t* mbt)
 {
-	Multiboot::mbt = mbt;
+	cli();
+	Multiboot::mbt = Arch::offsetToHigh(mbt);
 
 	Arch::init_serial();
 	GDT::init();
 	Memory::init();
+	Interrupt::init();
 	initICB();
 	initVM();
 
 	GC::Root<char> startupClassName;
-	s_vm.allocateString(startupClassName, "raviolios/Startup");
+	g_vm.allocateString(startupClassName, "raviolios/Startup");
 
 	GC::Root<Java::Thread> thread;
-	s_vm.createThread(thread);
+	g_vm.createThread(thread);
 	Log::info("Thread created");
 
 	Log::info("Loading startup class");
 	GC::Root<Java::ClassFile> startupClass;
-	Java::ClassError error = s_vm.getClass(startupClass, thread, startupClassName);
+	Java::ClassError error = g_vm.getClass(startupClass, thread, startupClassName);
 	if (error != Java::ClassError::GOOD)
 	{
 		Log::criticalf("Failed to load raviolios/Startup: %s", Java::toString(error));
@@ -99,9 +105,9 @@ extern "C" void arch_main(multiboot_info_t* mbt)
 	}
 	Log::info("Startup class loaded");
 
-	s_vm.invokeMethod(thread, startupClass, "main");
+	g_vm.invokeMethod(thread, startupClass, "main");
 
-	while (s_vm.step(thread) == Java::ThreadState::RUNNING)
+	while (g_vm.step(thread) == Java::ThreadState::RUNNING)
 	{
 		Log::info("Stepping");
 	}

@@ -1,6 +1,9 @@
 #include "arch.hpp"
 
 #include "io.hpp"
+#include "log.hpp"
+#include "main.hpp"
+#include "memory.hpp"
 #include "x86.hpp"
 
 #define SERIAL_BASE 0x3F8
@@ -36,6 +39,13 @@ void Arch::init_serial()
 
 	// IRQs enabled, RTS/DSR set
 	IO::outb(REG_MODEM_CTRL, 0x0B);
+}
+
+void Arch::dumpMemoryMap()
+{
+	Log::infof("Memory map:");
+	Log::infof(" GC Heap: %x to %x", Memory::g_heap, Memory::g_heap + Memory::g_heapSize);
+	Log::infof(" GC free: %d, used: %d", Main::g_vm.gc().getFree(), Main::g_vm.gc().getUsed());
 }
 
 static int is_transmit_empty()

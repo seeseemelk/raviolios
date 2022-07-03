@@ -7,6 +7,7 @@
 namespace Log
 {
 	void trace(const char* line);
+	void tracef(const char* fmt, ...);
 	void info(const char* line);
 	void infof(const char* fmt, ...);
 	void warning(const char* line);

@@ -1,6 +1,7 @@
 #include "memory.hpp"
 
 #include "arch.hpp"
+#include "cpu.hpp"
 #include "log.hpp"
 #include "math.hpp"
 #include "multiboot.hpp"
@@ -171,6 +172,10 @@ void Memory::init()
 		entryIndex++;
 		pagesNeeded--;
 	}
+
+	// Unmap low pages
+	g_page_directory.entries[0].present = 0;
+	reloadPageTable();
 
 	Log::infof("Have %d MiB (%d KiB) of heap memory", g_heapSize / MB(1), g_heapSize / KB(1));
 }
