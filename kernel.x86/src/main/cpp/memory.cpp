@@ -1,11 +1,11 @@
 #include "memory.hpp"
 
-#include "arch.hpp"
 #include "cpu.hpp"
 #include "log.hpp"
 #include "math.hpp"
 #include "multiboot.hpp"
 #include "paging.hpp"
+#include "x86.hpp"
 
 using namespace Memory;
 
@@ -23,57 +23,175 @@ struct MetaTable
 static Paging::PageTable s_metaTable;
 static MetaTable& s_tables = *reinterpret_cast<MetaTable*>(0xFF800000);
 
+static u8* s_memoryBitMap;
+static size_t s_pageCount;
+
 u8* Memory::g_heap = reinterpret_cast<u8*>(MB(4));
 size_t Memory::g_heapSize = 0;
 
 /**
- * Appends memory to the space allocated to the heap.
- *
- * @param memory The memory region to use for the heap.
- * @param length The number of bytes that are in the heap.
+ * Gets the highest available address that is referenced by the multiboot header.
  */
-//static void appendToHeap(u8* memory, size_t length)
-//{
-//	g_heapSize += length;
-//}
-
-/**
- * Gets the total amount of memory that can be used by the OS.
- *
- * @returns The number of bytes available.
- */
-static size_t totalMemoryAvailable()
+static u32 highestAvailableAddress()
 {
+	u32 address = 0;
 	Multiboot::MapIterator iterator;
-	size_t bytes = 0;
 	while (iterator.nextAvailable())
 	{
-		u32 start = Math::ceilg(iterator.entry->addr, KB(4));
-		u32 end = Math::floorg(start + iterator.entry->len, KB(4));
-		u32 useable = end - start;
-		iterator.entry->addr = start;
-		iterator.entry->len = useable;
-		bytes += useable;
+		if (iterator.entry->type == MULTIBOOT_MEMORY_AVAILABLE)
+		{
+			u32 endAddress = iterator.entry->addr + iterator.entry->len;
+			if (endAddress > address)
+				address = endAddress;
+		}
 	}
-	return bytes;
+	return address;
 }
 
-static void* allocateMemory(size_t amount)
+static bool isPageFree(size_t page)
+{
+	u32 offset = page / 8;
+	u32 bit = page % 8;
+	u8 mask = 1 << bit;
+	return (s_memoryBitMap[offset] & mask) == 0;
+}
+
+static void markPageFree(size_t page)
+{
+	u32 offset = page / 8;
+	u32 bit = page % 8;
+	s_memoryBitMap[offset] &= ~(1 << bit);
+}
+
+static void markPageUsed(size_t page)
+{
+	u32 offset = page / 8;
+	u32 bit = page % 8;
+	s_memoryBitMap[offset] |= 1 << bit;
+}
+
+static void markUsedAA(u32 start, u32 end)
+{
+	size_t kernelStart = start / KB(4);
+	size_t kernelEnd = Math::ceildiv(end, KB(4));
+	for (size_t page = kernelStart; page < kernelEnd; page++)
+		markPageUsed(page);
+}
+
+static void markUsedAL(u32 start, size_t length)
+{
+	markUsedAA(start, start + length);
+}
+
+template<typename T>
+static void markUsedAL(T* start, size_t length)
+{
+	markUsedAL(reinterpret_cast<u32>(start), length);
+}
+
+static u32 getFreeMemory()
+{
+	size_t bytesFree = 0;
+	for (size_t page = 0; page < s_pageCount; page++)
+	{
+		if (isPageFree(page))
+			bytesFree += KB(4);
+	}
+	return bytesFree;
+}
+
+static void* allocateMemoryDirect(size_t amount)
 {
 	Multiboot::MapIterator iterator;
 	while (iterator.nextAvailable())
 	{
-		if (iterator.entry->len >= amount)
+		multiboot_memory_map_t& entry = *iterator.entry;
+		u32 addr = static_cast<u32>(entry.addr);
+		size_t len = static_cast<size_t>(entry.len);
+		if (!Arch::isInPhysicalKernel(addr, len) && iterator.entry->len >= amount)
 		{
-			void* ptr = reinterpret_cast<void*>(iterator.entry->addr);
-			iterator.entry->addr += amount;
-			iterator.entry->len -= amount;
+			void* ptr = reinterpret_cast<void*>(addr);
+			entry.addr += amount;
+			entry.len -= amount;
 			return ptr;
 		}
 	}
-	Log::criticalf("Out of memory when allocating %d bytes", amount);
+	Log::criticalf("Out of memory when allocating %d bytes directly", amount);
 	Arch::panic();
 	return nullptr;
+}
+
+static void initBitMap()
+{
+	u32 highestAddress = highestAvailableAddress();
+	s_pageCount = Math::ceildiv(highestAddress, KB(4));
+	s_memoryBitMap = static_cast<u8*>(allocateMemoryDirect(s_pageCount / 8));
+
+	for (size_t i = 0; i < s_pageCount; i++)
+		markPageUsed(i);
+
+	// Mark free pages
+	Multiboot::MapIterator iterator;
+	while (iterator.nextAvailable())
+	{
+		u32 start = Math::ceilg(iterator.entry->addr, KB(4)) / KB(4);
+		u32 end = Math::floorg(iterator.entry->addr + iterator.entry->len, KB(4)) / KB(4);
+		for (size_t page = start; page < end; page++)
+			markPageFree(page);
+	}
+
+	// Mark kernel pages as used
+	markUsedAA(Arch::kernelStart(), Arch::kernelEnd());
+	markUsedAL(Multiboot::mbt, sizeof(multiboot_info_t));
+
+	if (Multiboot::hasMultibootFlag(MULTIBOOT_INFO_MODS) && Multiboot::mbt->mods_count > 0)
+	{
+		multiboot_module_t* mmod = reinterpret_cast<multiboot_module_t*>(Multiboot::mbt->mods_addr);
+		markUsedAL(mmod, sizeof(multiboot_module_t*));
+	}
+}
+
+static void dumpMemoryMap()
+{
+	Log::info("Memory map:");
+	size_t count = 0;
+	Multiboot::MapIterator iterator;
+	while (iterator.next())
+	{
+		u32 address = iterator.entry->addr;
+		u32 length = iterator.entry->len;
+		u32 end = address + length;
+		count++;
+		Log::infof(" - %x - %x (%d : %d KiB)", address, end, iterator.entry->type, length / KB(4));
+	}
+	Log::infof(" (%d items)", count);
+}
+
+static void* allocateMemory(size_t bytes)
+{
+	void* address = 0;
+	size_t pages = 0;
+	size_t neededPages = Math::ceildiv(bytes, KB(4));
+	for (size_t i = 0; i < s_pageCount; i++)
+	{
+		if (isPageFree(i))
+		{
+			if (pages == 0)
+				address = reinterpret_cast<void*>(i * KB(4));
+			pages++;
+			if (pages >= neededPages)
+			{
+				markUsedAL(address, bytes);
+				return address;
+			}
+		}
+		else
+		{
+			pages = 0;
+		}
+	}
+	Log::criticalf("Out of memory when allocating %d bytes", bytes);
+	Arch::panic();
 }
 
 Paging::PageTable& Paging::getPageTableForAddress(GC::Context& gc, u32 address)
@@ -116,8 +234,12 @@ void Memory::init()
 		Log::critical("No memory map provided");
 		Arch::panic();
 	}
+	dumpMemoryMap();
 
-	size_t bytes = totalMemoryAvailable();
+//	initIndirectMap();
+	initBitMap();
+
+	size_t bytes = getFreeMemory();
 	size_t pagesNeeded = Math::ceildiv(bytes, KB(4));
 	size_t tablesNeeded = Math::ceildiv(pagesNeeded, 1024);
 	pagesNeeded -= tablesNeeded;
@@ -172,10 +294,15 @@ void Memory::init()
 		entryIndex++;
 		pagesNeeded--;
 	}
+	g_heapSize = KB(32);
 
 	// Unmap low pages
 	g_page_directory.entries[0].present = 0;
 	reloadPageTable();
 
+	for (size_t i = 0; i < g_heapSize; i++)
+		g_heap[i] = 0x55;
+
 	Log::infof("Have %d MiB (%d KiB) of heap memory", g_heapSize / MB(1), g_heapSize / KB(1));
+//	Arch::panic();
 }

@@ -8,7 +8,7 @@
 #include "arch.hpp"
 #include "log.hpp"
 
-#define VALIDATE(obj) do { if (obj != nullptr) obj->validate(); } while (0);
+#define VALIDATE(obj) do { if ((obj) != nullptr) (obj)->validate(); } while (0);
 
 namespace GC
 {
@@ -491,6 +491,11 @@ namespace GC
 		 * @return A root to the allocated object.
 		 */
 		void createObject(Meta& meta, RawRoot& root);
+
+		/**
+		 * Validates all objects on the heap.
+		 */
+		void validateAll();
 	};
 }
 

@@ -26,8 +26,8 @@ public:
 	Java::VM vm;
 	void* memory;
 
-	CUT(size_t memorySize = MB(1));
-	CUT(Java::NativeMethod* nativeMethods, size_t nativeMethodCount, size_t memorySize = MB(1));
+	CUT(size_t memorySize = KB(16));
+	CUT(Java::NativeMethod* nativeMethods, size_t nativeMethodCount, size_t memorySize = KB(16));
 	~CUT();
 	Java::ClassError loadClass(GC::Root<Java::ClassFile>& classfile, GC::Root<Java::Thread>& thread, std::string className);
 	void createThread(GC::Root<Java::Thread>& thread);

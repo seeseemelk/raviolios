@@ -25,7 +25,6 @@ namespace Multiboot
 	struct MapIterator
 	{
 		multiboot_memory_map_t* entry = nullptr;
-		multiboot_memory_map_t* actual = nullptr;
 		size_t bytesLeft = 0;
 
 		/**

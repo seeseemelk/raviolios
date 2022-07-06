@@ -49,8 +49,9 @@ void VM::allocateString(GC::Root<char>& root, const char* str)
 void VM::allocateObject(GC::Root<ClassFile>& classFile, GC::Root<JavaObject>& object)
 {
 	GC::Allocator<JavaObject> allocator(JavaObject::describer);
-	allocator.size = classFile.get().objectSize + sizeof(void*);
+	allocator.size = classFile.get().objectSize + sizeof(JavaObject);
 	m_gc.allocate(allocator, object);
+	object.get().referencePropertiesCount = classFile.get().referencePropertiesCount;
 	classFile.store(&object.get().class_);
 }
 
@@ -258,10 +259,24 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, GC::Root<Thread>& thr
 	}
 
 	// Calculate size of object and alignment of fields.
+	// - Reference types first
+	size_t referencePropertiesCount = 0;
 	for (size_t i = 0; i < classfile.get().fieldsCount; i++)
 	{
 		FieldInfo& field = fieldRefRoot[i].field->object;
-		if (!field.isStatic())
+		if (!field.isStatic() && field.type.isReferenceType())
+		{
+			field.offset = classfile.get().objectSize;
+			classfile.get().objectSize += field.type.size();
+			referencePropertiesCount++;
+		}
+	}
+	classfile.get().referencePropertiesCount = referencePropertiesCount;
+	// - Others later
+	for (size_t i = 0; i < classfile.get().fieldsCount; i++)
+	{
+		FieldInfo& field = fieldRefRoot[i].field->object;
+		if (!field.isStatic() && !field.type.isReferenceType())
 		{
 			field.offset = classfile.get().objectSize;
 			classfile.get().objectSize += field.type.size();

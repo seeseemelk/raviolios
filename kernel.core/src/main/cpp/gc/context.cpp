@@ -59,6 +59,7 @@ void* Context::permAlloc(size_t size)
 	if (getFree() <= size)
 	{
 		Log::error("Out of memory");
+		Arch::panic();
 		return nullptr;
 	}
 
@@ -70,12 +71,19 @@ void* Context::permAlloc(size_t size)
 
 AllocResult Context::allocateRaw(Meta& meta, RawRoot& root)
 {
-//	Log::trace("Allocating object");
 	size_t required = meta.size + sizeof(Meta);
+	Log::tracef("Allocating object with size %d", required);
+//	collect();
+//	collect();
+//	collect();
 	if (getFree() < required)
 		collect();
 	if (getFree() < required)
+	{
+		Log::critical("Out of memory");
+		Arch::panic();
 		return AllocResult::OUT_OF_MEMORY;
+	}
 	createObject(meta, root);
 	root.object->writeValidators();
 	root.object->validate();
@@ -112,12 +120,50 @@ Meta* Context::firstObject()
 	return reinterpret_cast<Meta*>(m_memStart);
 }
 
+class ValidatorVisitor : public MetaVisitor
+{
+public:
+	void visit(Meta** /*object*/) override
+	{
+//		VALIDATE(*object);
+	}
+
+	void visitWeak(Meta** /*object*/) override
+	{
+//		VALIDATE(*object);
+	}
+};
+
+void Context::validateAll()
+{
+	Meta* object = firstObject();
+//	RawRoot* root = m_root.next;
+//	ValidatorVisitor visitor;
+	size_t count = m_objects;
+	while (count > 0)
+	{
+		object->validate();
+//		visitor.visit(&object);
+//		root = root->next;
+		object = nextObject(object);
+		count--;
+	}
+}
+
 void Context::collect()
 {
 	Log::trace("Collecting garbage");
+	Log::trace("Marking");
+	validateAll();
 	mark();
+	validateAll();
+	Log::trace("Sweeping - update");
 	sweepUpdate();
+	validateAll();
+	Log::trace("Sweeping - move");
 	sweepMove();
+	validateAll();
+	Log::trace("Finished collecting garbage");
 }
 
 class MarkVisitor : public MetaVisitor
@@ -145,6 +191,7 @@ void Context::mark()
 	MarkVisitor visitor;
 	while (root != nullptr)
 	{
+		root->object->validate();
 		visitor.visit(&root->object);
 		root = root->next;
 	}
@@ -251,18 +298,12 @@ void Context::sweepMove()
 		else
 		{
 			object->reachable = 0;
-			MetaDescriber* describer = object->describer;
-			size_t size = object->size;
 			if (offset > 0)
 			{
 				u8* source = reinterpret_cast<u8*>(object);
 				u8* destination = static_cast<u8*>(source) - offset;
 				memoryMove(destination, source, sizeof(Meta) + object->size);
 				object = reinterpret_cast<Meta*>(destination);
-			}
-			if (describer != object->describer || size != object->size)
-			{
-				Arch::panic();
 			}
 		}
 		object->validate();
@@ -273,5 +314,5 @@ void Context::sweepMove()
 	m_objects -= removed;
 	u8 value = 0xAA;
 	memorySet(m_memCurrent, value, static_cast<size_t>(memEnd - m_memCurrent));
-	Log::infof("Removed %d objects", removed);
+	Log::infof("Removed %d objects (freed %d bytes)", removed, static_cast<size_t>(memEnd - m_memCurrent));
 }

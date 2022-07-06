@@ -88,6 +88,8 @@ extern "C" void arch_main(multiboot_info_t* mbt)
 	initICB();
 	initVM();
 
+	g_vm.gc().collect();
+
 	GC::Root<char> startupClassName;
 	g_vm.allocateString(startupClassName, "raviolios/Startup");
 

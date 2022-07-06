@@ -123,13 +123,19 @@ namespace Java
 	struct JavaObject
 	{
 		GC::Object<ClassFile>* class_;
+		size_t referencePropertiesCount;
 
 		void* getFieldStart();
 
-		template<typename T>
-		T* getFieldAt(size_t index)
+		GC::Meta** getReferenceFieldAt(size_t index)
 		{
-			return reinterpret_cast<T*>(static_cast<u8*>(getFieldStart()) + index);
+			return getFieldAt<GC::Meta*>(index * sizeof(void*));
+		}
+
+		template<typename T>
+		T* getFieldAt(size_t offset)
+		{
+			return reinterpret_cast<T*>(static_cast<u8*>(getFieldStart()) + offset);
 		}
 
 		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);
@@ -301,6 +307,7 @@ namespace Java
 		u16 interfacesCount;
 		GC::Array<u16>* interfaces;
 		u16 fieldsCount;
+		size_t referencePropertiesCount;
 		GC::Array<FieldRef>* fields;
 		u16 methodCount;
 		GC::Array<MethodRef>* methods;

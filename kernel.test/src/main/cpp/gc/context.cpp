@@ -7,12 +7,12 @@ using namespace GC;
 
 struct DUT
 {
-	void* area;
+	u8* area;
 	Context context;
 
 	DUT(size_t size = MB(1))
 	{
-		area = malloc(size);
+		area = static_cast<u8*>(malloc(size));
 		context.init(area, size);
 	}
 
@@ -84,4 +84,34 @@ TEST("Can perform collection cycles")
 
 	assertEquals(emptyDescriber, rootB.object->describer, "Describer of B has not changed");
 	assertEquals(sizeB, rootB.object->size, "Size of B has not changed");
+}
+
+
+TEST("GC Stress Test")
+{
+	DUT dut(KB(4));
+
+	for (int i = 0; i < 100; i++)
+	{
+		for (int i = 10; i < 500; i++)
+		{
+			Meta meta;
+			meta.size = 17;
+			RawRoot root;
+			dut.context.allocateRaw(meta, root);
+		}
+		assertTrue(dut.context.getUsed() > 0, "Some objects are allocated before GC");
+		dut.context.collect();
+		assertTrue(dut.context.getUsed() == 0, "Heap is free after GC");
+		dut.context.collect();
+		dut.context.collect();
+	}
+
+//	for (int i = 0; i < 10000; i++)
+//	{
+//		Meta meta;
+//		meta.size = 17;
+//		RawRoot root;
+//		dut.context.allocateRaw(meta, root);
+//	}
 }
