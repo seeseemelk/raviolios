@@ -294,14 +294,14 @@ void Memory::init()
 		entryIndex++;
 		pagesNeeded--;
 	}
-	g_heapSize = KB(32);
+//	g_heapSize = KB(32);
 
 	// Unmap low pages
 	g_page_directory.entries[0].present = 0;
 	reloadPageTable();
 
-	for (size_t i = 0; i < g_heapSize; i++)
-		g_heap[i] = 0x55;
+//	for (size_t i = 0; i < g_heapSize; i++)
+//		g_heap[i] = 0x55;
 
 	Log::infof("Have %d MiB (%d KiB) of heap memory", g_heapSize / MB(1), g_heapSize / KB(1));
 //	Arch::panic();

@@ -246,6 +246,7 @@ namespace Java
 
 		void opcodeDup(GC::Root<Frame>& frame);
 		void opcodeSwap(GC::Root<Frame>& frame);
+		void opcodePop(GC::Root<Frame>& frame);
 		void opcodeLoadConstant(GC::Root<Frame>& frame, Instruction& instruction);
 		void opcodeLoadString(GC::Root<Frame>& frame, Instruction& instruction);
 		void opcodeCreateStringA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, Instruction& instruction);
@@ -257,7 +258,10 @@ namespace Java
 		void opcodeArrayLoadChar(GC::Root<Frame>& frame);
 		void opcodeArrayStoreChar(GC::Root<Frame>& frame);
 		void opcodeIadd(GC::Root<Frame>& frame);
+		void opcodeIsub(GC::Root<Frame>& frame);
+		void opcodeIdiv(GC::Root<Frame>& frame);
 		void opcodeImul(GC::Root<Frame>& frame);
+		void opcodeIrem(GC::Root<Frame>& frame);
 		void opcodeIinc(GC::Root<Frame>& frame, u8 variable, i32 amount);
 		void opcodeI2B(GC::Root<Frame>& frame);
 		void opcodeI2C(GC::Root<Frame>& frame);
@@ -266,6 +270,10 @@ namespace Java
 		void opcodeNewC(GC::Root<Frame>& frame, GC::Object<ClassFile>* classFile);
 		void opcodeNewArray(GC::Root<Frame>& frame, ArrayType index);
 		void opcodeArrayLength(GC::Root<Frame>& frame);
+		u16 opcodeIfeqB(GC::Root<Frame>& frame, u16 target, u16 pc);
+		u16 opcodeIfneB(GC::Root<Frame>& frame, u16 target, u16 pc);
+		u16 opcodeIfleB(GC::Root<Frame>& frame, u16 target, u16 pc);
+		u16 opcodeIfgeB(GC::Root<Frame>& frame, u16 target, u16 pc);
 		u16 opcodeIfIcmpneB(GC::Root<Frame>& frame, u16 target, u16 pc);
 		u16 opcodeIfIcmpgeB(GC::Root<Frame>& frame, u16 target, u16 pc);
 		u16 opcodeIfAcmpneB(GC::Root<Frame>& frame, u16 target, u16 pc);

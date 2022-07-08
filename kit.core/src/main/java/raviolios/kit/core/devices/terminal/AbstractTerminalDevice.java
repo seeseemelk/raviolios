@@ -28,4 +28,19 @@ public abstract class AbstractTerminalDevice extends AbstractDevice
 	 * @param character The character to place.
 	 */
 	public abstract void put(int x, int y, char character);
+
+	/**
+	 * Places a string at a location.
+	 *
+	 * @param x The X position. 0 refers to the left side of the screen.
+	 * @param y The Y position. 0 refers to the top side of the screen.
+	 * @param string The string to place.
+	 */
+	public void put(int x, int y, String string)
+	{
+		for (int i = 0; i < string.length(); i++)
+		{
+			put(x + i, y, string.charAt(i));
+		}
+	}
 }

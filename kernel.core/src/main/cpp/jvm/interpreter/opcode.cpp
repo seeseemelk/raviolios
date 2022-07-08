@@ -9,6 +9,7 @@ const char* Java::toString(Opcode opcode)
 	case Opcode::panic: return "panic";
 	case Opcode::dup: return "dup";
 	case Opcode::swap: return "swap";
+	case Opcode::pop: return "pop";
 	case Opcode::load_constant: return "load_constant";
 	case Opcode::load_string: return "load_string";
 	case Opcode::create_string_a: return "create_string_a";
@@ -20,7 +21,10 @@ const char* Java::toString(Opcode opcode)
 	case Opcode::array_load_char: return "array_load_char";
 	case Opcode::array_store_char: return "array_store_char";
 	case Opcode::iadd: return "iadd";
+	case Opcode::isub: return "isub";
+	case Opcode::idiv: return "idiv";
 	case Opcode::imul: return "imul";
+	case Opcode::irem: return "irem";
 	case Opcode::iinc: return "iinc";
 	case Opcode::i2b: return "i2b";
 	case Opcode::i2c: return "i2c";
@@ -31,6 +35,14 @@ const char* Java::toString(Opcode opcode)
 	case Opcode::arraylength: return "arraylength";
 	case Opcode::goto_a: return "goto_a";
 	case Opcode::goto_b: return "goto_b";
+	case Opcode::ifeq_a: return "ifeq_a";
+	case Opcode::ifeq_b: return "ifeq_b";
+	case Opcode::ifne_a: return "ifne_a";
+	case Opcode::ifne_b: return "ifne_b";
+	case Opcode::ifle_a: return "ifle_a";
+	case Opcode::ifle_b: return "ifle_b";
+	case Opcode::ifge_a: return "ifge_a";
+	case Opcode::ifge_b: return "ifge_b";
 	case Opcode::if_icmpne_a: return "if_icmpne_a";
 	case Opcode::if_icmpne_b: return "if_icmpne_b";
 	case Opcode::if_icmpge_a: return "if_icmpge_a";

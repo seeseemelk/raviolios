@@ -172,6 +172,11 @@ namespace GC
 	{
 		T& get(size_t index)
 		{
+			if (index > count())
+			{
+				Log::criticalf("Out of bounds: attempt to index %d, but size is %d", index, count());
+				Arch::panic();
+			}
 			return asPtr()[index];
 		}
 
@@ -495,7 +500,12 @@ namespace GC
 		/**
 		 * Validates all objects on the heap.
 		 */
-		void validateAll();
+		void validateAllInHeap();
+
+		/**
+		 * Validates all roots.
+		 */
+		void validateAllRoots();
 	};
 }
 

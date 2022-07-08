@@ -21,4 +21,31 @@ public final class String
 			chars[i] = (char) bytes[i];
 		return new String(chars);
 	}
+
+	public static String copyValueOf(char[] characters)
+	{
+		return new String(Arrays.copyOf(characters, characters.length));
+	}
+
+	public static String valueOf(int value)
+	{
+		if (value == 0)
+			return "0";
+
+		StringBuilder builder = new StringBuilder();
+		boolean negative = value < 0;
+		while (value > 0)
+		{
+			builder.append((char) ('0' + (value % 10)));
+			value /= 10;
+		}
+		if (negative)
+			builder.append('-');
+		return builder.reverse().toString();
+	}
+	
+	public static String valueOf(char[] characters)
+	{
+		return copyValueOf(characters);
+	}
 }

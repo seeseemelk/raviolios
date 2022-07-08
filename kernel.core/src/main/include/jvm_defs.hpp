@@ -133,9 +133,12 @@ namespace Java
 		}
 
 		template<typename T>
-		T* getFieldAt(size_t offset)
+		T* getFieldAt(i32 offset)
 		{
-			return reinterpret_cast<T*>(static_cast<u8*>(getFieldStart()) + offset);
+			if (offset < 0)
+				return getReferenceFieldAt(offset);
+			else
+				return reinterpret_cast<T*>(static_cast<u8*>(getFieldStart()) + offset);
 		}
 
 		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);

@@ -42,4 +42,6 @@ void Frame::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 	visitor.visit(&frame->locals);
 	visitor.visit(&frame->stack);
 	visitor.visit(&frame->instructions);
+	if ((reinterpret_cast<u64>(frame->instructions) >> 32) == 0x5555)
+		Log::info("wow");
 }

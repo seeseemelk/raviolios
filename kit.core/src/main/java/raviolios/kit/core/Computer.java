@@ -10,8 +10,16 @@ public final class Computer
 	@Setter
 	private AbstractTerminalDevice terminal;
 
+	@Getter
+	@Setter
+	private Memory memory;
+
 	public void run()
 	{
+		int usageY = terminal.getHeight() - 1;
+
+		terminal.put(0, usageY, "Usage");
+
 		while (true)
 		{
 			terminal.put(0, 0, '\\');

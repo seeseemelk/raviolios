@@ -259,26 +259,28 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, GC::Root<Thread>& thr
 	}
 
 	// Calculate size of object and alignment of fields.
-	// - Reference types first
+	// - Reference types first.
+	// We do this to work around the fact that we shouldn't dereference things from within the GC describer.
 	size_t referencePropertiesCount = 0;
 	for (size_t i = 0; i < classfile.get().fieldsCount; i++)
 	{
 		FieldInfo& field = fieldRefRoot[i].field->object;
 		if (!field.isStatic() && field.type.isReferenceType())
 		{
-			field.offset = classfile.get().objectSize;
+			field.offset = -1;
 			classfile.get().objectSize += field.type.size();
 			referencePropertiesCount++;
 		}
 	}
 	classfile.get().referencePropertiesCount = referencePropertiesCount;
 	// - Others later
+	size_t fieldOffsetOffset = referencePropertiesCount * sizeof(void*);
 	for (size_t i = 0; i < classfile.get().fieldsCount; i++)
 	{
 		FieldInfo& field = fieldRefRoot[i].field->object;
 		if (!field.isStatic() && !field.type.isReferenceType())
 		{
-			field.offset = classfile.get().objectSize;
+			field.offset = classfile.get().objectSize - fieldOffsetOffset;
 			classfile.get().objectSize += field.type.size();
 		}
 	}
@@ -535,6 +537,9 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 		case 0x55: /* castore */
 			instruction.opcode = Opcode::array_store_char;
 			break;
+		case 0x57: /* pop */
+			instruction.opcode = Opcode::pop;
+			break;
 		case 0x59: /* dup */
 			instruction.opcode = Opcode::dup;
 			break;
@@ -544,8 +549,17 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 		case 0x60: /* iadd */
 			instruction.opcode = Opcode::iadd;
 			break;
+		case 0x64: /* isub */
+			instruction.opcode = Opcode::isub;
+			break;
 		case 0x68: /* imul */
 			instruction.opcode = Opcode::imul;
+			break;
+		case 0x6C: /* idiv */
+			instruction.opcode = Opcode::idiv;
+			break;
+		case 0x70: /* irem */
+			instruction.opcode = Opcode::irem;
 			break;
 		case 0x84: /* iinc */
 			instruction.opcode = Opcode::iinc;
@@ -558,6 +572,26 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 			break;
 		case 0x92: /* i2c */
 			instruction.opcode = Opcode::i2c;
+			break;
+		case 0x99: /* ifeq */
+			instruction.opcode = Opcode::ifeq_a;
+			instruction.index = loader.readI16() + instruction.offset;
+			i += 2;
+			break;
+		case 0x9A: /* ifne */
+			instruction.opcode = Opcode::ifne_a;
+			instruction.index = loader.readI16() + instruction.offset;
+			i += 2;
+			break;
+		case 0x9E: /* ifle */
+			instruction.opcode = Opcode::ifle_a;
+			instruction.index = loader.readI16() + instruction.offset;
+			i += 2;
+			break;
+		case 0x9C: /* ifge */
+			instruction.opcode = Opcode::ifge_a;
+			instruction.index = loader.readI16() + instruction.offset;
+			i += 2;
 			break;
 		case 0xA0: /* if_icmpne */
 			instruction.opcode = Opcode::if_icmpne_a;

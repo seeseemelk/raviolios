@@ -50,6 +50,20 @@ static void poke(VM& /*vm*/, GC::Root<Thread>& thread)
 	*memory = value;
 }
 
+static void freeBytes(VM& vm, GC::Root<Thread>& thread)
+{
+	Operand result;
+	result.integer = static_cast<i32>(vm.gc().getFree());
+	thread.get().top->object.push(result);
+}
+
+static void usedBytes(VM& vm, GC::Root<Thread>& thread)
+{
+	Operand result;
+	result.integer = static_cast<i32>(vm.gc().getUsed());
+	thread.get().top->object.push(result);
+}
+
 const Java::NativeMethod g_nativeMethods[] =
 {
 	{
@@ -75,6 +89,18 @@ const Java::NativeMethod g_nativeMethods[] =
 		.methodName = "poke",
 		.methodType = "(IB)V",
 		.method = &poke
+	},
+	{
+		.className = "raviolios/Arch",
+		.methodName = "freeBytes",
+		.methodType = "()I",
+		.method = &freeBytes
+	},
+	{
+		.className = "raviolios/Arch",
+		.methodName = "usedBytes",
+		.methodType = "()I",
+		.method = &usedBytes
 	}
 };
 

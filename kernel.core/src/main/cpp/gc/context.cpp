@@ -134,19 +134,26 @@ public:
 	}
 };
 
-void Context::validateAll()
+void Context::validateAllInHeap()
 {
 	Meta* object = firstObject();
-//	RawRoot* root = m_root.next;
-//	ValidatorVisitor visitor;
 	size_t count = m_objects;
 	while (count > 0)
 	{
 		object->validate();
-//		visitor.visit(&object);
-//		root = root->next;
 		object = nextObject(object);
 		count--;
+	}
+}
+
+void Context::validateAllRoots()
+{
+	RawRoot* root = m_root.next;
+	ValidatorVisitor visitor;
+	while (root != nullptr)
+	{
+		visitor.visit(&root->object);
+		root = root->next;
 	}
 }
 
@@ -154,15 +161,18 @@ void Context::collect()
 {
 	Log::trace("Collecting garbage");
 	Log::trace("Marking");
-	validateAll();
+	validateAllInHeap();
+	validateAllRoots();
 	mark();
-	validateAll();
+	validateAllInHeap();
+	validateAllRoots();
 	Log::trace("Sweeping - update");
 	sweepUpdate();
-	validateAll();
+	validateAllInHeap();
 	Log::trace("Sweeping - move");
 	sweepMove();
-	validateAll();
+	validateAllInHeap();
+	validateAllRoots();
 	Log::trace("Finished collecting garbage");
 }
 

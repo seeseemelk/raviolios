@@ -10,8 +10,8 @@ public final class Startup
 	public static void main()
 	{
 		Computer computer = new Computer();
-		TextModeTerminalDevice display = new TextModeTerminalDevice();
-		computer.setTerminal(display);
+		computer.setTerminal(new TextModeTerminalDevice());
+		computer.setMemory(new SystemMemory());
 		computer.run();
 		/*int x = 0;
 		display.putAt('B', x++);

@@ -77,12 +77,14 @@ ThreadCreateResult VM::createThread(GC::Root<Thread>& thread, const GC::Root<Cla
 
 void VM::createFrame(GC::Root<Frame>& frame, GC::Root<MethodInfo>& method)
 {
-	CodeAttribute& attribute = method.get().getAttributeOfType(AttributeType::code)->code->object;
-	u16 localSize = attribute.maxLocals;
-	u16 stackSize = attribute.maxStack + 3;
-
 	GC::Allocator<Frame> frameAllocator(Frame::describer);
 	m_gc.allocate(frameAllocator, frame);
+
+	GC::Root<CodeAttribute> attribute;
+	m_gc.makeRoot(method.get().getAttributeOfType(AttributeType::code)->code, attribute);
+	u16 localSize = attribute.get().maxLocals;
+	u16 stackSize = attribute.get().maxStack + 3;
+
 	frame.get().pc = 0;
 	frame.get().previous = nullptr;
 	method.store(&frame.get().methodInfo);
@@ -97,7 +99,7 @@ void VM::createFrame(GC::Root<Frame>& frame, GC::Root<MethodInfo>& method)
 
 	local.store(&frame.get().locals);
 	stack.store(&frame.get().stack);
-	frame.get().instructions = attribute.instructions;
+	frame.get().instructions = attribute.get().instructions;
 	frame.get().stackIndex = 0;
 }
 
@@ -124,6 +126,8 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 	u16 pc = frame.get().pc;
 	do
 	{
+		frame.object->validate();
+		frame.get().instructions->validate();
 		Instruction instruction = frame.get().instructions->get(pc);
 		bool storeInstruction = false;
 		bool returnFromFrame = false;
@@ -140,6 +144,10 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 			break;
 		case Opcode::swap:
 			opcodeSwap(frame);
+			pc++;
+			break;
+		case Opcode::pop:
+			opcodePop(frame);
 			pc++;
 			break;
 		case Opcode::load_constant:
@@ -186,8 +194,20 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 			opcodeIadd(frame);
 			pc++;
 			break;
+		case Opcode::isub:
+			opcodeIsub(frame);
+			pc++;
+			break;
+		case Opcode::idiv:
+			opcodeIdiv(frame);
+			pc++;
+			break;
 		case Opcode::imul:
 			opcodeImul(frame);
+			pc++;
+			break;
+		case Opcode::irem:
+			opcodeIrem(frame);
 			pc++;
 			break;
 		case Opcode::iinc:
@@ -229,6 +249,34 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 			break;
 		case Opcode::goto_b:
 			pc = instruction.index;
+			break;
+		case Opcode::ifeq_a:
+			instruction.opcode = Opcode::ifeq_b;
+			instruction.index = findOpcodeJumpTarget(frame, instruction.index);
+			break;
+		case Opcode::ifeq_b:
+			pc = opcodeIfeqB(frame, instruction.index, pc);
+			break;
+		case Opcode::ifne_a:
+			instruction.opcode = Opcode::ifne_b;
+			instruction.index = findOpcodeJumpTarget(frame, instruction.index);
+			break;
+		case Opcode::ifne_b:
+			pc = opcodeIfneB(frame, instruction.index, pc);
+			break;
+		case Opcode::ifle_a:
+			instruction.opcode = Opcode::ifle_b;
+			instruction.index = findOpcodeJumpTarget(frame, instruction.index);
+			break;
+		case Opcode::ifle_b:
+			pc = opcodeIfleB(frame, instruction.index, pc);
+			break;
+		case Opcode::ifge_a:
+			instruction.opcode = Opcode::ifge_b;
+			instruction.index = findOpcodeJumpTarget(frame, instruction.index);
+			break;
+		case Opcode::ifge_b:
+			pc = opcodeIfgeB(frame, instruction.index, pc);
 			break;
 		case Opcode::if_icmpne_a:
 			instruction.opcode = Opcode::if_icmpne_b;
@@ -389,6 +437,11 @@ void VM::opcodeSwap(GC::Root<Frame>& frame)
 	Operand b = frame.get().pop();
 	frame.get().push(a);
 	frame.get().push(b);
+}
+
+void VM::opcodePop(GC::Root<Frame>& frame)
+{
+	frame.get().pop();
 }
 
 void VM::opcodeLoadConstant(GC::Root<Frame>& frame, Instruction& instruction)
@@ -554,12 +607,39 @@ void VM::opcodeIadd(GC::Root<Frame>& frame)
 	frame.get().push(c);
 }
 
+void VM::opcodeIsub(GC::Root<Frame>& frame)
+{
+	Operand b = frame.get().pop();
+	Operand a = frame.get().pop();
+	Operand c;
+	c.integer = a.integer - b.integer;
+	frame.get().push(c);
+}
+
+void VM::opcodeIdiv(GC::Root<Frame>& frame)
+{
+	Operand b = frame.get().pop();
+	Operand a = frame.get().pop();
+	Operand c;
+	c.integer = a.integer / b.integer;
+	frame.get().push(c);
+}
+
 void VM::opcodeImul(GC::Root<Frame>& frame)
 {
-	Operand a = frame.get().pop();
 	Operand b = frame.get().pop();
+	Operand a = frame.get().pop();
 	Operand c;
 	c.integer = a.integer * b.integer;
+	frame.get().push(c);
+}
+
+void VM::opcodeIrem(GC::Root<Frame>& frame)
+{
+	i32 b = frame.get().pop().integer;
+	i32 a = frame.get().pop().integer;
+	Operand c;
+	c.integer = a - (a / b) * b;
 	frame.get().push(c);
 }
 
@@ -681,6 +761,38 @@ void VM::opcodeArrayLength(GC::Root<Frame>& frame)
 	Operand result;
 	result.integer = operand.array->object.length;
 	frame.get().push(result);
+}
+
+u16 VM::opcodeIfeqB(GC::Root<Frame>& frame, u16 target, u16 pc)
+{
+	if (frame.get().pop().integer == 0)
+		return target;
+	else
+		return pc + 1;
+}
+
+u16 VM::opcodeIfneB(GC::Root<Frame>& frame, u16 target, u16 pc)
+{
+	if (frame.get().pop().integer != 0)
+		return target;
+	else
+		return pc + 1;
+}
+
+u16 VM::opcodeIfleB(GC::Root<Frame>& frame, u16 target, u16 pc)
+{
+	if (frame.get().pop().integer <= 0)
+		return target;
+	else
+		return pc + 1;
+}
+
+u16 VM::opcodeIfgeB(GC::Root<Frame>& frame, u16 target, u16 pc)
+{
+	if (frame.get().pop().integer >= 0)
+		return target;
+	else
+		return pc + 1;
 }
 
 u16 VM::opcodeIfIcmpneB(GC::Root<Frame>& frame, u16 target, u16 pc)
@@ -861,7 +973,7 @@ void VM::opcodeInvokeB(GC::Root<Frame>& frame, u16 index, Instruction& instructi
 		}
 		if (instruction.targetNativeMethod == nullptr)
 		{
-			Log::criticalf("Unknown native method");
+			Log::criticalf("Unknown native method %S.%S%S", &className, &methodName, &methodType);
 			Arch::panic();
 		}
 	}
