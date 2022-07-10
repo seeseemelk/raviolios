@@ -13,6 +13,7 @@ namespace Java
 {
 	enum class Opcode : u16
 	{
+		nop,
 		panic,
 		dup,
 		swap,
@@ -39,6 +40,7 @@ namespace Java
 		 * Then, it becomes the `load_string` instruction.
 		 */
 		create_string_b,
+		aconst,
 		iconst,
 		load,
 		store,
@@ -58,6 +60,8 @@ namespace Java
 		new_c,
 		newarray,
 		arraylength,
+		checkcast_a,
+		checkcast_b,
 		goto_a,
 		goto_b,
 		ifeq_a,

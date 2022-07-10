@@ -9,6 +9,11 @@ public final class String
 		this.characters = characters;
 	}
 
+	public int length()
+	{
+		return characters.length;
+	}
+
 	public char charAt(int i)
 	{
 		return characters[i];
@@ -43,7 +48,7 @@ public final class String
 			builder.append('-');
 		return builder.reverse().toString();
 	}
-	
+
 	public static String valueOf(char[] characters)
 	{
 		return copyValueOf(characters);

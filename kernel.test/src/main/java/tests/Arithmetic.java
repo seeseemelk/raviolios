@@ -11,6 +11,13 @@ public class Arithmetic
 		assertEquals(6, value + 1);
 	}
 
+	public static void canSubtract()
+	{
+		int a = 10;
+		int b = 7;
+		assertEquals(3, a - b);
+	}
+
 	public static void canIncrementNumbers()
 	{
 		int value = 3;
@@ -26,4 +33,17 @@ public class Arithmetic
 		assertEquals(6, a * b);
 	}
 
+	public static void canDivide()
+	{
+		int a = 10;
+		int b = 2;
+		assertEquals(5, a / b);
+	}
+
+	public static void canRemainder()
+	{
+		int a = 10;
+		int b = 7;
+		assertEquals(3, a % b);
+	}
 }

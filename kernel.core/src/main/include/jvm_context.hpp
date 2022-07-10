@@ -243,6 +243,7 @@ namespace Java
 		void findOpcodeFieldA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index);
 		void findOpcodeFieldB(GC::Root<Frame>& frame, u16 index, Instruction& instruction);
 		Opcode nextFieldOpcode(Instruction& instruction, FieldOpcodeType opcodeType);
+		GC::Object<ClassFile>* findOpcodeClass(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index);
 
 		void opcodeDup(GC::Root<Frame>& frame);
 		void opcodeSwap(GC::Root<Frame>& frame);
@@ -251,6 +252,7 @@ namespace Java
 		void opcodeLoadString(GC::Root<Frame>& frame, Instruction& instruction);
 		void opcodeCreateStringA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, Instruction& instruction);
 		void opcodeCreateStringB(GC::Root<Frame>& frame, Instruction& instruction);
+		void opcodeAconst(GC::Root<Frame>& frame, GC::Object<JavaObject>* value);
 		void opcodeIconst(GC::Root<Frame>& frame, i32 value);
 		void opcodeLoad(GC::Root<Frame>& frame, u16 index);
 		void opcodeStore(GC::Root<Frame>& frame, u16 index);
@@ -270,6 +272,7 @@ namespace Java
 		void opcodeNewC(GC::Root<Frame>& frame, GC::Object<ClassFile>* classFile);
 		void opcodeNewArray(GC::Root<Frame>& frame, ArrayType index);
 		void opcodeArrayLength(GC::Root<Frame>& frame);
+		void opcodeCheckcastB(GC::Root<Frame>& frame, GC::Object<ClassFile>* classFile);
 		u16 opcodeIfeqB(GC::Root<Frame>& frame, u16 target, u16 pc);
 		u16 opcodeIfneB(GC::Root<Frame>& frame, u16 target, u16 pc);
 		u16 opcodeIfleB(GC::Root<Frame>& frame, u16 target, u16 pc);

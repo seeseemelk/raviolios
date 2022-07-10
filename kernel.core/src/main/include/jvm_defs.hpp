@@ -126,19 +126,20 @@ namespace Java
 		size_t referencePropertiesCount;
 
 		void* getFieldStart();
+		void* getNonRefFieldStart();
 
 		GC::Meta** getReferenceFieldAt(size_t index)
 		{
-			return getFieldAt<GC::Meta*>(index * sizeof(void*));
+			return reinterpret_cast<GC::Meta**>(static_cast<u8*>(getFieldStart()) + index * sizeof(void*));
 		}
 
 		template<typename T>
 		T* getFieldAt(i32 offset)
 		{
 			if (offset < 0)
-				return getReferenceFieldAt(offset);
+				return getReferenceFieldAt(-offset - 1);
 			else
-				return reinterpret_cast<T*>(static_cast<u8*>(getFieldStart()) + offset);
+				return reinterpret_cast<T*>(static_cast<u8*>(getNonRefFieldStart()) + offset);
 		}
 
 		static void describer(GC::Meta* object, GC::MetaVisitor& visitor);

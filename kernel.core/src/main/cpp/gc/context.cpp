@@ -72,10 +72,7 @@ void* Context::permAlloc(size_t size)
 AllocResult Context::allocateRaw(Meta& meta, RawRoot& root)
 {
 	size_t required = meta.size + sizeof(Meta);
-	Log::tracef("Allocating object with size %d", required);
-//	collect();
-//	collect();
-//	collect();
+//	Log::tracef("Allocating object with size %d", required);
 	if (getFree() < required)
 		collect();
 	if (getFree() < required)
@@ -87,7 +84,7 @@ AllocResult Context::allocateRaw(Meta& meta, RawRoot& root)
 	createObject(meta, root);
 	root.object->writeValidators();
 	root.object->validate();
-	Log::tracef("Free memory: %d bytes", getFree());
+//	Log::tracef("Free memory: %d bytes", getFree());
 	return AllocResult::SUCCESS;
 }
 
@@ -160,16 +157,16 @@ void Context::validateAllRoots()
 void Context::collect()
 {
 	Log::trace("Collecting garbage");
-	Log::trace("Marking");
+//	Log::trace("Marking");
 	validateAllInHeap();
 	validateAllRoots();
 	mark();
 	validateAllInHeap();
 	validateAllRoots();
-	Log::trace("Sweeping - update");
+//	Log::trace("Sweeping - update");
 	sweepUpdate();
 	validateAllInHeap();
-	Log::trace("Sweeping - move");
+//	Log::trace("Sweeping - move");
 	sweepMove();
 	validateAllInHeap();
 	validateAllRoots();

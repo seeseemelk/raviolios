@@ -34,7 +34,8 @@ static void dumpStack(Frame& frame)
 		if (value.isObject)
 		{
 			Log::infof("[%d] %x (obj)", i, value.object);
-			value.object->validate();
+			if (value.object != nullptr)
+				value.object->validate();
 		}
 		else
 			Log::infof("[%d] %d", i, value.integer);
@@ -131,9 +132,13 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 		Instruction instruction = frame.get().instructions->get(pc);
 		bool storeInstruction = false;
 		bool returnFromFrame = false;
-		Log::infof("Executing opcode %d (%s) (index: %d)", instruction.opcode, toString(instruction.opcode), pc);
+		GC::Array<char>* methodName = frame.get().getClassFile()->object.constantPool->get(frame.get().methodInfo->object.nameIndex).c_utf8.bytes;
+		Log::infof("Executing opcode %d (%s) (index: %d, method: %A)", instruction.opcode, toString(instruction.opcode), pc, methodName);
 		switch (instruction.opcode)
 		{
+		case Opcode::nop:
+			pc++;
+			break;
 		case Opcode::panic:
 			Log::critical("Reached panic instruction");
 			Arch::panic();
@@ -165,6 +170,10 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 		case Opcode::create_string_b:
 			opcodeCreateStringB(frame, instruction);
 			storeInstruction = true;
+			break;
+		case Opcode::aconst:
+			opcodeAconst(frame, instruction.targetObject);
+			pc++;
 			break;
 		case Opcode::iconst:
 			opcodeIconst(frame, instruction.constantInteger);
@@ -242,6 +251,14 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 			opcodeArrayLength(frame);
 			pc++;
 			break;
+		case Opcode::checkcast_a:
+			instruction.opcode = Opcode::checkcast_b;
+			instruction.targetClass = findOpcodeClass(thread, frame, instruction.index);
+			break;
+		case Opcode::checkcast_b:
+			opcodeCheckcastB(frame, instruction.targetClass);
+			pc++;
+			break;
 		case Opcode::goto_a:
 			instruction.opcode = Opcode::goto_b;
 			instruction.index = findOpcodeJumpTarget(frame, instruction.index);
@@ -253,6 +270,7 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 		case Opcode::ifeq_a:
 			instruction.opcode = Opcode::ifeq_b;
 			instruction.index = findOpcodeJumpTarget(frame, instruction.index);
+			storeInstruction = true;
 			break;
 		case Opcode::ifeq_b:
 			pc = opcodeIfeqB(frame, instruction.index, pc);
@@ -260,6 +278,7 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 		case Opcode::ifne_a:
 			instruction.opcode = Opcode::ifne_b;
 			instruction.index = findOpcodeJumpTarget(frame, instruction.index);
+			storeInstruction = true;
 			break;
 		case Opcode::ifne_b:
 			pc = opcodeIfneB(frame, instruction.index, pc);
@@ -267,6 +286,7 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 		case Opcode::ifle_a:
 			instruction.opcode = Opcode::ifle_b;
 			instruction.index = findOpcodeJumpTarget(frame, instruction.index);
+			storeInstruction = true;
 			break;
 		case Opcode::ifle_b:
 			pc = opcodeIfleB(frame, instruction.index, pc);
@@ -274,6 +294,7 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 		case Opcode::ifge_a:
 			instruction.opcode = Opcode::ifge_b;
 			instruction.index = findOpcodeJumpTarget(frame, instruction.index);
+			storeInstruction = true;
 			break;
 		case Opcode::ifge_b:
 			pc = opcodeIfgeB(frame, instruction.index, pc);
@@ -527,6 +548,14 @@ void VM::opcodeCreateStringB(GC::Root<Frame>& frame, Instruction& instruction)
 	instruction.targetObject = stringObject.object;
 }
 
+void VM::opcodeAconst(GC::Root<Frame>& frame, GC::Object<JavaObject>* value)
+{
+	Operand operand;
+	operand.isObject = true;
+	operand.object = value;
+	frame.get().push(operand);
+}
+
 void VM::opcodeIconst(GC::Root<Frame>& frame, i32 value)
 {
 	Operand operand;
@@ -761,6 +790,26 @@ void VM::opcodeArrayLength(GC::Root<Frame>& frame)
 	Operand result;
 	result.integer = operand.array->object.length;
 	frame.get().push(result);
+}
+
+void VM::opcodeCheckcastB(GC::Root<Frame>& frame, GC::Object<ClassFile>* targetClass)
+{
+	Operand operand = frame.get().pop();
+	GC::Object<ClassFile>* classFile = operand.object->object.class_;
+	while (classFile != nullptr)
+	{
+		if (classFile == targetClass)
+		{
+			frame.get().push(operand);
+			return;
+		}
+		else
+		{
+			classFile = classFile->object.superClassObj;
+		}
+	}
+	operand.object = nullptr;
+	frame.get().push(operand);
 }
 
 u16 VM::opcodeIfeqB(GC::Root<Frame>& frame, u16 target, u16 pc)
@@ -1028,6 +1077,16 @@ void VM::opcodeInvokevirtualB(GC::Root<Frame>& frame, Instruction& instruction)
 void VM::opcodeInvokevirtualC(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index, u16 objectOffset)
 {
 	Operand operand = frame.get().peek(objectOffset);
+	if (operand.object == nullptr)
+	{
+		Log::critical("Null pointer dereference");
+		Arch::panic();
+	}
+	else if (!operand.isObject)
+	{
+		Log::critical("Attempting to invoke a method on a non-object");
+		Arch::panic();
+	}
 	GC::Object<MethodInfo>* methodPtr = operand.object->object.class_->object.vtable->get(index).method;
 	GC::Root<MethodInfo> method;
 	m_gc.makeRoot(methodPtr, method);
@@ -1109,6 +1168,36 @@ void VM::findClass(GC::Root<Thread>& thread, GC::Root<Frame>& frame, const GC::R
 		operand.isObject = true;
 		targetClass.store(&operand.classFile);
 		frame.get().push(operand);
+	}
+	else
+	{
+		Log::critical("Non-native classloader not yet supported");
+		Arch::panic();
+	}
+}
+
+GC::Object<ClassFile>* VM::findOpcodeClass(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index)
+{
+	GC::Root<ClassFile> methodClass;
+	m_gc.makeRoot(frame.get().getClassFile(), methodClass);
+	if (methodClass.get().classLoader == nullptr)
+	{
+		u16 nameIndex = methodClass.get().constantPool->get(index).c_class.nameIndex;
+		GC::Root<char> name;
+		m_gc.makeRoot(methodClass.get().constantPool->get(nameIndex).c_utf8.bytes, name);
+
+		GC::Root<ClassFile> targetClass;
+		findClass(thread, frame, name);
+//		if (error != ClassError::GOOD)
+//		{
+//			Log::criticalf("Failed to load class: %s", toString(error));
+//			Arch::panic();
+//		}
+		return static_cast<GC::Object<ClassFile>*>(targetClass.object);
+//		Operand operand;
+//		operand.isObject = true;
+//		targetClass.store(&operand.classFile);
+//		frame.get().push(operand);
 	}
 	else
 	{

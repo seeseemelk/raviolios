@@ -65,7 +65,7 @@ static void runJavaTestMethod(const char* className, const char* methodName)
 
 	s_assertsCalled = 0;
 	size_t steps = 0;
-	while (steps < 10000)
+	while (steps < 1000000)
 	{
 		ThreadState state = cut.vm.step(thread);
 		if (state == ThreadState::STOPPED)
@@ -121,16 +121,24 @@ static void runJavaTestAggressiveGC(const char* className, const char* methodNam
 JAVA_FAIL("tests/Assertions", "equalsFailsWhenDifferent");
 JAVA_FAIL("tests/Assertions", "fails");
 JAVA_TEST("tests/Arithmetic", "canAddNumbers");
+JAVA_TEST("tests/Arithmetic", "canDivide");
 JAVA_TEST("tests/Arithmetic", "canIncrementNumbers");
 JAVA_TEST("tests/Arithmetic", "canMultiply");
+JAVA_TEST("tests/Arithmetic", "canRemainder");
+JAVA_TEST("tests/Arithmetic", "canSubtract");
 JAVA_TEST("tests/Arrays", "canGetArrayLength");
 JAVA_TEST("tests/Arrays", "canReadAndWriteCharArrays");
 JAVA_TEST("tests/Assertions", "equalsSucceedsWhenSame");
 JAVA_TEST("tests/Assertions", "succeeds");
 JAVA_TEST("tests/Constants", "canUseLargeIntegers");
+JAVA_TEST("tests/Conditionals", "testIf");
+JAVA_TEST("tests/Conditionals", "testIfNot");
 JAVA_TEST("tests/Methods", "canReturnReference");
 JAVA_TEST("tests/Objects", "canReadObjectProperty");
 JAVA_TEST("tests/Objects", "canStoredObjectsAsProperties");
+JAVA_TEST("tests/Objects", "methodsWithParameters");
+JAVA_TEST("tests/Objects", "methodsWithMultipleParameters");
+JAVA_TEST("tests/Objects", "testMultiObject");
 JAVA_TEST("tests/StaticProperty", "propertiesHaveDefaultValues");
 JAVA_TEST("tests/StaticProperty", "propertyCanBeChanged");
 JAVA_TEST("tests/StaticProperty", "propertyStartsAsZero");

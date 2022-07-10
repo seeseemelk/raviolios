@@ -25,16 +25,26 @@ public class TextModeTerminalDevice extends AbstractTerminalDevice
 		return 80;
 	}
 
+	public int getStride()
+	{
+		return getWidth() * 2;
+	}
+
+	public int getBytesPerCharacter()
+	{
+		return 2;
+	}
+
 	@Override
 	public int getHeight()
 	{
-		return 40;
+		return 25;
 	}
 
 	@Override
 	public void put(int x, int y, char character)
 	{
-		int ptr = screen + x + (y * getWidth());
+		int ptr = screen + (x * 2) + (y * getStride());
 		Arch.poke(ptr, (byte) character);
 		Arch.poke(ptr + 1, COLOR);
 	}

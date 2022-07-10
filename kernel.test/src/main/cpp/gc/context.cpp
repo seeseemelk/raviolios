@@ -87,31 +87,23 @@ TEST("Can perform collection cycles")
 }
 
 
-TEST("GC Stress Test")
-{
-	DUT dut(KB(4));
-
-	for (int i = 0; i < 100; i++)
-	{
-		for (int i = 10; i < 500; i++)
-		{
-			Meta meta;
-			meta.size = 17;
-			RawRoot root;
-			dut.context.allocateRaw(meta, root);
-		}
-		assertTrue(dut.context.getUsed() > 0, "Some objects are allocated before GC");
-		dut.context.collect();
-		assertTrue(dut.context.getUsed() == 0, "Heap is free after GC");
-		dut.context.collect();
-		dut.context.collect();
-	}
-
-//	for (int i = 0; i < 10000; i++)
+//TEST("GC Stress Test")
+//{
+//	DUT dut(KB(4));
+//
+//	for (int i = 0; i < 100; i++)
 //	{
-//		Meta meta;
-//		meta.size = 17;
-//		RawRoot root;
-//		dut.context.allocateRaw(meta, root);
+//		for (int i = 10; i < 500; i++)
+//		{
+//			Meta meta;
+//			meta.size = 17;
+//			RawRoot root;
+//			dut.context.allocateRaw(meta, root);
+//		}
+//		assertTrue(dut.context.getUsed() > 0, "Some objects are allocated before GC");
+//		dut.context.collect();
+//		assertTrue(dut.context.getUsed() == 0, "Heap is free after GC");
+//		dut.context.collect();
+//		dut.context.collect();
 //	}
-}
+//}

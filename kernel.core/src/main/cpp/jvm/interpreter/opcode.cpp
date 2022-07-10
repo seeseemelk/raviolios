@@ -6,6 +6,7 @@ const char* Java::toString(Opcode opcode)
 {
 	switch (opcode)
 	{
+	case Opcode::nop: return "nop";
 	case Opcode::panic: return "panic";
 	case Opcode::dup: return "dup";
 	case Opcode::swap: return "swap";
@@ -14,6 +15,7 @@ const char* Java::toString(Opcode opcode)
 	case Opcode::load_string: return "load_string";
 	case Opcode::create_string_a: return "create_string_a";
 	case Opcode::create_string_b: return "create_string_b";
+	case Opcode::aconst: return "aconst";
 	case Opcode::iconst: return "iconst";
 	case Opcode::load: return "load";
 	case Opcode::store: return "store";
@@ -33,6 +35,8 @@ const char* Java::toString(Opcode opcode)
 	case Opcode::new_c: return "new_c";
 	case Opcode::newarray: return "newarray";
 	case Opcode::arraylength: return "arraylength";
+	case Opcode::checkcast_a: return "checkcast_a";
+	case Opcode::checkcast_b: return "checkcast_b";
 	case Opcode::goto_a: return "goto_a";
 	case Opcode::goto_b: return "goto_b";
 	case Opcode::ifeq_a: return "ifeq_a";

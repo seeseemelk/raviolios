@@ -7,6 +7,11 @@ void* JavaObject::getFieldStart()
 	return static_cast<void*>(reinterpret_cast<u8*>(this) + sizeof(JavaObject));
 }
 
+void* JavaObject::getNonRefFieldStart()
+{
+	return static_cast<void*>(reinterpret_cast<u8*>(this) + sizeof(JavaObject) + class_->object.referencePropertiesCount * sizeof(void*));
+}
+
 void JavaObject::describer(GC::Meta* object, GC::MetaVisitor& visitor)
 {
 	JavaObject* obj = object->as<JavaObject>();

@@ -252,29 +252,29 @@ ClassError VM::defineClass(GC::Root<ClassFile>& classfile, GC::Root<Thread>& thr
 			return error;
 		superClassObj.store(&classfile.get().superClassObj);
 		classfile.get().objectSize = superClassObj.get().objectSize;
+		classfile.get().referencePropertiesCount = superClassObj.get().referencePropertiesCount;
 	}
 	else
 	{
 		classfile.get().objectSize = 0;
+		classfile.get().referencePropertiesCount = 0;
 	}
 
 	// Calculate size of object and alignment of fields.
 	// - Reference types first.
 	// We do this to work around the fact that we shouldn't dereference things from within the GC describer.
-	size_t referencePropertiesCount = 0;
 	for (size_t i = 0; i < classfile.get().fieldsCount; i++)
 	{
 		FieldInfo& field = fieldRefRoot[i].field->object;
 		if (!field.isStatic() && field.type.isReferenceType())
 		{
-			field.offset = -1;
+			field.offset = -1 - classfile.get().referencePropertiesCount;
 			classfile.get().objectSize += field.type.size();
-			referencePropertiesCount++;
+			classfile.get().referencePropertiesCount++;
 		}
 	}
-	classfile.get().referencePropertiesCount = referencePropertiesCount;
 	// - Others later
-	size_t fieldOffsetOffset = referencePropertiesCount * sizeof(void*);
+	size_t fieldOffsetOffset = classfile.get().referencePropertiesCount * sizeof(void*);
 	for (size_t i = 0; i < classfile.get().fieldsCount; i++)
 	{
 		FieldInfo& field = fieldRefRoot[i].field->object;
@@ -415,6 +415,13 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 		instruction.offset = i;
 		switch (opcode)
 		{
+		case 0x00: /* nop */
+			instruction.opcode = Opcode::nop;
+			break;
+		case 0x01: /* aconst_null */
+			instruction.opcode = Opcode::aconst;
+			instruction.targetObject = nullptr;
+			break;
 		case 0x03: /* iconst_0 */
 			instruction.opcode = Opcode::iconst;
 			instruction.constantInteger = 0;
@@ -666,6 +673,11 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 			break;
 		case 0xBE: /* arraylength */
 			instruction.opcode = Opcode::arraylength;
+			break;
+		case 0xC0: /* checkcast */
+			instruction.opcode = Opcode::checkcast_a;
+			instruction.index = loader.readU16() - 1;
+			i += 2;
 			break;
 		default:
 			Log::criticalf("Unknown opcode: %b", opcode);

@@ -8,7 +8,7 @@ public class Object
 	{
 		// Chosen by fair roll of five D6 dice
 		return 26515;
-		
+
 //		if (hashCode == 0)
 //            hashCode = getAddressHashCode();
 //        return hashCode;
