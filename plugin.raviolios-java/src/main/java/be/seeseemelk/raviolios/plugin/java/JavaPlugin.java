@@ -3,29 +3,74 @@
  */
 package be.seeseemelk.raviolios.plugin.java;
 
+import org.codehaus.groovy.tools.javac.JavacCompilerFactory;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
+import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.initialization.IncludedBuild;
 import org.gradle.api.plugins.JavaPluginExtension;
+import org.gradle.api.tasks.compile.CompileOptions;
+import org.gradle.api.tasks.compile.JavaCompile;
+import org.gradle.composite.internal.IncludedBuildTaskReference;
+import org.gradle.internal.file.FilePathUtil;
+import org.gradle.internal.impldep.org.apache.commons.io.FilenameUtils;
+import org.gradle.jvm.toolchain.JavaCompiler;
 import org.gradle.jvm.toolchain.JavaLanguageVersion;
+
+import java.io.File;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Set;
+import java.util.StringJoiner;
+import java.util.stream.Collectors;
 
 /**
  * Sets default configuration for Raviolios Java projects
  */
 public class JavaPlugin implements Plugin<Project>
 {
+	public static final Set<String> excludedConfigurations = Set.of("archives", "default");
+
 	public void apply(Project project)
 	{
 		project.getPlugins().apply("java");
-
-		JavaPluginExtension extension = project.getExtensions().getByType(JavaPluginExtension.class);
-		extension.getToolchain().getLanguageVersion().convention(JavaLanguageVersion.of(11));
 
 		Task task = project.getTasks().getByName("jar");
 		for (IncludedBuild includedBuild : project.getGradle().getIncludedBuilds())
 		{
 			task.dependsOn(includedBuild.task(":jar"));
 		}
+
+		project.afterEvaluate(it ->
+		{
+			project.getGradle().getIncludedBuilds()
+				.stream()
+				.filter(build -> build.getName().equals("kit.java"))
+				.findAny()
+				.ifPresent(includedBuild ->
+				{
+					String modules = project.getConfigurations()
+						.stream()
+						.filter(Configuration::isCanBeResolved)
+						.filter(configuration -> !excludedConfigurations.contains(configuration.getName()))
+						.flatMap(configuration -> configuration.getFiles().stream())
+						.filter(File::isFile)
+						.map(File::getAbsolutePath)
+						.distinct()
+						.collect(Collectors.joining(":"));
+
+					project.getTasks().withType(JavaCompile.class).all(action ->
+					{
+						CompileOptions options = action.getOptions();
+						options.getRelease().set(11);
+						options.setFork(true);
+						List<String> args = options.getCompilerArgs();
+						args.add("--system=none");
+						args.add("--module-path");
+						args.add(modules);
+					});
+				});
+		});
 	}
 }

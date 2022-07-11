@@ -9,10 +9,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 public class IcbPacker implements AutoCloseable
 {
 	private final OutputStream output;
+
+	private static final Set<String> classes = new HashSet<>();
 
 	public IcbPacker(Path outputFile) throws IOException
 	{
@@ -32,17 +36,23 @@ public class IcbPacker implements AutoCloseable
 	{
 		byte[] content = Files.readAllBytes(classFile);
 
-		// Write tag
-		output.write(Tag.CLASS.asByte());
+		String className = getClassNameOf(classFile);
+		if (!classes.contains(className))
+		{
+			classes.add(className);
 
-		// Write null-terminated string
-		writeZString(getClassNameOf(classFile));
+			// Write tag
+			output.write(Tag.CLASS.asByte());
 
-		// Write the length of the class file
-		writeU32(content.length);
+			// Write null-terminated string
+			writeZString(className);
 
-		// Write class file
-		writeBytes(content);
+			// Write the length of the class file
+			writeU32(content.length);
+
+			// Write class file
+			writeBytes(content);
+		}
 	}
 
 	public void addFiles(Collection<Path> classFiles) throws IOException
