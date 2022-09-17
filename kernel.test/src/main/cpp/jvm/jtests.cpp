@@ -143,6 +143,7 @@ JAVA_TEST("tests/StaticProperty", "propertiesHaveDefaultValues");
 JAVA_TEST("tests/StaticProperty", "propertyCanBeChanged");
 JAVA_TEST("tests/StaticProperty", "propertyStartsAsZero");
 JAVA_TEST("tests/Strings", "canGetCharacterAtPosition");
+JAVA_TEST("tests/Strings", "testStringLiteralInMethod");
 JAVA_TEST("tests/Variables", "canSaveVariables");
 JAVA_TEST("tests/Virtual", "testCanCallVirtualMethod");
 

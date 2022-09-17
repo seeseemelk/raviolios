@@ -5,6 +5,7 @@
 #include "jvm_loader.hpp"
 #include "log.hpp"
 #include "util.hpp"
+#include "math.hpp"
 
 using namespace Java;
 
@@ -611,6 +612,11 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 			i += 2;
 			break;
 			break;
+		case 0xA5: /* if_acmpeq */
+			instruction.opcode = Opcode::if_acmpeq_a;
+			instruction.index = loader.readI16() + instruction.offset;
+			i += 2;
+			break;
 		case 0xA6: /* if_acmpne */
 			instruction.opcode = Opcode::if_acmpne_a;
 			instruction.index = loader.readI16() + instruction.offset;
@@ -677,6 +683,16 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 		case 0xC0: /* checkcast */
 			instruction.opcode = Opcode::checkcast_a;
 			instruction.index = loader.readU16() - 1;
+			i += 2;
+			break;
+		case 0xC6: /* ifnull */
+			instruction.opcode = Opcode::ifnull_a;
+			instruction.index = loader.readI16() + instruction.offset;
+			i += 2;
+			break;
+		case 0xC7: /* ifnonnull */
+			instruction.opcode = Opcode::ifnonnull_a;
+			instruction.index = loader.readI16() + instruction.offset;
 			i += 2;
 			break;
 		default:

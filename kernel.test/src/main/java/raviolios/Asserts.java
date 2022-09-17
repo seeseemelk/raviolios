@@ -22,4 +22,28 @@ public final class Asserts
 		else
 			fail();
 	}
+
+	public static void assertNotSame(Object expected, Object actual)
+	{
+		if (expected != actual)
+			success();
+		else
+			fail();
+	}
+
+	public static void assertNotNull(Object actual)
+	{
+		if (actual != null)
+			success();
+		else
+			fail();
+	}
+
+	public static void assertNull(Object actual)
+	{
+		if (actual == null)
+			success();
+		else
+			fail();
+	}
 }

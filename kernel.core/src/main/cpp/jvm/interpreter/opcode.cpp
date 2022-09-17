@@ -51,8 +51,14 @@ const char* Java::toString(Opcode opcode)
 	case Opcode::if_icmpne_b: return "if_icmpne_b";
 	case Opcode::if_icmpge_a: return "if_icmpge_a";
 	case Opcode::if_icmpge_b: return "if_icmpge_b";
+	case Opcode::if_acmpeq_a: return "if_acmpeq_a";
+	case Opcode::if_acmpeq_b: return "if_acmpeq_b";
 	case Opcode::if_acmpne_a: return "if_acmpne_a";
 	case Opcode::if_acmpne_b: return "if_acmpne_b";
+	case Opcode::ifnull_a: return "ifnull_a";
+	case Opcode::ifnull_b: return "ifnull_b";
+	case Opcode::ifnonnull_a: return "ifnonnull_a";
+	case Opcode::ifnonnull_b: return "ifnonnull_b";
 	case Opcode::getstatic_a: return "getstatic_a";
 	case Opcode::getstatic_b: return "getstatic_b";
 	case Opcode::getstatic_c: return "getstatic_c";

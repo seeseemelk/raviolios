@@ -16,7 +16,7 @@ public class IcbPacker implements AutoCloseable
 {
 	private final OutputStream output;
 
-	private static final Set<String> classes = new HashSet<>();
+	private final Set<String> classes = new HashSet<>();
 
 	public IcbPacker(Path outputFile) throws IOException
 	{

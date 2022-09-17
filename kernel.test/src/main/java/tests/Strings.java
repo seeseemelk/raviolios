@@ -1,6 +1,6 @@
 package tests;
 
-import static raviolios.Asserts.assertEquals;
+import static raviolios.Asserts.*;
 
 public class Strings
 {
@@ -12,5 +12,18 @@ public class Strings
 		assertEquals('l', str.charAt(2));
 		assertEquals('l', str.charAt(3));
 		assertEquals('o', str.charAt(4));
+	}
+
+	public int getLength(int extra, String text)
+	{
+		return text.length() + extra;
+	}
+
+	public static void testStringLiteralInMethod()
+	{
+		Strings stringsA = new Strings();
+		int length = stringsA.getLength(0, "hello");
+		assertEquals(5, length);
+		assertNotNull(stringsA);
 	}
 }

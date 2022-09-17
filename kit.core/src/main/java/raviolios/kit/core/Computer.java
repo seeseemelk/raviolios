@@ -16,19 +16,17 @@ public final class Computer
 
 	public void run()
 	{
-		String str = "test";
 		int usageY = terminal.getHeight() - 1;
 
-		terminal.put(0, usageY, str);
-		//terminal.put(0, usageY, "Usage");
+		int totalKb = memory.getTotalMemory() / 1024;
+		terminal.put(0, usageY, "Total: " + totalKb);
 
-		/*while (true)
+		while (true)
 		{
 			terminal.put(0, 0, '\\');
 			terminal.put(0, 0, '|');
 			terminal.put(0, 0, '/');
 			terminal.put(0, 0, '-');
-		}*/
-		for (;;) ;
+		}
 	}
 }

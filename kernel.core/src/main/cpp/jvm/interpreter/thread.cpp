@@ -315,13 +315,37 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 		case Opcode::if_icmpge_b:
 			pc = opcodeIfIcmpgeB(frame, instruction.index, pc);
 			break;
+		case Opcode::if_acmpeq_a:
+			instruction.opcode = Opcode::if_acmpeq_b;
+			instruction.index = findOpcodeJumpTarget(frame, instruction.index);
+			storeInstruction = true;
+			break;
+		case Opcode::if_acmpeq_b:
+			pc = opcodeIfAcmpeqB(frame, instruction.index, pc);
+			break;
 		case Opcode::if_acmpne_a:
 			instruction.opcode = Opcode::if_acmpne_b;
 			instruction.index = findOpcodeJumpTarget(frame, instruction.index);
 			storeInstruction = true;
 			break;
 		case Opcode::if_acmpne_b:
-			pc = opcodeIfIcmpneB(frame, instruction.index, pc);
+			pc = opcodeIfAcmpneB(frame, instruction.index, pc);
+			break;
+		case Opcode::ifnull_a:
+			instruction.opcode = Opcode::ifnull_b;
+			instruction.index = findOpcodeJumpTarget(frame, instruction.index);
+			storeInstruction = true;
+			break;
+		case Opcode::ifnull_b:
+			pc = opcodeIfNullB(frame, instruction.index, pc);
+			break;
+		case Opcode::ifnonnull_a:
+			instruction.opcode = Opcode::ifnonnull_b;
+			instruction.index = findOpcodeJumpTarget(frame, instruction.index);
+			storeInstruction = true;
+			break;
+		case Opcode::ifnonnull_b:
+			pc = opcodeIfNonNullB(frame, instruction.index, pc);
 			break;
 		case Opcode::getstatic_a:
 			findOpcodeFieldA(thread, frame, instruction.index);
@@ -507,13 +531,13 @@ void VM::opcodeCreateStringA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, I
 	GC::Root<ClassFile> stringClass;
 	getStringClass(thread, stringClass);
 
-	GC::Root<JavaObject> stringObject;
-	allocateObject(stringClass, stringObject);
-
-	Operand objectOperand;
-	stringObject.store(&objectOperand.object);
-	objectOperand.isObject = true;
-	frame.get().push(objectOperand); // Reference that will be used by create_string_b
+//	GC::Root<JavaObject> stringObject;
+//	allocateObject(stringClass, stringObject);
+//
+//	Operand objectOperand;
+//	stringObject.store(&objectOperand.object);
+//	objectOperand.isObject = true;
+//	frame.get().push(objectOperand); // Reference that will be used by create_string_b
 
 	ClassFile* classFile = &frame.get().getClassFile()->object;
 	ConstantPoolUtf8 cpUtf8 = classFile->constantPool->get(instruction.protoString.utf8Index).c_utf8;
@@ -869,6 +893,34 @@ u16 VM::opcodeIfAcmpneB(GC::Root<Frame>& frame, u16 target, u16 pc)
 	Operand a = frame.get().pop();
 	Operand b = frame.get().pop();
 	if (a.integer != b.integer)
+		return target;
+	else
+		return pc + 1;
+}
+
+u16 VM::opcodeIfAcmpeqB(GC::Root<Frame>& frame, u16 target, u16 pc)
+{
+	Operand a = frame.get().pop();
+	Operand b = frame.get().pop();
+	if (a.integer != b.integer)
+		return target;
+	else
+		return pc + 1;
+}
+
+u16 VM::opcodeIfNullB(GC::Root<Frame>& frame, u16 target, u16 pc)
+{
+	Operand a = frame.get().pop();
+	if (a.object == nullptr)
+		return target;
+	else
+		return pc + 1;
+}
+
+u16 VM::opcodeIfNonNullB(GC::Root<Frame>& frame, u16 target, u16 pc)
+{
+	Operand a = frame.get().pop();
+	if (a.object != nullptr)
 		return target;
 	else
 		return pc + 1;

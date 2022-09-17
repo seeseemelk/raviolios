@@ -233,6 +233,11 @@ namespace Java
 
 		void loadCodeAttribute(GC::Root<ClassFile>& classfile, GC::Root<CodeAttribute>& root, Loader& loader);
 
+		/**
+		 * Parses the opcodes from a loader.
+		 *
+		 * Returns the number of extra stack space entries that will be needed by the instructions.
+		 */
 		void parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_t instructionCount);
 
 		void createFrame(GC::Root<Frame>& frame, GC::Root<MethodInfo>& method);
@@ -280,6 +285,9 @@ namespace Java
 		u16 opcodeIfIcmpneB(GC::Root<Frame>& frame, u16 target, u16 pc);
 		u16 opcodeIfIcmpgeB(GC::Root<Frame>& frame, u16 target, u16 pc);
 		u16 opcodeIfAcmpneB(GC::Root<Frame>& frame, u16 target, u16 pc);
+		u16 opcodeIfAcmpeqB(GC::Root<Frame>& frame, u16 target, u16 pc);
+		u16 opcodeIfNullB(GC::Root<Frame>& frame, u16 target, u16 pc);
+		u16 opcodeIfNonNullB(GC::Root<Frame>& frame, u16 target, u16 pc);
 
 //		Instruction opcodeFindFieldA;
 //		Instruction opcodeGetfieldB(GC::Root<Frame>& frame, u16 index);
