@@ -43,6 +43,11 @@ size_t Context::getUsed()
 	return used + m_permUsed;
 }
 
+size_t Context::getCapacity()
+{
+	return m_memCapacity;
+}
+
 void* Context::permAlloc(size_t size)
 {
 	/*if (m_memStart != m_memCurrent)

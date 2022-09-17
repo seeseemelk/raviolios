@@ -2,6 +2,7 @@
 
 #include "arch.hpp"
 #include "jvm_context.hpp"
+#include "jvm_internalnative.hpp"
 #include "jvm_type.hpp"
 #include "log.hpp"
 #include "util.hpp"
@@ -147,6 +148,10 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 			opcodeDup(frame);
 			pc++;
 			break;
+		case Opcode::dup_x1:
+			opcodeDupX1(frame);
+			pc++;
+			break;
 		case Opcode::swap:
 			opcodeSwap(frame);
 			pc++;
@@ -213,6 +218,10 @@ ThreadState VM::runUntilInterrupted(GC::Root<Thread>& thread)
 			break;
 		case Opcode::imul:
 			opcodeImul(frame);
+			pc++;
+			break;
+		case Opcode::ineg:
+			opcodeIneg(frame);
 			pc++;
 			break;
 		case Opcode::irem:
@@ -476,6 +485,15 @@ void VM::opcodeDup(GC::Root<Frame>& frame)
 	frame.get().push(value);
 }
 
+void VM::opcodeDupX1(GC::Root<Frame>& frame)
+{
+	Operand value = frame.get().pop();
+	Operand value2 = frame.get().pop();
+	frame.get().push(value);
+	frame.get().push(value2);
+	frame.get().push(value);
+}
+
 void VM::opcodeSwap(GC::Root<Frame>& frame)
 {
 	Operand a = frame.get().pop();
@@ -694,6 +712,13 @@ void VM::opcodeIrem(GC::Root<Frame>& frame)
 	Operand c;
 	c.integer = a - (a / b) * b;
 	frame.get().push(c);
+}
+
+void VM::opcodeIneg(GC::Root<Frame>& frame)
+{
+	Operand value = frame.get().pop();
+	value.integer = (~value.integer) + 1;
+	frame.get().push(value);
 }
 
 void VM::opcodeI2B(GC::Root<Frame>& frame)
@@ -1049,6 +1074,11 @@ void VM::opcodeInvokeB(GC::Root<Frame>& frame, u16 index, Instruction& instructi
 	GC::Object<ClassFile>* targetClass = operand.classFile;
 
 	u16 methodIndexInTargetClass = targetClass->object.findMethodByNameAndType(methodName, methodType);
+	if (methodIndexInTargetClass == U16_MAX)
+	{
+		Log::criticalf("Could not find method %S%S", &methodName, &methodType);
+		Arch::panic();
+	}
 
 	GC::Object<MethodInfo>* method = targetClass->object.methods->get(methodIndexInTargetClass).method;
 
@@ -1061,7 +1091,8 @@ void VM::opcodeInvokeB(GC::Root<Frame>& frame, u16 index, Instruction& instructi
 		u16 classNameIndex = classFile.constantPool->get(methodRef.classIndex).c_class.nameIndex;
 		m_gc.makeRoot(classFile.constantPool->get(classNameIndex).c_utf8.bytes, className);
 
-		for (size_t i = 0; i < m_nativeMethodCount; i++)
+		instruction.targetNativeMethod = findNativeMethod(className, methodName, methodType)->method;
+		/*for (size_t i = 0; i < m_nativeMethodCount; i++)
 		{
 			const NativeMethod& nativeMethod = m_nativeMethods[i];
 			if (!equals(className, nativeMethod.className))
@@ -1076,7 +1107,7 @@ void VM::opcodeInvokeB(GC::Root<Frame>& frame, u16 index, Instruction& instructi
 		{
 			Log::criticalf("Unknown native method %S.%S%S", &className, &methodName, &methodType);
 			Arch::panic();
-		}
+		}*/
 	}
 	else
 	{
@@ -1104,24 +1135,35 @@ void VM::opcodeInvokevirtualA(GC::Root<Thread>& thread, GC::Root<Frame>& frame, 
 
 void VM::opcodeInvokevirtualB(GC::Root<Frame>& frame, Instruction& instruction)
 {
+	Log::trace("A");
 	ClassFile& classfile = frame.get().getClassFile()->object;
 	ConstantPoolMethodRef methodRef = classfile.constantPool->get(instruction.index).c_method;
 
+	Log::trace("B");
 	GC::Root<char> methodName;
 	u16 methodNameIndex = classfile.constantPool->get(methodRef.nameAndTypeIndex).c_nameAndType.nameIndex;
 	m_gc.makeRoot(classfile.constantPool->get(methodNameIndex).c_utf8.bytes, methodName);
 
+	Log::trace("C");
 	GC::Root<char> methodType;
 	u16 methodTypeIndex = classfile.constantPool->get(methodRef.nameAndTypeIndex).c_nameAndType.descriptorIndex;
 	m_gc.makeRoot(classfile.constantPool->get(methodTypeIndex).c_utf8.bytes, methodType);
 
+	Log::trace("D");
 	Operand operand = frame.get().pop();
 	GC::Object<ClassFile>* targetClass = operand.classFile;
 
+	Log::trace("E");
 	u16 methodIndexInTargetClass = targetClass->object.findMethodByNameAndType(methodName, methodType);
+	if (methodIndexInTargetClass == U16_MAX)
+	{
+		Log::criticalf("Could not find method %S%S", &methodName, &methodType);
+		Arch::panic();
+	}
 	MethodInfo& method = targetClass->object.methods->get(methodIndexInTargetClass).method->object;
 	u16 vtableIndex = method.vtableIndex;
 
+	Log::trace("F");
 	instruction.virtualArg.vtableIndex = vtableIndex;
 	instruction.virtualArg.stackOffset = method.type.arguments;
 }
@@ -1258,22 +1300,36 @@ GC::Object<ClassFile>* VM::findOpcodeClass(GC::Root<Thread>& thread, GC::Root<Fr
 	}
 }
 
-void VM::invokeNativeMethod(GC::Root<Thread>& thread, const GC::Root<char>& className, const GC::Root<char>& methodName, const GC::Root<char>& methodType)
+const NativeMethod* VM::findNativeMethod(const GC::Root<char>& className, const GC::Root<char>& methodName, const GC::Root<char>& methodType)
 {
-	for (size_t i = 0; i < m_nativeMethodCount; i++)
+	const NativeMethod* result = findNativeMethod(className, methodName, methodType, m_nativeMethods, m_nativeMethodCount);
+	if (result == nullptr)
+		result = findNativeMethod(className, methodName, methodType, g_internalNativeMethods, g_internalNativeMethodsCount);
+	if (result == nullptr)
 	{
-		const NativeMethod& nativeMethod = m_nativeMethods[i];
+		Log::criticalf("Unknown native method %S.%S%S", &className, &methodName, &methodType);
+	//	Log::critical("No native method handler found");
+		Arch::panic();
+	}
+	return result;
+}
+
+const NativeMethod* VM::findNativeMethod(const GC::Root<char>& className, const GC::Root<char>& methodName, const GC::Root<char>& methodType, const NativeMethod* methodList, size_t count)
+{
+	for (size_t i = 0; i < count; i++)
+	{
+		const NativeMethod& nativeMethod = methodList[i];
 		if (!equals(className, nativeMethod.className))
 			continue;
 		if (!equals(methodName, nativeMethod.methodName))
 			continue;
 		if (!equals(methodType, nativeMethod.methodType))
 			continue;
-		nativeMethod.method(*this, thread);
-		return;
+//		nativeMethod.method(*this, thread);
+		return &nativeMethod;
 	}
-	Log::critical("No native method handler found");
-	Arch::panic();
+	//return false;
+	return nullptr;
 }
 
 void VM::invokeMethod(GC::Root<Thread>& thread, const GC::Root<ClassFile>& targetClass, u16 method, bool isInterrupt)
@@ -1294,7 +1350,9 @@ void VM::invokeMethod(GC::Root<Thread>& thread, const GC::Root<ClassFile>& targe
 
 	if (targetMethod.get().isNative())
 	{
-		invokeNativeMethod(thread, className, methodName, type);
+		//invokeNativeMethod(thread, className, methodName, type);
+		Log::critical("We shouldn't have reached this point I think");
+		Arch::panic();
 	}
 	else
 	{

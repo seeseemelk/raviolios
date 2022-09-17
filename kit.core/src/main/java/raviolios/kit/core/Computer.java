@@ -19,10 +19,17 @@ public final class Computer
 		int usageY = terminal.getHeight() - 1;
 
 		int totalKb = memory.getTotalMemory() / 1024;
-		terminal.put(0, usageY, "Total: " + totalKb);
+		StringBuilder builder = new StringBuilder("Total: ");
+		builder.append(totalKb).append(" KiB");
+		terminal.put(0, usageY, builder.toString());
 
 		while (true)
 		{
+			int usedKb = memory.getUsedMemory() / 1024;
+			builder = new StringBuilder("Used: ");
+			builder.append(usedKb).append(" KiB");
+			terminal.put(0, usageY - 1, builder.toString());
+
 			terminal.put(0, 0, '\\');
 			terminal.put(0, 0, '|');
 			terminal.put(0, 0, '/');

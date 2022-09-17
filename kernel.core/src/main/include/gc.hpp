@@ -314,6 +314,13 @@ namespace GC
 		size_t getFree();
 
 		/**
+		 * Gets the number of bytes that can be stored in the GC context.
+		 *
+		 * @return The number of bytes that can be stored in the GC context.
+		 */
+		size_t getCapacity();
+
+		/**
 		 * Performs a garbage collection cycle.
 		 */
 		void collect();

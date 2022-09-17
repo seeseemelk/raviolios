@@ -251,6 +251,7 @@ namespace Java
 		GC::Object<ClassFile>* findOpcodeClass(GC::Root<Thread>& thread, GC::Root<Frame>& frame, u16 index);
 
 		void opcodeDup(GC::Root<Frame>& frame);
+		void opcodeDupX1(GC::Root<Frame>& frame);
 		void opcodeSwap(GC::Root<Frame>& frame);
 		void opcodePop(GC::Root<Frame>& frame);
 		void opcodeLoadConstant(GC::Root<Frame>& frame, Instruction& instruction);
@@ -269,6 +270,7 @@ namespace Java
 		void opcodeIdiv(GC::Root<Frame>& frame);
 		void opcodeImul(GC::Root<Frame>& frame);
 		void opcodeIrem(GC::Root<Frame>& frame);
+		void opcodeIneg(GC::Root<Frame>& frame);
 		void opcodeIinc(GC::Root<Frame>& frame, u8 variable, i32 amount);
 		void opcodeI2B(GC::Root<Frame>& frame);
 		void opcodeI2C(GC::Root<Frame>& frame);
@@ -310,7 +312,9 @@ namespace Java
 		void opcodeReturn(GC::Root<Thread>& thread, GC::Root<Frame>& frame);
 		void invokeStatic(GC::Root<Thread>& thread);
 		void invokeSpecial(GC::Root<Thread>& thread);
-		void invokeNativeMethod(GC::Root<Thread>& thread, const GC::Root<char>& className, const GC::Root<char>& methodName, const GC::Root<char>& methodType);
+		//void invokeNativeMethod(GC::Root<Thread>& thread, const GC::Root<char>& className, const GC::Root<char>& methodName, const GC::Root<char>& methodType);
+		const NativeMethod* findNativeMethod(const GC::Root<char>& className, const GC::Root<char>& methodName, const GC::Root<char>& methodType);
+		const NativeMethod* findNativeMethod(const GC::Root<char>& className, const GC::Root<char>& methodName, const GC::Root<char>& methodType, const NativeMethod* methodList, size_t count);
 //		void jumpIfIntegerNotEqual(Frame& frame);
 //		void jumpIfIntegerLessThan(Frame& frame);
 //		void jumpUnconditionally(Frame& frame);

@@ -551,6 +551,9 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 		case 0x59: /* dup */
 			instruction.opcode = Opcode::dup;
 			break;
+		case 0x5A: /* dup_x1 */
+			instruction.opcode = Opcode::dup_x1;
+			break;
 		case 0x5F: /* swap */
 			instruction.opcode = Opcode::swap;
 			break;
@@ -568,6 +571,9 @@ void VM::parseOpcodes(GC::Root<Instruction>& instructions, Loader& loader, size_
 			break;
 		case 0x70: /* irem */
 			instruction.opcode = Opcode::irem;
+			break;
+		case 0x74: /* ineg */
+			instruction.opcode = Opcode::ineg;
 			break;
 		case 0x84: /* iinc */
 			instruction.opcode = Opcode::iinc;

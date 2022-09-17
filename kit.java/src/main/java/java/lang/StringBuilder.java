@@ -15,6 +15,12 @@ public class StringBuilder
 		string = new char[capacity];
 	}
 
+	public StringBuilder(String initialValue)
+	{
+		this(initialValue.length());
+		append(initialValue);
+	}
+
 	public void ensureCapacity(int capacity)
 	{
 		if (string.length < capacity)
@@ -28,6 +34,19 @@ public class StringBuilder
 		ensureCapacity(length + 1);
 		string[length++] = chr;
 		return this;
+	}
+
+	public StringBuilder append(String string)
+	{
+		ensureCapacity(length + string.length());
+		for (int i = 0; i < string.length(); i++)
+			this.string[length++] = string.charAt(i);
+		return this;
+	}
+
+	public StringBuilder append(int i)
+	{
+		return append(Integer.toString(i));
 	}
 
 	public StringBuilder reverse()

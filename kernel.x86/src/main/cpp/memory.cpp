@@ -240,6 +240,8 @@ void Memory::init()
 	initBitMap();
 
 	size_t bytes = getFreeMemory();
+//	bytes = KB(128);
+
 	size_t pagesNeeded = Math::ceildiv(bytes, KB(4));
 	size_t tablesNeeded = Math::ceildiv(pagesNeeded, 1024);
 	pagesNeeded -= tablesNeeded;

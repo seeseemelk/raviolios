@@ -9,6 +9,7 @@ const char* Java::toString(Opcode opcode)
 	case Opcode::nop: return "nop";
 	case Opcode::panic: return "panic";
 	case Opcode::dup: return "dup";
+	case Opcode::dup_x1: return "dup_x1";
 	case Opcode::swap: return "swap";
 	case Opcode::pop: return "pop";
 	case Opcode::load_constant: return "load_constant";
@@ -26,6 +27,7 @@ const char* Java::toString(Opcode opcode)
 	case Opcode::isub: return "isub";
 	case Opcode::idiv: return "idiv";
 	case Opcode::imul: return "imul";
+	case Opcode::ineg: return "ineg";
 	case Opcode::irem: return "irem";
 	case Opcode::iinc: return "iinc";
 	case Opcode::i2b: return "i2b";
