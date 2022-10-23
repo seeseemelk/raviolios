@@ -188,7 +188,12 @@ public abstract class CppBuildTask extends DefaultTask
 	{
 		Set<File> dirs = new HashSet<>();
 		for (File file : getIncludes().getFiles())
-			dirs.add(file.getParentFile());
+		{
+			if (file.isDirectory())
+				dirs.add(file);
+			else
+				dirs.add(file.getParentFile());
+		}
 		return dirs;
 	}
 
