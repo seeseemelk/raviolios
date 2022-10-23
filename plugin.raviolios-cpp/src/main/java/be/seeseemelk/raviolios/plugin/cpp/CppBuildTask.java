@@ -48,6 +48,17 @@ public abstract class CppBuildTask extends DefaultTask
 	@Incremental
 	@PathSensitive(PathSensitivity.ABSOLUTE)
 	@IgnoreEmptyDirectories
+	public abstract ConfigurableFileCollection getCSources();
+
+	public void addCSources(FileCollection collection)
+	{
+		getCSources().setFrom(getCSources().plus(collection));
+	}
+
+	@InputFiles
+	@Incremental
+	@PathSensitive(PathSensitivity.ABSOLUTE)
+	@IgnoreEmptyDirectories
 	public abstract ConfigurableFileCollection getCppSources();
 
 	public void addCppSources(FileCollection collection)
@@ -187,19 +198,39 @@ public abstract class CppBuildTask extends DefaultTask
 			command.add("-I" + includeDirectory.getAbsolutePath());
 	}
 
+	private void buildC(
+		CommandRunner runner,
+		List<File> objects,
+		RebuildTracker tracker
+	)
+	{
+		buildClang(runner, objects, tracker, "clang", getCSources());
+	}
+
 	private void buildCpp(
 		CommandRunner runner,
 		List<File> objects,
 		RebuildTracker tracker
 	)
 	{
+		buildClang(runner, objects, tracker, "clang++", getCppSources());
+	}
+
+	private void buildClang(
+		CommandRunner runner,
+		List<File> objects,
+		RebuildTracker tracker,
+		String compiler,
+		ConfigurableFileCollection sources
+	)
+	{
 		Arguments command = new Arguments();
-		command.add("clang++");
+		command.add(compiler);
 
 		command.addAll(getCommonFlags());
 		command.addAll(getCppFlags());
 		addIncludes(command);
-		runBuild(runner, command, objects, tracker, getCppSources());
+		runBuild(runner, command, objects, tracker, sources);
 	}
 
 	private void buildAssembler(

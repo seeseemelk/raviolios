@@ -43,6 +43,12 @@ public class CppBuildPlugin implements Plugin<Project>
 			}
 			task.addIncludes(project.fileTree("src/main/include"));
 			task.addCppSources(project.fileTree("src/main/cpp"));
+
+			task.addIncludes(extensions.getExtraHeaderDirs());
+			task.addCSources(extensions.getExtraSourceDirs());
+			for (File file : extensions.getExtraSourceDirs())
+				task.getSourceRoots().add(file);
+
 			task.addAssemblerSources(project.fileTree("src/main/asm"));
 			if (extensions.getLinkerScript().isPresent())
 			{

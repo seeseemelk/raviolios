@@ -74,7 +74,7 @@ public class ProgramWriter
 
 		builder.write("");
 		builder.write("#ifdef __cplusplus");
-		builder.write("extern }");
+		builder.write("}");
 		builder.write("#endif");
 		builder.write("");
 		builder.write("#endif");

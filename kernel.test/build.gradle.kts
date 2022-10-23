@@ -7,9 +7,13 @@ plugins {
 group = "raviolios"
 
 dependencies {
+    implementation("raviolios:lib.directtoc")
     implementation("raviolios:kernel.core")
     implementation("raviolios:kit.java")
 }
+
+val outputC = layout.buildDirectory.dir("generated/c").get().toString()
+val outputH = layout.buildDirectory.dir("generated/h").get().toString()
 
 cpp {
     dependency("kernel.core")
@@ -23,6 +27,8 @@ cpp {
     cppFlags.addAll(
             "--std=c++17",
     )
+    extraSourceDirs.from(outputC)
+    extraHeaderDirs.from(outputH)
 }
 
 task("testCpp", Exec::class) {
@@ -35,3 +41,16 @@ task("testCpp", Exec::class) {
 tasks.check {
     dependsOn("testCpp")
 }
+
+task("generateC", JavaExec::class) {
+    dependsOn("compileJava")
+
+    inputs.files(sourceSets.getByName("main").allSource)
+    outputs.files(File(outputC, "d2c_raviolios.c"), File(outputH, "d2c_raviolios.h"))
+
+    mainClass.set("raviolios.kernel.test.Generator")
+    args = listOf(outputC, outputH)
+    classpath = sourceSets.getByName("main").runtimeClasspath
+}
+
+tasks.getByName("compileCpp").dependsOn("generateC");
