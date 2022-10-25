@@ -6,6 +6,10 @@ plugins {
 
 group = "raviolios"
 
+repositories {
+    mavenCentral()
+}
+
 dependencies {
     implementation("raviolios:lib.directtoc")
     implementation("raviolios:kernel.core")

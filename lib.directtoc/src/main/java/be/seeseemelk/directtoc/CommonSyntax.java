@@ -75,4 +75,14 @@ public class CommonSyntax
 	{
 		return new MultiplyExpression(left, right);
 	}
+
+	public IndexExpression Index(Variable var, Expression index)
+	{
+		return new IndexExpression(var, index);
+	}
+
+	public IndexExpression Deref(Variable var)
+	{
+		return Index(var, Int(0));
+	}
 }

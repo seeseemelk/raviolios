@@ -1,0 +1,23 @@
+package be.seeseemelk.directtoc.expressions;
+
+import be.seeseemelk.directtoc.types.Type;
+import be.seeseemelk.directtoc.visitors.SyntaxVisitor;
+import lombok.Data;
+
+@Data
+public class ReferenceExpression implements Expression
+{
+	private final Variable variable;
+
+	@Override
+	public void visit(SyntaxVisitor visitor)
+	{
+		visitor.visitReference(this);
+	}
+
+	@Override
+	public Type getResultType()
+	{
+		return null;
+	}
+}

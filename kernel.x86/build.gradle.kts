@@ -6,6 +6,10 @@ plugins {
 
 group = "kernel"
 
+repositories {
+    mavenCentral()
+}
+
 dependencies {
     implementation("raviolios:kernel.core")
     implementation("raviolios:kit.core")

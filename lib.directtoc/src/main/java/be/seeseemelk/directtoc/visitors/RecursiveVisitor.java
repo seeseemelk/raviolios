@@ -1,14 +1,12 @@
 package be.seeseemelk.directtoc.visitors;
 
-import be.seeseemelk.directtoc.expressions.CallExpression;
-import be.seeseemelk.directtoc.expressions.LessThanOrEqualExpression;
-import be.seeseemelk.directtoc.expressions.Literal;
-import be.seeseemelk.directtoc.expressions.Variable;
+import be.seeseemelk.directtoc.expressions.*;
 import be.seeseemelk.directtoc.statements.BlockStatement;
 import be.seeseemelk.directtoc.statements.ExpressionStatement;
 import be.seeseemelk.directtoc.statements.IfStatement;
 import be.seeseemelk.directtoc.statements.ReturnStatement;
 import be.seeseemelk.directtoc.types.Function;
+import be.seeseemelk.directtoc.types.Pointer;
 import be.seeseemelk.directtoc.types.Primitive;
 
 public abstract class RecursiveVisitor implements SyntaxVisitor
@@ -81,5 +79,18 @@ public abstract class RecursiveVisitor implements SyntaxVisitor
 		variable.getType().visit(this);
 		if (variable.getParent() != null)
 			variable.getParent().visit(this);
+	}
+
+	@Override
+	public void visitPointer(Pointer pointer)
+	{
+		pointer.getOf().visit(this);
+	}
+
+	@Override
+	public void visitIndex(IndexExpression expression)
+	{
+		expression.getVariable().visit(this);
+		expression.getIndex().visit(this);
 	}
 }

@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Set;
 
 import static be.seeseemelk.directtoc.CommonSyntax.*;
+import static be.seeseemelk.directtoc.CommonTypes.ptr;
 import static be.seeseemelk.directtoc.expressions.BoolLiteral.TRUE;
 import static be.seeseemelk.directtoc.types.Bool.BOOL;
 import static be.seeseemelk.directtoc.types.Int.INT;
@@ -136,5 +137,18 @@ public class ProgramTest
 		Interpreter interpreter = new Interpreter();
 		Value result = interpreter.call(factorial, 5);
 		assertThat(result.asInt(), equalTo(120));
+	}
+
+	@Test
+	void testPointers()
+	{
+		Function pointers = Func(INT, "testPointer");
+		Variable pointer = pointers.parameter(ptr(INT), "pointer");
+		pointers.body(
+			Return( Deref(pointer) )
+		);
+
+		Set<Type> types = TypeVisitor.visit(pointers);
+		assertThat(types, containsInAnyOrder(pointers, INT, ptr(INT)));
 	}
 }

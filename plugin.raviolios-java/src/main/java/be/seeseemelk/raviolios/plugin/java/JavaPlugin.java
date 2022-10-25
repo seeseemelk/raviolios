@@ -3,6 +3,7 @@
  */
 package be.seeseemelk.raviolios.plugin.java;
 
+import io.freefair.gradle.plugins.lombok.LombokPlugin;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
@@ -28,6 +29,7 @@ public class JavaPlugin implements Plugin<Project>
 	public void apply(Project project)
 	{
 		project.getPlugins().apply("java");
+		project.getPlugins().apply(LombokPlugin.class);
 
 		Task task = project.getTasks().getByName("jar");
 		for (IncludedBuild includedBuild : project.getGradle().getIncludedBuilds())

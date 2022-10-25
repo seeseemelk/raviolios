@@ -22,7 +22,7 @@ TEST("Can load class file")
 	cut.loadClass(root, thread, "Test1");
 
 	ClassFile& classfile = root.get();
-	assertEquals(55U, classfile.majorVersion, "Correct major version");
+	assertEquals(61U, classfile.majorVersion, "Correct major version");
 	assertEquals(0U, classfile.minorVersion, "Correct minor version");
 	// This can vary based on compiler version and flags
 	//assertEquals(13, classfile.constantPoolCount, "Correct number of items in the constant pool");

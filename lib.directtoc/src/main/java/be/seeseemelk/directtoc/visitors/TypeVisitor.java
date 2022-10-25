@@ -2,6 +2,7 @@ package be.seeseemelk.directtoc.visitors;
 
 import be.seeseemelk.directtoc.SyntaxElement;
 import be.seeseemelk.directtoc.types.Function;
+import be.seeseemelk.directtoc.types.Pointer;
 import be.seeseemelk.directtoc.types.Primitive;
 import be.seeseemelk.directtoc.types.Type;
 import lombok.Getter;
@@ -26,6 +27,13 @@ public class TypeVisitor extends RecursiveVisitor
 	public void visitPrimitive(Primitive primitive)
 	{
 		types.add(primitive);
+	}
+
+	@Override
+	public void visitPointer(Pointer pointer)
+	{
+		types.add(pointer);
+		super.visitPointer(pointer);
 	}
 
 	public static Set<Type> visit(SyntaxElement element)

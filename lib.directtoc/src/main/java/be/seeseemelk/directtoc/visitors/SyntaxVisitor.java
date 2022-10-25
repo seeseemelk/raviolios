@@ -3,6 +3,7 @@ package be.seeseemelk.directtoc.visitors;
 import be.seeseemelk.directtoc.expressions.*;
 import be.seeseemelk.directtoc.statements.*;
 import be.seeseemelk.directtoc.types.Function;
+import be.seeseemelk.directtoc.types.Pointer;
 import be.seeseemelk.directtoc.types.Primitive;
 import be.seeseemelk.directtoc.types.Struct;
 
@@ -69,6 +70,14 @@ public interface SyntaxVisitor
 	{
 		throw new UnsupportedOperationException();
 	}
+	default void visitIndex(IndexExpression expression)
+	{
+		throw new UnsupportedOperationException();
+	}
+	default void visitReference(ReferenceExpression expression)
+	{
+		throw new UnsupportedOperationException();
+	}
 
 	// Literal expressions
 	default void visitLiteral(Literal literal)
@@ -82,5 +91,9 @@ public interface SyntaxVisitor
 	default void visitIntLiteral(IntLiteral literal)
 	{
 		visitLiteral(literal);
+	}
+	default void visitPointer(Pointer pointer)
+	{
+		throw new UnsupportedOperationException();
 	}
 }

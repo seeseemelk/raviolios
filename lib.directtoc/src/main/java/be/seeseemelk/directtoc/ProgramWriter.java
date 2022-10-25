@@ -34,6 +34,11 @@ public class ProgramWriter
 		headers.addAll(IncludeVisitor.visit(type));
 	}
 
+	public void addFunctions(Set<Function> functions)
+	{
+		functions.forEach(this::addFunction);
+	}
+
 	public Set<Type> getStructs()
 	{
 		return getTypesOf(type -> type instanceof Struct);
