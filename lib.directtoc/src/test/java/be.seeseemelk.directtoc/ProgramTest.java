@@ -62,6 +62,7 @@ public class ProgramTest
 		ProgramWriter program = new ProgramWriter();
 		program.addFunction(function);
 		assertThat(program.toC().toOutput(), equalTo("""
+			#include "d2c.h"
 			static void simpleIf(void);
 			void simpleIf(void)
 			{
@@ -85,6 +86,7 @@ public class ProgramTest
 		ProgramWriter program = new ProgramWriter();
 		program.addFunction(main);
 		assertThat(program.toC().toOutput(), equalTo("""
+			#include "d2c.h"
 			#include <stdio.h>
 			static void main(void);
 			void main(void)
@@ -121,6 +123,7 @@ public class ProgramTest
 		ProgramWriter program = new ProgramWriter();
 		program.addFunction(factorial);
 		assertThat(program.toC().toOutput(), equalTo("""
+			#include "d2c.h"
 			static int factorial(int num);
 			int factorial(int num)
 			{
@@ -150,5 +153,20 @@ public class ProgramTest
 
 		Set<Type> types = TypeVisitor.visit(pointers);
 		assertThat(types, containsInAnyOrder(pointers, INT, ptr(INT)));
+
+		ProgramWriter program = new ProgramWriter(pointers);
+		assertThat(program.toC().toOutput(), equalTo("""
+			#include "d2c.h"
+			static int testPointer(int* pointer);
+			int testPointer(int* pointer)
+			{
+				return *pointer;
+			}
+			"""));
+
+		Interpreter interpreter = new Interpreter();
+		Value value = Value.fromInt(23);
+		Value result = interpreter.call(pointers, Value.pointerTo(value));
+		assertThat(result.asInt(), equalTo(23));
 	}
 }

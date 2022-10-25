@@ -5,6 +5,7 @@ import be.seeseemelk.directtoc.SyntaxElement;
 import be.seeseemelk.directtoc.expressions.*;
 import be.seeseemelk.directtoc.statements.*;
 import be.seeseemelk.directtoc.types.Function;
+import be.seeseemelk.directtoc.types.Pointer;
 import be.seeseemelk.directtoc.types.Primitive;
 import be.seeseemelk.directtoc.visitors.SyntaxVisitor;
 import lombok.Data;
@@ -19,7 +20,6 @@ public class CVisitor implements SyntaxVisitor
 	/**
 	 * Contains the current precedence level.
 	 * See: <a href="https://en.cppreference.com/w/c/language/operator_precedence">...</a>
-	 *
 	 * If an expression with an operator precedence higher than this one is used, brackets should be added
 	 * around the expression.
 	 */
@@ -139,6 +139,44 @@ public class CVisitor implements SyntaxVisitor
 			visit(expression.getLeft(), 3),
 			visit(expression.getRight(), 3)
 		);
+	}
+
+	@Override
+	public void visitPointer(Pointer pointer)
+	{
+		source.write(pointer.getName());
+	}
+
+	@Override
+	public void visitIndex(IndexExpression expression)
+	{
+		if (expression.getTags().hasTag(CTags.IndexUsingPointerArithmetic.INSTANCE))
+		{
+			String index = visit(expression.getIndex(), 2).toString();
+			if ("0".equals(index))
+			{
+				source.write(
+					formatPrecendence("*%s", 2),
+					visit(expression.getVariable(), 2)
+				);
+			}
+			else
+			{
+				source.write(
+					formatPrecendence("*(%s + %s)", 2),
+					visit(expression.getVariable(), 2),
+					index
+				);
+			}
+		}
+		else
+		{
+			source.write(
+				formatPrecendence("%s[%s]", 1),
+				visit(expression.getVariable(), 1),
+				visit(expression.getIndex(), 1)
+			);
+		}
 	}
 
 	private String formatPrecendence(String format, int level)

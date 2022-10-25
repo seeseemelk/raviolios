@@ -2,6 +2,7 @@ package be.seeseemelk.directtoc.statements;
 
 import be.seeseemelk.directtoc.CommonSyntax;
 import be.seeseemelk.directtoc.expressions.Expression;
+import be.seeseemelk.directtoc.tags.Tags;
 import be.seeseemelk.directtoc.visitors.SyntaxVisitor;
 import lombok.Builder;
 import lombok.Getter;
@@ -11,6 +12,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class IfStatement implements Statement
 {
+	private final Tags tags = new Tags();
 	private final Expression expression;
 	@Builder.Default
 	private Statement trueStatement = new BlockStatement();

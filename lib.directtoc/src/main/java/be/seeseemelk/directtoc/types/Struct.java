@@ -1,6 +1,7 @@
 package be.seeseemelk.directtoc.types;
 
 import be.seeseemelk.directtoc.expressions.Variable;
+import be.seeseemelk.directtoc.tags.Tags;
 import be.seeseemelk.directtoc.visitors.SyntaxVisitor;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,6 +12,7 @@ import java.util.List;
 @Data
 public class Struct implements Type
 {
+	private final Tags tags = new Tags();
 	private final String name;
 	private final List<Field> fields = new ArrayList<>();
 

@@ -1,9 +1,12 @@
 package be.seeseemelk.directtoc.visitors.interpreter;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
-@Data
+@Getter
+@Setter
+@ToString
 public class Value
 {
 	public static Value NULL;
@@ -19,6 +22,7 @@ public class Value
 	private boolean isNull = false;
 	private Integer integer = null;
 	private Boolean bool = null;
+	private Value pointer = null;
 
 	private Value() {}
 
@@ -40,6 +44,18 @@ public class Value
 		return bool;
 	}
 
+	public Value deref()
+	{
+		if (isNull())
+			throw new IllegalStateException("Null-pointer");
+		return pointer;
+	}
+
+	public static Value uninitialised()
+	{
+		return new Value();
+	}
+
 	public static Value fromInt(int value)
 	{
 		Value result = new Value();
@@ -51,6 +67,13 @@ public class Value
 	{
 		Value result = new Value();
 		result.bool = value;
+		return result;
+	}
+
+	public static Value pointerTo(Value value)
+	{
+		Value result = new Value();
+		result.pointer = value;
 		return result;
 	}
 	

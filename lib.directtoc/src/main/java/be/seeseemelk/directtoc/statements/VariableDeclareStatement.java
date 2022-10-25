@@ -1,7 +1,8 @@
 package be.seeseemelk.directtoc.statements;
 
-import be.seeseemelk.directtoc.expressions.Variable;
 import be.seeseemelk.directtoc.expressions.Expression;
+import be.seeseemelk.directtoc.expressions.Variable;
+import be.seeseemelk.directtoc.tags.Tags;
 import be.seeseemelk.directtoc.types.Type;
 import be.seeseemelk.directtoc.visitors.SyntaxVisitor;
 import lombok.Data;
@@ -11,6 +12,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class VariableDeclareStatement implements Statement
 {
+	private final Tags tags = new Tags();
 	private final String name;
 	private final Type type;
 	private final Expression initialiser;

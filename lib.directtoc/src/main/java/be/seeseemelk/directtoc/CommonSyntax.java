@@ -4,6 +4,7 @@ import be.seeseemelk.directtoc.expressions.*;
 import be.seeseemelk.directtoc.statements.*;
 import be.seeseemelk.directtoc.types.Function;
 import be.seeseemelk.directtoc.types.Type;
+import be.seeseemelk.directtoc.visitors.c.CTags;
 import lombok.experimental.UtilityClass;
 
 import java.util.Arrays;
@@ -83,6 +84,8 @@ public class CommonSyntax
 
 	public IndexExpression Deref(Variable var)
 	{
-		return Index(var, Int(0));
+		IndexExpression expression = Index(var, Int(0));
+		expression.getTags().addTag(CTags.IndexUsingPointerArithmetic.INSTANCE);
+		return expression;
 	}
 }

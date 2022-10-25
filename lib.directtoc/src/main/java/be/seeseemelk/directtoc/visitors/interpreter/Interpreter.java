@@ -137,6 +137,16 @@ public class Interpreter
 		}
 
 		@Override
+		public void visitIndex(IndexExpression expression)
+		{
+			Value pointer = getValue(expression.getVariable());
+			Value index = getValue(expression.getIndex());
+			if (index.asInt() != 0)
+				throw new UnsupportedOperationException("Does not supported indexes other than 0 yet");
+			value = pointer.deref();
+		}
+
+		@Override
 		public void visitVariable(Variable variable)
 		{
 			value = variables.get(variable);
@@ -149,7 +159,7 @@ public class Interpreter
 		}
 	}
 
-	private class VariableContext
+	private static class VariableContext
 	{
 		private Map<Variable, Value> values = new HashMap<>();
 		private VariableContext parent;
@@ -217,4 +227,20 @@ public class Interpreter
 			parent = parent.parent;
 		}
 	}
+
+//	private static class Heap
+//	{
+//		private final Collection<Value> values = new LinkedList<>();
+//
+//		public Value alloc()
+//		{
+//			return Value.NULL;
+//		}
+//
+//		public void free(Value value)
+//		{
+//			if (!values.remove(value))
+//				throw new RuntimeException("Value is not in heap");
+//		}
+//	}
 }

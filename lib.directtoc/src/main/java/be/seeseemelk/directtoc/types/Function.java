@@ -4,6 +4,7 @@ import be.seeseemelk.directtoc.CommonSyntax;
 import be.seeseemelk.directtoc.expressions.Variable;
 import be.seeseemelk.directtoc.statements.BlockStatement;
 import be.seeseemelk.directtoc.statements.Statement;
+import be.seeseemelk.directtoc.tags.Tags;
 import be.seeseemelk.directtoc.visitors.SyntaxVisitor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,6 +17,7 @@ import java.util.List;
 @Builder
 public class Function implements Type
 {
+	private final Tags tags = new Tags();
 	private final List<Variable> parameters = new ArrayList<>();
 
 	@ToString.Include

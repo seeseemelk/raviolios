@@ -1,5 +1,6 @@
 package be.seeseemelk.directtoc.types;
 
+import be.seeseemelk.directtoc.tags.Tags;
 import be.seeseemelk.directtoc.visitors.SyntaxVisitor;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -9,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class Primitive implements Type
 {
+	private final Tags tags = new Tags();
 	private final String name;
 
 	@Override

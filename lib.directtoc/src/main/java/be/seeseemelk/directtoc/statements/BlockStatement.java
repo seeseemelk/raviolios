@@ -1,7 +1,7 @@
 package be.seeseemelk.directtoc.statements;
 
+import be.seeseemelk.directtoc.tags.Tags;
 import be.seeseemelk.directtoc.visitors.SyntaxVisitor;
-import lombok.Data;
 import lombok.Getter;
 
 import java.util.ArrayList;
@@ -10,6 +10,7 @@ import java.util.List;
 @Getter
 public class BlockStatement implements Statement
 {
+	private final Tags tags = new Tags();
 	private final List<Statement> statements = new ArrayList<>();
 
 	public BlockStatement add(Statement element)

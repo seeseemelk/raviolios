@@ -28,6 +28,12 @@ public class ProgramWriter
 		this("d2c");
 	}
 
+	public ProgramWriter(Function function)
+	{
+		this();
+		addFunction(function);
+	}
+
 	public void addFunction(Function type)
 	{
 		usedTypes.addAll(TypeVisitor.visit(type));

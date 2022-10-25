@@ -1,5 +1,6 @@
 package be.seeseemelk.directtoc.expressions;
 
+import be.seeseemelk.directtoc.tags.Tags;
 import be.seeseemelk.directtoc.types.Type;
 import be.seeseemelk.directtoc.visitors.SyntaxVisitor;
 import lombok.Builder;
@@ -10,6 +11,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class Variable implements Expression
 {
+	private final Tags tags = new Tags();
 	private final Type type;
 	private final String name;
 
