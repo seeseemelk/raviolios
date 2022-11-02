@@ -114,10 +114,7 @@ public class Interpreter
 		{
 			Value smaller = getValue(expression.getSmaller());
 			Value bigger = getValue(expression.getBigger());
-			if (smaller.asInt() <= bigger.asInt())
-				value = Value.TRUE;
-			else
-				value = Value.FALSE;
+			value = Value.fromBool(smaller.asInt() <= bigger.asInt());
 		}
 
 		@Override
@@ -227,20 +224,4 @@ public class Interpreter
 			parent = parent.parent;
 		}
 	}
-
-//	private static class Heap
-//	{
-//		private final Collection<Value> values = new LinkedList<>();
-//
-//		public Value alloc()
-//		{
-//			return Value.NULL;
-//		}
-//
-//		public void free(Value value)
-//		{
-//			if (!values.remove(value))
-//				throw new RuntimeException("Value is not in heap");
-//		}
-//	}
 }

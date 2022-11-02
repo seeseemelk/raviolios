@@ -22,6 +22,10 @@ public interface SyntaxVisitor
 	{
 		throw new UnsupportedOperationException();
 	}
+	default void visitPointer(Pointer pointer)
+	{
+		throw new UnsupportedOperationException();
+	}
 
 	// Statements
 	default void visitIfStatement(IfStatement statement)
@@ -48,6 +52,14 @@ public interface SyntaxVisitor
 	{
 		throw new UnsupportedOperationException();
 	}
+	default void visitWhileStatement(WhileStatement statement)
+	{
+		throw new UnsupportedOperationException();
+	}
+	default void visitCompoundStatement(CompoundStatement statement)
+	{
+		throw new UnsupportedOperationException("Compound statements should probably be transformed instead of visited");
+	}
 
 	// Expressions
 	default void visitVariable(Variable variable)
@@ -59,6 +71,10 @@ public interface SyntaxVisitor
 		throw new UnsupportedOperationException();
 	}
 	default void visitLessThanOrEqual(LessThanOrEqualExpression expression)
+	{
+		throw new UnsupportedOperationException();
+	}
+	default void visitAddition(AdditionExpression expression)
 	{
 		throw new UnsupportedOperationException();
 	}
@@ -78,6 +94,10 @@ public interface SyntaxVisitor
 	{
 		throw new UnsupportedOperationException();
 	}
+	default void visitEqual(EqualExpression expression)
+	{
+		throw new UnsupportedOperationException();
+	}
 
 	// Literal expressions
 	default void visitLiteral(Literal literal)
@@ -92,8 +112,8 @@ public interface SyntaxVisitor
 	{
 		visitLiteral(literal);
 	}
-	default void visitPointer(Pointer pointer)
+	default void visitCharLiteral(CharLiteral literal)
 	{
-		throw new UnsupportedOperationException();
+		visitLiteral(literal);
 	}
 }

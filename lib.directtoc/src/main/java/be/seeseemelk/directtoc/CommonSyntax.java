@@ -37,6 +37,36 @@ public class CommonSyntax
 			.build();
 	}
 
+	public WhileStatement While(Expression expression)
+	{
+		return WhileStatement.builder()
+			.expression(expression)
+			.build();
+	}
+
+	public VariableDeclareStatement Declare(Variable variable)
+	{
+		return VariableDeclareStatement.builder()
+			.variable(variable)
+			.build();
+	}
+
+	public VariableDeclareStatement Declare(Variable variable, Expression initialiser)
+	{
+		return VariableDeclareStatement.builder()
+			.variable(variable)
+			.initialiser(initialiser)
+			.build();
+	}
+
+	public AssignmentStatement Assign(Expression variable, Expression expression)
+	{
+		return AssignmentStatement.builder()
+			.variable(variable)
+			.expression(expression)
+			.build();
+	}
+
 	public ExpressionStatement Expression(Expression expression)
 	{
 		return new ExpressionStatement(expression);
@@ -52,9 +82,19 @@ public class CommonSyntax
 		return new IntLiteral(value);
 	}
 
+	public CharLiteral Char(char value)
+	{
+		return new CharLiteral(value);
+	}
+
 	public LessThanOrEqualExpression LessThanOrEqual(Expression smaller, Expression bigger)
 	{
 		return new LessThanOrEqualExpression(smaller, bigger);
+	}
+
+	public EqualExpression Equal(Expression left, Expression right)
+	{
+		return new EqualExpression(left, right);
 	}
 
 	public ReturnStatement Return(Expression expression)
@@ -65,6 +105,11 @@ public class CommonSyntax
 	public ReturnStatement Return()
 	{
 		return new ReturnStatement(null);
+	}
+
+	public AdditionExpression Add(Expression left, Expression right)
+	{
+		return new AdditionExpression(left, right);
 	}
 
 	public SubtractExpression Subtract(Expression left, Expression right)

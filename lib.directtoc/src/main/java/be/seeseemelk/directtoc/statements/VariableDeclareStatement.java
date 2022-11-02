@@ -5,17 +5,26 @@ import be.seeseemelk.directtoc.expressions.Variable;
 import be.seeseemelk.directtoc.tags.Tags;
 import be.seeseemelk.directtoc.types.Type;
 import be.seeseemelk.directtoc.visitors.SyntaxVisitor;
+import lombok.Builder;
 import lombok.Data;
-import lombok.experimental.SuperBuilder;
 
 @Data
-@SuperBuilder
+@Builder
 public class VariableDeclareStatement implements Statement
 {
 	private final Tags tags = new Tags();
-	private final String name;
-	private final Type type;
+	private final Variable variable;
 	private final Expression initialiser;
+
+	public String getName()
+	{
+		return variable.getName();
+	}
+
+	public Type getType()
+	{
+		return variable.getType();
+	}
 
 	@Override
 	public void visit(SyntaxVisitor visitor)
@@ -23,11 +32,25 @@ public class VariableDeclareStatement implements Statement
 		visitor.visitVariableDeclarationStatement(this);
 	}
 
-	public Variable access()
+	public static class VariableDeclareStatementBuilder
 	{
-		return Variable.builder()
-			.name(name)
-			.type(type)
-			.build();
+		public VariableDeclareStatementBuilder name(String name)
+		{
+			getVariable().setName(name);
+			return this;
+		}
+
+		public VariableDeclareStatementBuilder type(Type type)
+		{
+			getVariable().setType(type);
+			return this;
+		}
+
+		private Variable getVariable()
+		{
+			if (this.variable == null)
+				this.variable = Variable.builder().build();
+			return this.variable;
+		}
 	}
 }

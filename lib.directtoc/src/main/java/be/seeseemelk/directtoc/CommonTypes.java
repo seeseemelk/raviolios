@@ -9,6 +9,7 @@ public class CommonTypes
 {
 	public static final Bool BOOL = Bool.BOOL;
 	public static final Int INT = Int.INT;
+	public static final Char CHAR = Char.CHAR;
 	public static final Void VOID = Void.VOID;
 
 	public static Pointer ptr(Type type)

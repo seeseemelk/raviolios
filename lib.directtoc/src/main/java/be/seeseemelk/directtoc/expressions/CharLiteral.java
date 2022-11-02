@@ -6,24 +6,24 @@ import be.seeseemelk.directtoc.visitors.SyntaxVisitor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import static be.seeseemelk.directtoc.CommonTypes.INT;
+import static be.seeseemelk.directtoc.CommonTypes.CHAR;
 
 @Data
-@EqualsAndHashCode(callSuper = false)
-public class IntLiteral implements Literal
+@EqualsAndHashCode
+public class CharLiteral implements Literal
 {
 	private final Tags tags = new Tags();
-	private final int value;
+	private final char value;
 
 	@Override
 	public void visit(SyntaxVisitor visitor)
 	{
-		visitor.visitIntLiteral(this);
+		visitor.visitCharLiteral(this);
 	}
 
 	@Override
 	public Type getResultType()
 	{
-		return INT;
+		return CHAR;
 	}
 }

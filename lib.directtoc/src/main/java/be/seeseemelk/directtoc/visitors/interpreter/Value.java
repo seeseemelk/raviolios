@@ -2,79 +2,44 @@ package be.seeseemelk.directtoc.visitors.interpreter;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 
 @Getter
 @Setter
-@ToString
-public class Value
+public abstract class Value
 {
-	public static Value NULL;
-	public static Value TRUE = fromBool(true);
-	public static Value FALSE = fromBool(false);
-
-	static
-	{
-		NULL = new Value();
-		NULL.isNull = true;
-	}
-
-	private boolean isNull = false;
-	private Integer integer = null;
-	private Boolean bool = null;
-	private Value pointer = null;
-
-	private Value() {}
-
 	public int asInt()
 	{
-		if (isNull())
-			return 0;
-		if (integer == null)
-			throw new IllegalStateException("Not an int");
-		return integer;
+		throw new IllegalStateException("Not an int");
 	}
 
 	public boolean asBool()
 	{
-		if (isNull())
-			return false;
-		if (bool == null)
-			throw new IllegalStateException("Not a bool");
-		return bool;
+		throw new IllegalStateException("Not a bool");
 	}
 
 	public Value deref()
 	{
-		if (isNull())
-			throw new IllegalStateException("Null-pointer");
-		return pointer;
+		throw new IllegalStateException("Not a pointer");
 	}
 
-	public static Value uninitialised()
+	public static IntValue fromInt(int value)
 	{
-		return new Value();
+		return new IntValue(value);
 	}
 
-	public static Value fromInt(int value)
+	public static BoolValue fromBool(boolean value)
 	{
-		Value result = new Value();
-		result.integer = value;
-		return result;
+		return value ? BoolValue.TRUE : BoolValue.FALSE;
 	}
 
-	public static Value fromBool(boolean value)
+	public static ArrayValue pointerTo(Value value)
 	{
-		Value result = new Value();
-		result.bool = value;
-		return result;
+		return arrayOf(value);
 	}
 
-	public static Value pointerTo(Value value)
+	public static ArrayValue arrayOf(Value... values)
 	{
-		Value result = new Value();
-		result.pointer = value;
-		return result;
+		return new ArrayValue(values, 0);
 	}
 	
 	public static Value from(Object object)

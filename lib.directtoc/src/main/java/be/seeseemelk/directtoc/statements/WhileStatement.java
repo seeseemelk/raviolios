@@ -9,30 +9,22 @@ import lombok.experimental.SuperBuilder;
 
 @Getter
 @SuperBuilder
-public class IfStatement implements Statement
+public class WhileStatement implements Statement
 {
 	private final Tags tags = new Tags();
 	private final Expression expression;
 	@Builder.Default
-	private Statement trueStatement = new BlockStatement();
-	@Builder.Default
-	private Statement falseStatement = null;
+	private Statement body = new BlockStatement();
 
 	@Override
 	public void visit(SyntaxVisitor visitor)
 	{
-		visitor.visitIfStatement(this);
+		visitor.visitWhileStatement(this);
 	}
 
-	public IfStatement Then(Statement... statements)
+	public WhileStatement Do(Statement... statements)
 	{
-		trueStatement = Statement.transformToSingle(statements);
-		return this;
-	}
-
-	public IfStatement Else(Statement... statements)
-	{
-		falseStatement = Statement.transformToSingle(statements);
+		body = Statement.transformToSingle(statements);
 		return this;
 	}
 }
