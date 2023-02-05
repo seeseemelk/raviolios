@@ -10,7 +10,7 @@ repositories {
 }
 
 dependencies {
-    implementation("org.ow2.asm:asm-util:9.2")
+    implementation("org.ow2.asm:asm-util:9.3")
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
 }
 

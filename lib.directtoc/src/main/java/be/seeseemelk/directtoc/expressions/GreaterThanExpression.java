@@ -6,16 +6,16 @@ import be.seeseemelk.directtoc.visitors.SyntaxVisitor;
 import lombok.Data;
 
 @Data
-public class LessThanOrEqualExpression implements Expression
+public class GreaterThanExpression implements Expression
 {
 	private final Tags tags = new Tags();
-	private final Expression lesser;
 	private final Expression greater;
+	private final Expression lesser;
 
 	@Override
 	public void visit(SyntaxVisitor visitor)
 	{
-		visitor.visitLessThanOrEqual(this);
+		visitor.visitGreaterThan(this);
 	}
 
 	@Override

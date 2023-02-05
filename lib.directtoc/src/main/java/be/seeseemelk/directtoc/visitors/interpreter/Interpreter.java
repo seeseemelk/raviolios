@@ -2,10 +2,7 @@ package be.seeseemelk.directtoc.visitors.interpreter;
 
 import be.seeseemelk.directtoc.SyntaxElement;
 import be.seeseemelk.directtoc.expressions.*;
-import be.seeseemelk.directtoc.statements.BlockStatement;
-import be.seeseemelk.directtoc.statements.ExpressionStatement;
-import be.seeseemelk.directtoc.statements.IfStatement;
-import be.seeseemelk.directtoc.statements.ReturnStatement;
+import be.seeseemelk.directtoc.statements.*;
 import be.seeseemelk.directtoc.types.Function;
 import be.seeseemelk.directtoc.visitors.SyntaxVisitor;
 
@@ -23,7 +20,7 @@ public class Interpreter
 		{
 			Variable parameter = function.getParameters().get(i);
 			Value argument = arguments[i];
-			variables.setScoped(parameter, argument);
+			variables.create(parameter, argument);
 		}
 
 		return getValueOrNull(function);
@@ -79,6 +76,20 @@ public class Interpreter
 		}
 
 		@Override
+		public void visitVariableDeclarationStatement(VariableDeclareStatement statement)
+		{
+			if (statement.getInitialiser() != null)
+			{
+				Value value = getValue(statement.getInitialiser());
+				variables.create(statement.getVariable(), value);
+			}
+			else
+			{
+				variables.create(statement.getVariable(), NullValue.get());
+			}
+		}
+
+		@Override
 		public void visitIfStatement(IfStatement statement)
 		{
 			Value branch = getValue(statement.getExpression());
@@ -86,6 +97,23 @@ public class Interpreter
 				statement.getTrueStatement().visit(this);
 			else if (statement.getFalseStatement() != null)
 				statement.getFalseStatement().visit(this);
+		}
+
+		@Override
+		public void visitWhileStatement(WhileStatement statement)
+		{
+			while (getValue(statement.getExpression()).asBool())
+			{
+				statement.getBody().visit(this);
+			}
+		}
+
+		@Override
+		public void visitAssignmentStatement(AssignmentStatement statement)
+		{
+			Variable variable = statement.getVariable();
+			Value value = getValue(statement.getExpression());
+			variables.update(variable, value);
 		}
 
 		@Override
@@ -103,18 +131,34 @@ public class Interpreter
 			List<Variable> parameters = expression.getFunction().getParameters();
 			Expression[] arguments = expression.getArguments();
 			for (int i = 0; i < parameters.size(); i++)
-				variables.setScoped(parameters.get(i), getValue(arguments[i]));
+				variables.create(parameters.get(i), getValue(arguments[i]));
 			if (expression.getResultType() != VOID)
 				value = getValue(expression.getFunction());
 			variables.pop();
 		}
 
 		@Override
+		public void visitEqual(EqualExpression expression)
+		{
+			Value left = getValue(expression.getLeft());
+			Value right = getValue(expression.getRight());
+			value = Value.fromBool(left.asInt() == right.asInt());
+		}
+
+		@Override
 		public void visitLessThanOrEqual(LessThanOrEqualExpression expression)
 		{
-			Value smaller = getValue(expression.getSmaller());
-			Value bigger = getValue(expression.getBigger());
-			value = Value.fromBool(smaller.asInt() <= bigger.asInt());
+			Value lesser = getValue(expression.getLesser());
+			Value greater = getValue(expression.getGreater());
+			value = Value.fromBool(lesser.asInt() <= greater.asInt());
+		}
+
+		@Override
+		public void visitGreaterThan(GreaterThanExpression expression)
+		{
+			Value greater = getValue(expression.getGreater());
+			Value lesser = getValue(expression.getLesser());
+			value = Value.fromBool(greater.asInt() > lesser.asInt());
 		}
 
 		@Override
@@ -131,6 +175,14 @@ public class Interpreter
 			Value left = getValue(expression.getLeft());
 			Value right = getValue(expression.getRight());
 			value = Value.fromInt(left.asInt() - right.asInt());
+		}
+
+		@Override
+		public void visitAddition(AdditionExpression expression)
+		{
+			Value left = getValue(expression.getLeft());
+			Value right = getValue(expression.getRight());
+			value = Value.fromInt(left.asInt() + right.asInt());
 		}
 
 		@Override
@@ -184,13 +236,19 @@ public class Interpreter
 				return null;
 		}
 
-		public void set(Variable variable, Value value)
+//		public void set(Variable variable, Value value)
+//		{
+//			if (!setIfPresent(variable, value))
+//				create(variable, value);
+//		}
+
+		public void update(Variable variable, Value value)
 		{
 			if (!setIfPresent(variable, value))
-				values.put(variable, value);
+				throw new IllegalArgumentException("Variable was not created");
 		}
 
-		public void setScoped(Variable variable, Value value)
+		public void create(Variable variable, Value value)
 		{
 			values.put(variable, value);
 		}

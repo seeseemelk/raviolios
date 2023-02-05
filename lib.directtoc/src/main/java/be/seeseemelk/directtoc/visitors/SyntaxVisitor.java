@@ -74,6 +74,10 @@ public interface SyntaxVisitor
 	{
 		throw new UnsupportedOperationException();
 	}
+	default void visitGreaterThan(GreaterThanExpression expression)
+	{
+		throw new UnsupportedOperationException();
+	}
 	default void visitAddition(AdditionExpression expression)
 	{
 		throw new UnsupportedOperationException();

@@ -51,6 +51,17 @@ public class CVisitor implements SyntaxVisitor
 	}
 
 	@Override
+	public void visitVariableDeclarationStatement(VariableDeclareStatement statement)
+	{
+		SourceBuilder type = visit(statement.getVariable().getType());
+		String name = statement.getVariable().getName();
+		if (statement.getInitialiser() == null)
+			source.write("%s %s;", type, name);
+		else
+			source.write("%s %s = %s;", type, name, visit(statement.getInitialiser()));
+	}
+
+	@Override
 	public void visitIfStatement(IfStatement statement)
 	{
 		source.write("if (%s)", visit(statement.getExpression()));
@@ -60,6 +71,13 @@ public class CVisitor implements SyntaxVisitor
 			source.write("else");
 			writeChild(statement.getFalseStatement());
 		}
+	}
+
+	@Override
+	public void visitWhileStatement(WhileStatement statement)
+	{
+		source.write("while (%s)", visit(statement.getExpression()));
+		writeChild(statement.getBody());
 	}
 
 	@Override
@@ -83,6 +101,28 @@ public class CVisitor implements SyntaxVisitor
 	public void visitIntLiteral(IntLiteral literal)
 	{
 		source.write("%d", literal.getValue());
+	}
+
+	@Override
+	public void visitCharLiteral(CharLiteral literal)
+	{
+		switch (literal.getValue())
+		{
+			case '\0':
+				source.write("'\\0'");
+				break;
+			case '\n':
+				source.write("'\\n'");
+				break;
+			case '\r':
+				source.write("'\\r'");
+				break;
+			case '\t':
+				source.write("'\\t'");
+				break;
+			default:
+				source.write("'%s'", literal.getValue());
+		}
 	}
 
 	@Override
@@ -112,32 +152,53 @@ public class CVisitor implements SyntaxVisitor
 	}
 
 	@Override
+	public void visitAssignmentStatement(AssignmentStatement statement)
+	{
+		source.write("%s = %s;", visit(statement.getVariable()), visit(statement.getExpression()));
+	}
+
+	@Override
+	public void visitEqual(EqualExpression expression)
+	{
+		visitBinaryExpression(expression.getLeft(), "==", expression.getRight(), 6);
+	}
+
+	@Override
 	public void visitLessThanOrEqual(LessThanOrEqualExpression expression)
 	{
-		source.write(
-			formatPrecendence("%s < %s", 6),
-			visit(expression.getSmaller(), 6),
-			visit(expression.getBigger(), 6)
-		);
+		visitBinaryExpression(expression.getLesser(), "<=", expression.getGreater(), 6);
+	}
+
+	@Override
+	public void visitGreaterThan(GreaterThanExpression expression)
+	{
+		visitBinaryExpression(expression.getGreater(), ">", expression.getLesser(), 6);
+	}
+
+	@Override
+	public void visitAddition(AdditionExpression expression)
+	{
+		visitBinaryExpression(expression.getLeft(), "+", expression.getRight(), 4);
 	}
 
 	@Override
 	public void visitSubtract(SubtractExpression expression)
 	{
-		source.write(
-			formatPrecendence("%s - %s", 4),
-			visit(expression.getLeft(), 4),
-			visit(expression.getRight(), 4)
-		);
+		visitBinaryExpression(expression.getLeft(), "-", expression.getRight(), 4);
 	}
 
 	@Override
 	public void visitMultiply(MultiplyExpression expression)
 	{
+		visitBinaryExpression(expression.getLeft(), "*", expression.getRight(), 3);
+	}
+
+	private void visitBinaryExpression(Expression left, String operator, Expression right, int operatorPrecedence)
+	{
 		source.write(
-			formatPrecendence("%s * %s", 3),
-			visit(expression.getLeft(), 3),
-			visit(expression.getRight(), 3)
+			formatPrecedence("%s " + operator + " %s", operatorPrecedence),
+			visit(left, operatorPrecedence),
+			visit(right, operatorPrecedence)
 		);
 	}
 
@@ -156,14 +217,14 @@ public class CVisitor implements SyntaxVisitor
 			if ("0".equals(index))
 			{
 				source.write(
-					formatPrecendence("*%s", 2),
+					formatPrecedence("*%s", 2),
 					visit(expression.getVariable(), 2)
 				);
 			}
 			else
 			{
 				source.write(
-					formatPrecendence("*(%s + %s)", 2),
+					formatPrecedence("*(%s + %s)", 2),
 					visit(expression.getVariable(), 2),
 					index
 				);
@@ -172,14 +233,14 @@ public class CVisitor implements SyntaxVisitor
 		else
 		{
 			source.write(
-				formatPrecendence("%s[%s]", 1),
+				formatPrecedence("%s[%s]", 1),
 				visit(expression.getVariable(), 1),
 				visit(expression.getIndex(), 1)
 			);
 		}
 	}
 
-	private String formatPrecendence(String format, int level)
+	private String formatPrecedence(String format, int level)
 	{
 		if (operatorPrecedence < level)
 			return "(" + format + ")";

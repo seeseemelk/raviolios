@@ -59,7 +59,7 @@ public class CommonSyntax
 			.build();
 	}
 
-	public AssignmentStatement Assign(Expression variable, Expression expression)
+	public AssignmentStatement Assign(Variable variable, Expression expression)
 	{
 		return AssignmentStatement.builder()
 			.variable(variable)
@@ -87,9 +87,14 @@ public class CommonSyntax
 		return new CharLiteral(value);
 	}
 
-	public LessThanOrEqualExpression LessThanOrEqual(Expression smaller, Expression bigger)
+	public LessThanOrEqualExpression LessThanOrEqual(Expression lesser, Expression greater)
 	{
-		return new LessThanOrEqualExpression(smaller, bigger);
+		return new LessThanOrEqualExpression(lesser, greater);
+	}
+
+	public GreaterThanExpression GreaterThan(Expression greater, Expression lesser)
+	{
+		return new GreaterThanExpression(greater, lesser);
 	}
 
 	public EqualExpression Equal(Expression left, Expression right)

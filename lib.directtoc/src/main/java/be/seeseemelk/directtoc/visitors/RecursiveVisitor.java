@@ -1,10 +1,7 @@
 package be.seeseemelk.directtoc.visitors;
 
 import be.seeseemelk.directtoc.expressions.*;
-import be.seeseemelk.directtoc.statements.BlockStatement;
-import be.seeseemelk.directtoc.statements.ExpressionStatement;
-import be.seeseemelk.directtoc.statements.IfStatement;
-import be.seeseemelk.directtoc.statements.ReturnStatement;
+import be.seeseemelk.directtoc.statements.*;
 import be.seeseemelk.directtoc.types.Function;
 import be.seeseemelk.directtoc.types.Pointer;
 import be.seeseemelk.directtoc.types.Primitive;
@@ -50,6 +47,20 @@ public abstract class RecursiveVisitor implements SyntaxVisitor
 	}
 
 	@Override
+	public void visitWhileStatement(WhileStatement statement)
+	{
+		statement.getExpression().visit(this);
+		statement.getBody().visit(this);
+	}
+
+	@Override
+	public void visitAssignmentStatement(AssignmentStatement statement)
+	{
+		statement.getVariable().visit(this);
+		statement.getExpression().visit(this);
+	}
+
+	@Override
 	public void visitLiteral(Literal literal)
 	{
 		literal.getResultType().visit(this);
@@ -62,15 +73,37 @@ public abstract class RecursiveVisitor implements SyntaxVisitor
 	}
 
 	@Override
+	public void visitVariableDeclarationStatement(VariableDeclareStatement statement)
+	{
+		statement.getVariable().visit(this);
+		if (statement.getInitialiser() != null)
+			statement.getInitialiser().visit(this);
+	}
+
+	@Override
 	public void visitPrimitive(Primitive primitive)
 	{
 	}
 
 	@Override
+	public void visitEqual(EqualExpression expression)
+	{
+		expression.getLeft().visit(this);
+		expression.getRight().visit(this);
+	}
+
+	@Override
 	public void visitLessThanOrEqual(LessThanOrEqualExpression expression)
 	{
-		expression.getSmaller().visit(this);
-		expression.getBigger().visit(this);
+		expression.getLesser().visit(this);
+		expression.getGreater().visit(this);
+	}
+
+	@Override
+	public void visitGreaterThan(GreaterThanExpression expression)
+	{
+		expression.getGreater().visit(this);
+		expression.getLesser().visit(this);
 	}
 
 	@Override
@@ -79,6 +112,20 @@ public abstract class RecursiveVisitor implements SyntaxVisitor
 		variable.getType().visit(this);
 		if (variable.getParent() != null)
 			variable.getParent().visit(this);
+	}
+
+	@Override
+	public void visitAddition(AdditionExpression expression)
+	{
+		expression.getLeft().visit(this);
+		expression.getRight().visit(this);
+	}
+
+	@Override
+	public void visitSubtract(SubtractExpression expression)
+	{
+		expression.getLeft().visit(this);
+		expression.getRight().visit(this);
 	}
 
 	@Override

@@ -169,4 +169,72 @@ public class ProgramTest
 		Value result = interpreter.call(pointers, Value.pointerTo(value));
 		assertThat(result.asInt(), equalTo(23));
 	}
+
+	@Test
+	void testVariables()
+	{
+		Function function = Func(INT, "testVariables");
+		Variable number = function.parameter(INT, "number");
+		Variable sum = new Variable(INT, "sum");
+		function.body(
+			Declare( sum, Int(0) ),
+			While( GreaterThan(number, Int(0)) ).Do(
+				Assign( sum, Add(sum, Int(1)) ),
+				Assign( number, Subtract(number, Int(1)) )
+			),
+			Return( sum )
+		);
+
+		ProgramWriter program = new ProgramWriter(function);
+		assertThat(program.toC().toOutput(), equalTo("""
+			#include "d2c.h"
+			static int testVariables(int number);
+			int testVariables(int number)
+			{
+				int sum = 0;
+				while (number > 0)
+				{
+					sum = sum + 1;
+					number = number - 1;
+				}
+				return sum;
+			}
+			"""));
+
+		Interpreter interpreter = new Interpreter();
+		Value value = Value.fromInt(23);
+		Value result = interpreter.call(function, value);
+		assertThat(result.asInt(), equalTo(23));
+	}
+
+	@Test
+	void testEquality()
+	{
+		Function function = Func(INT, "testEqualTo42");
+		Variable number = function.parameter(INT, "number");
+		function.body(
+			If( Equal(number, Int(42)) ).Then(
+				Return( Int(1) )
+			).Else(
+				Return( Int(0) )
+			)
+		);
+
+		ProgramWriter program = new ProgramWriter(function);
+		assertThat(program.toC().toOutput(), equalTo("""
+			#include "d2c.h"
+			static int testEqualTo42(int number);
+			int testEqualTo42(int number)
+			{
+				if (number == 42)
+					return 1;
+				else
+					return 0;
+			}
+			"""));
+
+		Interpreter interpreter = new Interpreter();
+		assertThat(interpreter.call(function, Value.fromInt(5)).asInt(), equalTo(0));
+		assertThat(interpreter.call(function, Value.fromInt(42)).asInt(), equalTo(1));
+	}
 }
